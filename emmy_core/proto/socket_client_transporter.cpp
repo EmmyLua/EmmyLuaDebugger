@@ -17,41 +17,41 @@
 #include <condition_variable>
 
 void OnConnectCB(uv_connect_t* req, int status) {
-    const auto thiz = (SocketClientTransporter*)req->data;
-    thiz->OnConnection(req, status);
+	const auto thiz = (SocketClientTransporter*)req->data;
+	thiz->OnConnection(req, status);
 }
 
 static void echo_alloc(uv_handle_t* handle,
                        size_t suggested_size,
                        uv_buf_t* buf) {
-    buf->base = static_cast<char*>(malloc(suggested_size));
-    buf->len = suggested_size;
+	buf->base = static_cast<char*>(malloc(suggested_size));
+	buf->len = suggested_size;
 }
 
 static void after_read(uv_stream_t* handle,
                        ssize_t nread,
                        const uv_buf_t* buf) {
-    auto p = static_cast<Transporter*>(handle->data);
-    p->OnAfterRead(handle, nread, buf);
+	auto p = static_cast<Transporter*>(handle->data);
+	p->OnAfterRead(handle, nread, buf);
 }
 
 SocketClientTransporter::SocketClientTransporter():
-    Transporter(false),
+	Transporter(false),
 	uvClient({}),
-    connect_req({}) {
+	connect_req({}) {
 }
 
 SocketClientTransporter::~SocketClientTransporter() {
 }
 
 int SocketClientTransporter::Stop() {
-    Transporter::Stop();
+	Transporter::Stop();
 	if (IsConnected()) {
 		uv_read_stop((uv_stream_t*)&uvClient);
 		uv_close((uv_handle_t*)&uvClient, nullptr);
 	}
-    cv.notify_all();
-    return 0;
+	cv.notify_all();
+	return 0;
 }
 
 bool SocketClientTransporter::Connect(const std::string& host, int port) {
@@ -59,29 +59,29 @@ bool SocketClientTransporter::Connect(const std::string& host, int port) {
 	uvClient.data = this;
 	uv_tcp_init(loop, &uvClient);
 	uv_ip4_addr(host.c_str(), port, &addr);
-    connect_req.data = this;
+	connect_req.data = this;
 	const int r = uv_tcp_connect(&connect_req, &uvClient, reinterpret_cast<const struct sockaddr*>(&addr), OnConnectCB);
 	if (r) {
 		fprintf(stderr, "Connect error %s\n", uv_strerror(r));
 		return false;
 	}
-    StartEventLoop();
-    std::unique_lock<std::mutex> lock(mutex);
-    cv.wait(lock);
+	StartEventLoop();
+	std::unique_lock<std::mutex> lock(mutex);
+	cv.wait(lock);
 	return IsConnected();
 }
 
-void SocketClientTransporter::OnConnection(uv_connect_t *req, int status) {
-    if (status >= 0) {
-        OnConnect();
-        uv_read_start((uv_stream_t*)&uvClient, echo_alloc, after_read);
-    }
-    else {
-        Stop();
-    }
-    cv.notify_all();
+void SocketClientTransporter::OnConnection(uv_connect_t* req, int status) {
+	if (status >= 0) {
+		OnConnect();
+		uv_read_start((uv_stream_t*)&uvClient, echo_alloc, after_read);
+	}
+	else {
+		Stop();
+	}
+	cv.notify_all();
 }
 
-void SocketClientTransporter::Send(int cmd, const char *data, size_t len) {
-    Transporter::Send((uv_stream_t*)&uvClient, cmd, data, len);
+void SocketClientTransporter::Send(int cmd, const char* data, size_t len) {
+	Transporter::Send((uv_stream_t*)&uvClient, cmd, data, len);
 }

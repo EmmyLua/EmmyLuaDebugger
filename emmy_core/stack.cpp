@@ -19,16 +19,15 @@ Stack::Stack(): level(0) {
 }
 
 Stack::~Stack() {
-    for(auto var : localVariables) {
-        delete var;
-    }
-    for (auto var : upvalueVariables) {
-        delete var;
-    }
+	for (auto var : localVariables) {
+		delete var;
+	}
+	for (auto var : upvalueVariables) {
+		delete var;
+	}
 }
 
 Variable* Stack::CreateVariable() {
-    auto variable = new Variable();
-    return variable;
+	auto variable = new Variable();
+	return variable;
 }
-

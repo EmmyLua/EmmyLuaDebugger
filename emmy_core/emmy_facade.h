@@ -24,25 +24,25 @@ struct EvalContext;
 
 class EmmyFacade {
 	Transporter* transporter;
-    lua_State* L;
-    std::mutex waitIDEMutex;
-    std::condition_variable waitIDECV;
+	lua_State* L;
+	std::mutex waitIDEMutex;
+	std::condition_variable waitIDECV;
 public:
 	static EmmyFacade* Get();
 	EmmyFacade();
 	~EmmyFacade();
 	int TcpListen(lua_State* L, const std::string& host, int port);
-    int TcpConnect(lua_State* L, const std::string& host, int port);
-    int PipeListen(lua_State* L, const std::string& name);
-    int PipeConnect(lua_State* L, const std::string& name);
+	int TcpConnect(lua_State* L, const std::string& host, int port);
+	int PipeListen(lua_State* L, const std::string& name);
+	int PipeConnect(lua_State* L, const std::string& name);
 	int BreakHere(lua_State* L);
-    int OnConnect();
+	int OnConnect();
 	int Stop();
-    void WaitIDE();
+	void WaitIDE();
 	void OnReceiveMessage(const rapidjson::Document& document);
 	void OnBreak();
-    void Destroy();
-    void OnEvalResult(const EvalContext* context);
+	void Destroy();
+	void OnEvalResult(const EvalContext* context);
 private:
 	void OnAddBreakPoint(const rapidjson::Document& document);
 	void OnRemoveBreakPoint(const rapidjson::Document& document);

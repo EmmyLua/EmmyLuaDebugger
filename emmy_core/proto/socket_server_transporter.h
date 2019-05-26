@@ -24,9 +24,9 @@ public:
 	SocketServerTransporter();
 	~SocketServerTransporter();
 	void OnNewConnection(uv_stream_t* server, int status);
-    bool Listen(const std::string& host, int port);
+	bool Listen(const std::string& host, int port);
 private:
 	int Stop() override;
 	void Send(int cmd, const char* data, size_t len) override;
-    void OnDisconnect() override;
+	void OnDisconnect() override;
 };

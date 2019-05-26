@@ -27,8 +27,7 @@ HMODULE FindLuaModule() {
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
 	BOOL moreModules = Module32First(hSnapshot, &module);
 
-	while (moreModules)
-	{
+	while (moreModules) {
 		if (GetProcAddress(module.hModule, "lua_gettop")) {
 			hModule = module.hModule;
 			break;
@@ -92,52 +91,59 @@ IMPL_LUA_API_E(lua_pcallk);
 IMPL_LUA_API_E(luaL_setfuncs);
 
 
-int lua_setfenv(lua_State *L, int idx) {
-    if (luaVersion == LuaVersion::LUA_51) {
-        return e_lua_setfenv(L, idx);
-    }
-    return lua_setupvalue(L, idx, 1) != nullptr;
+int lua_setfenv(lua_State* L, int idx) {
+	if (luaVersion == LuaVersion::LUA_51) {
+		return e_lua_setfenv(L, idx);
+	}
+	return lua_setupvalue(L, idx, 1) != nullptr;
 }
-lua_Integer lua_tointeger(lua_State *L, int idx) {
-    if (luaVersion > LuaVersion::LUA_51) {
-        return e_lua_tointegerx(L, idx, nullptr);
-    }
-    return e_lua_tointeger(L, idx);
+
+lua_Integer lua_tointeger(lua_State* L, int idx) {
+	if (luaVersion > LuaVersion::LUA_51) {
+		return e_lua_tointegerx(L, idx, nullptr);
+	}
+	return e_lua_tointeger(L, idx);
 }
-int lua_getglobal(lua_State *L, const char *name) {
-    if (luaVersion == LuaVersion::LUA_51) {
-        return lua_getfield(L, -10002, name);
-    }
-    return e_lua_getglobal(L, name);
+
+int lua_getglobal(lua_State* L, const char* name) {
+	if (luaVersion == LuaVersion::LUA_51) {
+		return lua_getfield(L, -10002, name);
+	}
+	return e_lua_getglobal(L, name);
 }
-void lua_call(lua_State *L, int nargs, int nresults) {
-    if (luaVersion == LuaVersion::LUA_51)
-        e_lua_call(L, nargs, nresults);
-    else
-        e_lua_callk(L, nargs, nresults, 0, nullptr);
+
+void lua_call(lua_State* L, int nargs, int nresults) {
+	if (luaVersion == LuaVersion::LUA_51)
+		e_lua_call(L, nargs, nresults);
+	else
+		e_lua_callk(L, nargs, nresults, 0, nullptr);
 }
-int lua_pcall(lua_State *L, int nargs, int nresults, int errfunc) {
-    if (luaVersion == LuaVersion::LUA_51)
-        return e_lua_pcall(L, nargs, nresults, errfunc);
-    return e_lua_pcallk(L, nargs, nresults, errfunc, 0, nullptr);
+
+int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc) {
+	if (luaVersion == LuaVersion::LUA_51)
+		return e_lua_pcall(L, nargs, nresults, errfunc);
+	return e_lua_pcallk(L, nargs, nresults, errfunc, 0, nullptr);
 }
-void luaL_setfuncs(lua_State *L, const luaL_Reg *l, int nup) {
-    if (luaVersion == LuaVersion::LUA_51) {
-        for (;l->name != nullptr; l++) {
-            int i;
-            for (i = 0; i < nup; i++)
-                lua_pushvalue(L, -nup);
-            lua_pushcclosure(L, l->func, nup);
-            lua_setfield(L, -(nup + 2), l->name);
-        }
-    } else e_luaL_setfuncs(L, l, nup);
+
+void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
+	if (luaVersion == LuaVersion::LUA_51) {
+		for (; l->name != nullptr; l++) {
+			int i;
+			for (i = 0; i < nup; i++)
+				lua_pushvalue(L, -nup);
+			lua_pushcclosure(L, l->func, nup);
+			lua_setfield(L, -(nup + 2), l->name);
+		}
+	}
+	else e_luaL_setfuncs(L, l, nup);
 }
+
 int lua_upvalueindex(int i) {
-    if (luaVersion == LuaVersion::LUA_53)
-        return -1001000 - i;
-    if (luaVersion == LuaVersion::LUA_52)
-        return -1001000 - i;
-    return -10002 - i;
+	if (luaVersion == LuaVersion::LUA_53)
+		return -1001000 - i;
+	if (luaVersion == LuaVersion::LUA_52)
+		return -1001000 - i;
+	return -10002 - i;
 }
 
 extern int LUA_REGISTRYINDEX = 0;
@@ -155,7 +161,7 @@ extern "C" bool SetupLuaAPI() {
 	REQUIRE_LUA_API(lua_pushstring);
 	REQUIRE_LUA_API(lua_pushcclosure);
 	REQUIRE_LUA_API(lua_pushboolean);
-    REQUIRE_LUA_API(lua_pushvalue);
+	REQUIRE_LUA_API(lua_pushvalue);
 	REQUIRE_LUA_API(lua_getfield);
 	REQUIRE_LUA_API(lua_next);
 	REQUIRE_LUA_API(lua_createtable);
@@ -170,32 +176,32 @@ extern "C" bool SetupLuaAPI() {
 	REQUIRE_LUA_API(luaL_loadstring);
 	REQUIRE_LUA_API(luaL_checklstring);
 	REQUIRE_LUA_API(luaL_checknumber);
-    REQUIRE_LUA_API(lua_topointer);
-    //51
-    REQUIRE_LUA_API_E(lua_setfenv);
-    REQUIRE_LUA_API_E(lua_tointeger);
-    REQUIRE_LUA_API_E(lua_call);
-    REQUIRE_LUA_API_E(lua_pcall);
-    //53
-    REQUIRE_LUA_API_E(lua_tointegerx);
-    REQUIRE_LUA_API_E(lua_getglobal);
-    REQUIRE_LUA_API_E(lua_callk);
-    REQUIRE_LUA_API_E(lua_pcallk);
-    REQUIRE_LUA_API_E(luaL_setfuncs);
-    
-    if (e_luaL_setfuncs && e_lua_call && e_lua_tointegerx) {
+	REQUIRE_LUA_API(lua_topointer);
+	//51
+	REQUIRE_LUA_API_E(lua_setfenv);
+	REQUIRE_LUA_API_E(lua_tointeger);
+	REQUIRE_LUA_API_E(lua_call);
+	REQUIRE_LUA_API_E(lua_pcall);
+	//53
+	REQUIRE_LUA_API_E(lua_tointegerx);
+	REQUIRE_LUA_API_E(lua_getglobal);
+	REQUIRE_LUA_API_E(lua_callk);
+	REQUIRE_LUA_API_E(lua_pcallk);
+	REQUIRE_LUA_API_E(luaL_setfuncs);
+
+	if (e_luaL_setfuncs && e_lua_call && e_lua_tointegerx) {
 		luaVersion = LuaVersion::LUA_53;
 		LUA_REGISTRYINDEX = -1001000;
-    }
-    else if (LoadAPI("lua_version")) {
-        luaVersion = LuaVersion::LUA_52;
+	}
+	else if (LoadAPI("lua_version")) {
+		luaVersion = LuaVersion::LUA_52;
 		//todo
 		LUA_REGISTRYINDEX = -1001000;
-    }
-    else {
+	}
+	else {
 		luaVersion = LuaVersion::LUA_51;
 		LUA_REGISTRYINDEX = -10000;
-    }
-    printf("[EMMY]lua version: %d\n", luaVersion);
-    return true;
+	}
+	printf("[EMMY]lua version: %d\n", luaVersion);
+	return true;
 }

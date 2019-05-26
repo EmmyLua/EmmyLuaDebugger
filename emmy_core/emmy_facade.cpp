@@ -27,61 +27,61 @@ EmmyFacade* EmmyFacade::Get() {
 }
 
 EmmyFacade::EmmyFacade():
-    transporter(nullptr),
-    L(nullptr) {
+	transporter(nullptr),
+	L(nullptr) {
 }
 
 EmmyFacade::~EmmyFacade() {
-    delete transporter;
+	delete transporter;
 }
 
 int EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port) {
 	Destroy();
-    this->L = L;
-    const auto s = new SocketServerTransporter();
-    transporter = s;
-    s->SetHandler(this);
+	this->L = L;
+	const auto s = new SocketServerTransporter();
+	transporter = s;
+	s->SetHandler(this);
 	const auto suc = s->Listen(host, port);
-    return suc ? 0 : 1;
+	return suc ? 0 : 1;
 }
 
-int EmmyFacade::TcpConnect(lua_State *L, const std::string &host, int port) {
+int EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port) {
 	Destroy();
-    this->L = L;
-    const auto c = new SocketClientTransporter();
-    transporter = c;
-    c->SetHandler(this);
-    const auto suc = c->Connect(host, port);
-    return suc ? 0 : 1;
+	this->L = L;
+	const auto c = new SocketClientTransporter();
+	transporter = c;
+	c->SetHandler(this);
+	const auto suc = c->Connect(host, port);
+	return suc ? 0 : 1;
 }
 
-int EmmyFacade::PipeListen(lua_State* L, const std::string &name) {
+int EmmyFacade::PipeListen(lua_State* L, const std::string& name) {
 	Destroy();
-    this->L = L;
-    const auto p = new PipelineServerTransporter();
-    transporter = p;
-    p->SetHandler(this);
-    const auto suc = p->pipe(name);
-    return suc ? 0 : 1;
+	this->L = L;
+	const auto p = new PipelineServerTransporter();
+	transporter = p;
+	p->SetHandler(this);
+	const auto suc = p->pipe(name);
+	return suc ? 0 : 1;
 }
 
-int EmmyFacade::PipeConnect(lua_State *L, const std::string &name) {
+int EmmyFacade::PipeConnect(lua_State* L, const std::string& name) {
 	Destroy();
-    this->L = L;
-    const auto p = new PipelineClientTransporter();
-    transporter = p;
-    p->SetHandler(this);
-    const auto suc = p->Connect(name);
-    return suc ? 0 : 1;
+	this->L = L;
+	const auto p = new PipelineClientTransporter();
+	transporter = p;
+	p->SetHandler(this);
+	const auto suc = p->Connect(name);
+	return suc ? 0 : 1;
 }
 
 void EmmyFacade::WaitIDE() {
-    if (transporter != nullptr
-        && !transporter->IsConnected()
-        && transporter->IsServerMode()) {
-        std::unique_lock<std::mutex> lock(waitIDEMutex);
-        waitIDECV.wait(lock);
-    }
+	if (transporter != nullptr
+		&& !transporter->IsConnected()
+		&& transporter->IsServerMode()) {
+		std::unique_lock<std::mutex> lock(waitIDEMutex);
+		waitIDECV.wait(lock);
+	}
 }
 
 int EmmyFacade::BreakHere(lua_State* L) {
@@ -92,9 +92,9 @@ int EmmyFacade::BreakHere(lua_State* L) {
 }
 
 int EmmyFacade::OnConnect() {
-    Debugger::Get()->Start(L);
-    waitIDECV.notify_all();
-    return 0;
+	Debugger::Get()->Start(L);
+	waitIDECV.notify_all();
+	return 0;
 }
 
 int EmmyFacade::Stop() {
@@ -103,12 +103,12 @@ int EmmyFacade::Stop() {
 }
 
 void EmmyFacade::Destroy() {
-    Stop();
-    if (transporter) {
-        transporter->Stop();
+	Stop();
+	if (transporter) {
+		transporter->Stop();
 		delete transporter;
-        transporter = nullptr;
-    }
+		transporter = nullptr;
+	}
 }
 
 void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
@@ -133,7 +133,9 @@ void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 	}
 }
 
-void FillVariables(rapidjson::Value& container, const std::vector<Variable*>& variables, rapidjson::MemoryPoolAllocator<>& allocator);
+void FillVariables(rapidjson::Value& container, const std::vector<Variable*>& variables,
+                   rapidjson::MemoryPoolAllocator<>& allocator);
+
 void FillVariable(rapidjson::Value& container, const Variable* variable, rapidjson::MemoryPoolAllocator<>& allocator) {
 	container.AddMember("name", variable->name, allocator);
 	container.AddMember("value", variable->value, allocator);
@@ -146,7 +148,8 @@ void FillVariable(rapidjson::Value& container, const Variable* variable, rapidjs
 	}
 }
 
-void FillVariables(rapidjson::Value& container, const std::vector<Variable*>& variables, rapidjson::MemoryPoolAllocator<>& allocator) {
+void FillVariables(rapidjson::Value& container, const std::vector<Variable*>& variables,
+                   rapidjson::MemoryPoolAllocator<>& allocator) {
 	std::vector<Variable*> tmp = variables;
 	for (auto variable : tmp) {
 		rapidjson::Value variableValue(rapidjson::kObjectType);
@@ -239,32 +242,32 @@ void EmmyFacade::OnEval(const rapidjson::Document& document) {
 	const auto expr = document["expr"].GetString();
 	const auto stackLevel = document["stackLevel"].GetInt();
 	const auto depth = document["depth"].GetInt();
-    
-    EvalContext* c = (EvalContext*)malloc(sizeof(EvalContext));
-    memset(c, 0, sizeof(EvalContext));
-    c->seq = seq;
-    c->expr = expr;
-    c->stackLevel = stackLevel;
-    c->depth = depth;
-    c->success = false;
-    Debugger::Get()->Eval(c);
+
+	EvalContext* c = (EvalContext*)malloc(sizeof(EvalContext));
+	memset(c, 0, sizeof(EvalContext));
+	c->seq = seq;
+	c->expr = expr;
+	c->stackLevel = stackLevel;
+	c->depth = depth;
+	c->success = false;
+	Debugger::Get()->Eval(c);
 }
 
-void EmmyFacade::OnEvalResult(const EvalContext *context) {
-    rapidjson::Document rspDoc;
-    rspDoc.SetObject();
-    auto& allocator = rspDoc.GetAllocator();
-    rspDoc.AddMember("seq", context->seq, allocator);
-    rspDoc.AddMember("success", context->success, allocator);
-    if (context->success) {
-        rapidjson::Value v(rapidjson::kObjectType);
-        FillVariable(v, &context->result, allocator);
-        rspDoc.AddMember("value", v, allocator);
-    }
-    else {
-        rspDoc.AddMember("error", context->error, allocator);
-    }
-    //free(context);
-    if (transporter)
-        transporter->Send(int(MessageCMD::EvalRsp), rspDoc);
+void EmmyFacade::OnEvalResult(const EvalContext* context) {
+	rapidjson::Document rspDoc;
+	rspDoc.SetObject();
+	auto& allocator = rspDoc.GetAllocator();
+	rspDoc.AddMember("seq", context->seq, allocator);
+	rspDoc.AddMember("success", context->success, allocator);
+	if (context->success) {
+		rapidjson::Value v(rapidjson::kObjectType);
+		FillVariable(v, &context->result, allocator);
+		rspDoc.AddMember("value", v, allocator);
+	}
+	else {
+		rspDoc.AddMember("error", context->error, allocator);
+	}
+	//free(context);
+	if (transporter)
+		transporter->Send(int(MessageCMD::EvalRsp), rspDoc);
 }

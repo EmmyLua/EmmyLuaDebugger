@@ -14,23 +14,21 @@
 * limitations under the License.
 */
 #pragma once
-
-#include <thread>
 #include <mutex>
 #include <condition_variable>
 #include "uv.h"
 #include "../transporter.h"
 
 class PipelineClientTransporter : public Transporter {
-    uv_pipe_t uvClient;
-    std::mutex mutex;
-    std::condition_variable cv;
+	uv_pipe_t uvClient;
+	std::mutex mutex;
+	std::condition_variable cv;
 public:
-    PipelineClientTransporter();
-    ~PipelineClientTransporter();
-    
-    bool Connect(const std::string& name);
-    int Stop() override;
-    void Send(int cmd, const char* data, size_t len) override;
-    void OnPipeConnection(uv_connect_t* req, int status);
+	PipelineClientTransporter();
+	~PipelineClientTransporter();
+
+	bool Connect(const std::string& name);
+	int Stop() override;
+	void Send(int cmd, const char* data, size_t len) override;
+	void OnPipeConnection(uv_connect_t* req, int status);
 };

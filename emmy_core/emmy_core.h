@@ -24,7 +24,7 @@
 #endif
 
 #ifndef EMMY_USE_LUA_SOURCE
-    #include "lua_copy/lua_api.h"
+#include "lua_copy/lua_api.h"
 #else//EMMY_USE_LUA_SOURCE
     extern "C" {
     #include "lua.h"
@@ -32,14 +32,17 @@
     #include "lauxlib.h"
     }
 
-    #ifdef EMMY_LUA_51
+#ifdef EMMY_LUA_51
         #define LUA_OK 0
-    #endif
+#endif
 #endif//EMMY_USE_LUA_SOURCE
 
 // lua version
 enum class LuaVersion {
-    UNKNOWN, LUA_51 = 51, LUA_52 = 52, LUA_53 = 53
+	UNKNOWN,
+	LUA_51 = 51,
+	LUA_52 = 52,
+	LUA_53 = 53
 };
 
 extern LuaVersion luaVersion;

@@ -22,14 +22,14 @@
 class SocketClientTransporter : public Transporter {
 	uv_tcp_t uvClient;
 	uv_connect_t connect_req;
-    std::mutex mutex;
-    std::condition_variable cv;
+	std::mutex mutex;
+	std::condition_variable cv;
 public:
 	SocketClientTransporter();
 	~SocketClientTransporter();
 
 	bool Connect(const std::string& host, int port);
-    int Stop() override;
-    void Send(int cmd, const char* data, size_t len) override;
-    void OnConnection(uv_connect_t* req, int status);
+	int Stop() override;
+	void Send(int cmd, const char* data, size_t len) override;
+	void OnConnection(uv_connect_t* req, int status);
 };

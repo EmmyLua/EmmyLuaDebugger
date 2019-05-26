@@ -49,9 +49,9 @@ public:
 	int level;
 	int line;
 	std::vector<Variable*> localVariables;
-    std::vector<Variable*> upvalueVariables;
+	std::vector<Variable*> upvalueVariables;
 public:
-    Stack();
-    ~Stack();
+	Stack();
+	~Stack();
 	Variable* CreateVariable();
 };

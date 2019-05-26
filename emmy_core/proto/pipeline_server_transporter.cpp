@@ -18,39 +18,39 @@
 static void echo_alloc(uv_handle_t* handle,
                        size_t suggested_size,
                        uv_buf_t* buf) {
-    buf->base = static_cast<char*>(malloc(suggested_size));
-    buf->len = suggested_size;
+	buf->base = static_cast<char*>(malloc(suggested_size));
+	buf->len = suggested_size;
 }
 
 static void after_read(uv_stream_t* handle,
                        ssize_t nread,
                        const uv_buf_t* buf) {
-    auto p = static_cast<Transporter*>(handle->data);
-    p->OnAfterRead(handle, nread, buf);
+	auto p = static_cast<Transporter*>(handle->data);
+	p->OnAfterRead(handle, nread, buf);
 }
 
 void onPipeConnectionCB(uv_stream_t* pipe, int status) {
-    const auto t = (PipelineServerTransporter*) pipe->data;
-    t->OnPipeConnection(pipe, status);
+	const auto t = (PipelineServerTransporter*)pipe->data;
+	t->OnPipeConnection(pipe, status);
 }
 
 PipelineServerTransporter::PipelineServerTransporter():
-    Transporter(true),
-    uvClient(nullptr) {
+	Transporter(true),
+	uvClient(nullptr) {
 }
 
 PipelineServerTransporter::~PipelineServerTransporter() {
-    
+
 }
 
-bool PipelineServerTransporter::pipe(const std::string &name) {
-    loop = uv_default_loop();
+bool PipelineServerTransporter::pipe(const std::string& name) {
+	loop = uv_default_loop();
 	std::string fullName;
 #ifdef _WIN32
-    {
+	{
 		fullName = "\\\\.\\pipe\\emmylua-";
 		fullName.append(name);
-    }
+	}
 #else
     {
 		char tmp[2048];
@@ -64,47 +64,47 @@ bool PipelineServerTransporter::pipe(const std::string &name) {
         uv_fs_req_cleanup(&req);
     }
 #endif
-    uvServer.data = this;
-    uv_pipe_init(loop, &uvServer, 0);
-    int r = uv_pipe_bind(&uvServer, fullName.c_str());
-    if (r) {
-        fprintf(stderr, "Bind error: %s\n", uv_err_name(r));
-        return false;
-    }
-    r = uv_listen((uv_stream_t*)&uvServer, 128, onPipeConnectionCB);
-    if (r) {
-        fprintf(stderr, "Listen error: %s\n", uv_err_name(r));
-        return false;
-    }
-    StartEventLoop();
-    return true;
+	uvServer.data = this;
+	uv_pipe_init(loop, &uvServer, 0);
+	int r = uv_pipe_bind(&uvServer, fullName.c_str());
+	if (r) {
+		fprintf(stderr, "Bind error: %s\n", uv_err_name(r));
+		return false;
+	}
+	r = uv_listen((uv_stream_t*)&uvServer, 128, onPipeConnectionCB);
+	if (r) {
+		fprintf(stderr, "Listen error: %s\n", uv_err_name(r));
+		return false;
+	}
+	StartEventLoop();
+	return true;
 }
 
 int PipelineServerTransporter::Stop() {
-    Transporter::Stop();
+	Transporter::Stop();
 	uv_close((uv_handle_t*)&uvServer, nullptr);
 	if (uvClient) {
 		uv_read_stop((uv_stream_t*)&uvClient);
 		uv_close((uv_handle_t*)uvClient, nullptr);
 	}
-    return 0;
+	return 0;
 }
 
-void PipelineServerTransporter::Send(int cmd, const char *data, size_t len) {
-    Transporter::Send((uv_stream_t*)uvClient, cmd, data, len);
+void PipelineServerTransporter::Send(int cmd, const char* data, size_t len) {
+	Transporter::Send((uv_stream_t*)uvClient, cmd, data, len);
 }
 
-void PipelineServerTransporter::OnPipeConnection(uv_stream_t *pipe, int status) {
-    if (status < 0) {
-        Stop();
-    }
-    else {
-        uvClient = (uv_pipe_t*) malloc(sizeof(uv_pipe_t));
-        uv_pipe_init(loop, uvClient, 0);
-        uvClient->data = this;
-        const int r = uv_accept((uv_stream_t*)&uvServer, (uv_stream_t*)uvClient);
-        assert(r == 0);
-        OnConnect();
-        uv_read_start((uv_stream_t*)uvClient, echo_alloc, after_read);
-    }
+void PipelineServerTransporter::OnPipeConnection(uv_stream_t* pipe, int status) {
+	if (status < 0) {
+		Stop();
+	}
+	else {
+		uvClient = (uv_pipe_t*)malloc(sizeof(uv_pipe_t));
+		uv_pipe_init(loop, uvClient, 0);
+		uvClient->data = this;
+		const int r = uv_accept((uv_stream_t*)&uvServer, (uv_stream_t*)uvClient);
+		assert(r == 0);
+		OnConnect();
+		uv_read_start((uv_stream_t*)uvClient, echo_alloc, after_read);
+	}
 }

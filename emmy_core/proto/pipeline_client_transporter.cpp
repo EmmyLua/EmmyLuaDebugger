@@ -18,39 +18,39 @@
 static void echo_alloc(uv_handle_t* handle,
                        size_t suggested_size,
                        uv_buf_t* buf) {
-    buf->base = static_cast<char*>(malloc(suggested_size));
-    buf->len = suggested_size;
+	buf->base = static_cast<char*>(malloc(suggested_size));
+	buf->len = suggested_size;
 }
 
 static void after_read(uv_stream_t* handle,
                        ssize_t nread,
                        const uv_buf_t* buf) {
-    auto p = static_cast<Transporter*>(handle->data);
-    p->OnAfterRead(handle, nread, buf);
+	auto p = static_cast<Transporter*>(handle->data);
+	p->OnAfterRead(handle, nread, buf);
 }
 
 void onPipeConnectionCB(uv_connect_t* req, int status) {
-    const auto t = (PipelineClientTransporter*) req->data;
-    t->OnPipeConnection(req, status);
+	const auto t = (PipelineClientTransporter*)req->data;
+	t->OnPipeConnection(req, status);
 }
 
 PipelineClientTransporter::PipelineClientTransporter(): Transporter(false) {
 }
 
 PipelineClientTransporter::~PipelineClientTransporter() {
-    
+
 }
 
 int PipelineClientTransporter::Stop() {
-    Transporter::Stop();
+	Transporter::Stop();
 	if (IsConnected()) {
 		uv_read_stop((uv_stream_t*)&uvClient);
 		uv_close((uv_handle_t*)&uvClient, nullptr);
 	}
-    return 0;
+	return 0;
 }
 
-bool PipelineClientTransporter::Connect(const std::string &name) {
+bool PipelineClientTransporter::Connect(const std::string& name) {
 	std::string fullName;
 #ifdef _WIN32
 	{
@@ -67,30 +67,30 @@ bool PipelineClientTransporter::Connect(const std::string &name) {
 		fullName.append(name);
 	}
 #endif
-    
-    uvClient.data = this;
+
+	uvClient.data = this;
 	const auto req = (uv_connect_t*)malloc(sizeof(uv_connect_t));
-    req->data = this;
-    uv_pipe_init(loop, &uvClient, 0);
-    uv_pipe_connect(req, &uvClient, fullName.c_str(), onPipeConnectionCB);
-    StartEventLoop();
+	req->data = this;
+	uv_pipe_init(loop, &uvClient, 0);
+	uv_pipe_connect(req, &uvClient, fullName.c_str(), onPipeConnectionCB);
+	StartEventLoop();
 
-    std::unique_lock<std::mutex> lock(mutex);
-    cv.wait(lock);
-    return IsConnected();
+	std::unique_lock<std::mutex> lock(mutex);
+	cv.wait(lock);
+	return IsConnected();
 }
 
-void PipelineClientTransporter::Send(int cmd, const char *data, size_t len) {
-    Transporter::Send((uv_stream_t*) &uvClient, cmd, data, len);
+void PipelineClientTransporter::Send(int cmd, const char* data, size_t len) {
+	Transporter::Send((uv_stream_t*)&uvClient, cmd, data, len);
 }
 
-void PipelineClientTransporter::OnPipeConnection(uv_connect_t *pipe, int status) {
-    if (status < 0) {
-        Stop();
-    }
-    else {
-        OnConnect();
-        uv_read_start((uv_stream_t*)&uvClient, echo_alloc, after_read);
-    }
-    cv.notify_all();
+void PipelineClientTransporter::OnPipeConnection(uv_connect_t* pipe, int status) {
+	if (status < 0) {
+		Stop();
+	}
+	else {
+		OnConnect();
+		uv_read_start((uv_stream_t*)&uvClient, echo_alloc, after_read);
+	}
+	cv.notify_all();
 }

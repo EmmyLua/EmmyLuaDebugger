@@ -21,10 +21,13 @@ class Debugger;
 
 class HookState {
 protected:
-	lua_State * currentStateL;
+	lua_State* currentStateL;
 public:
 	HookState();
-	virtual ~HookState() {}
+
+	virtual ~HookState() {
+	}
+
 	virtual void Start(Debugger* debugger, lua_State* L, lua_State* current);
 	virtual void ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar);
 };

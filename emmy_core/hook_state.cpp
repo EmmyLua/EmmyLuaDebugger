@@ -53,7 +53,7 @@ void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lu
 	else if (ar->event == LUA_HOOKRET) {
 		isRetPrevTime = true;
 	}
-	else if(ar->event == LUA_HOOKTAILCALL) {
+	else if (ar->event == LUA_HOOKTAILCALL) {
 		isTailCall = true;
 	}
 }
@@ -67,7 +67,8 @@ void HookStateStepIn::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* a
 	UpdateStackLevel(debugger, L, ar);
 	if (newStackLevel > oriStackLevel) {
 		debugger->DoAction(DebugAction::Break);
-	} else StackLevelBasedState::ProcessHook(debugger, L, ar);
+	}
+	else StackLevelBasedState::ProcessHook(debugger, L, ar);
 }
 
 void HookStateStepOut::Start(Debugger* debugger, lua_State* L, lua_State* current) {
@@ -114,7 +115,8 @@ void HookStateStepOver::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug*
 void HookStateBreak::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
 	if (ar->event == LUA_HOOKLINE) {
 		debugger->HandleBreak(L);
-	} else {
+	}
+	else {
 		HookState::ProcessHook(debugger, L, ar);
 	}
 }

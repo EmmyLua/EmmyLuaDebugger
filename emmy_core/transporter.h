@@ -17,8 +17,6 @@
 #include "uv.h"
 #include "rapidjson/document.h"
 #include <thread>
-#include <mutex>
-#include <condition_variable>
 
 class EmmyFacade;
 
@@ -46,32 +44,32 @@ enum class MessageCMD {
 
 class Transporter {
 	EmmyFacade* facade;
-    std::thread thread;
+	std::thread thread;
 	char* buf;
 	size_t bufSize;
 	size_t receiveSize;
 	bool readHead;
-    bool running;
-    bool connected;
-    bool serverMode;
+	bool running;
+	bool connected;
+	bool serverMode;
 protected:
-    uv_loop_t* loop;
+	uv_loop_t* loop;
 public:
 	Transporter(bool server);
-    virtual ~Transporter();
+	virtual ~Transporter();
 	virtual int Stop();
-    bool IsConnected() const;
-    bool IsServerMode() const;
+	bool IsConnected() const;
+	bool IsServerMode() const;
 	void Send(int cmd, const rapidjson::Document& document);
 	void SetHandler(EmmyFacade* facade);
-    void OnAfterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
+	void OnAfterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
 protected:
 	virtual void Send(int cmd, const char* data, size_t len) = 0;
-    void Send(uv_stream_t* handler, int cmd, const char* data, size_t len);
+	void Send(uv_stream_t* handler, int cmd, const char* data, size_t len);
 	void Receive(const char* data, size_t len);
 	void OnReceiveMessage(const rapidjson::Document& document);
-    void StartEventLoop();
-    void Run();
+	void StartEventLoop();
+	void Run();
 	virtual void OnDisconnect();
 	virtual void OnConnect();
 };

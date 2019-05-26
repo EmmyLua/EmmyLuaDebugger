@@ -33,7 +33,7 @@ Debugger::Debugger():
 	hookState(nullptr),
 	hooked(false),
 	skipHook(false),
-    blocking(false) {
+	blocking(false) {
 	stateBreak = new HookStateBreak();
 	stateContinue = new HookStateContinue();
 	stateStepOver = new HookStateStepOver();
@@ -47,17 +47,17 @@ Debugger::~Debugger() {
 		delete bp;
 	}
 	breakPoints.clear();
-    delete stateBreak;
+	delete stateBreak;
 	stateBreak = nullptr;
-    delete stateContinue;
+	delete stateContinue;
 	stateContinue = nullptr;
 	delete stateStepOver;
 	stateStepOver = nullptr;
-    delete stateStop;
+	delete stateStop;
 	stateStop = nullptr;
-    delete stateStepIn;
+	delete stateStepIn;
 	stateStepIn = nullptr;
-    delete stateStepOut;
+	delete stateStepOut;
 	stateStepOut = nullptr;
 
 	L = nullptr;
@@ -67,7 +67,7 @@ Debugger::~Debugger() {
 void Debugger::Start(lua_State* L) {
 	this->L = L;
 	skipHook = false;
-    blocking = false;
+	blocking = false;
 	// todo: just set hook when break point added.
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 
@@ -183,36 +183,36 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		break;
 	}
 	case LUA_TFUNCTION: {
-        void* fAddr = lua_topointer(L, -1);
-        char buff[100];
-        snprintf(buff, sizeof(buff), "%p", fAddr);
-        variable->value = buff;
+		void* fAddr = lua_topointer(L, -1);
+		char buff[100];
+		snprintf(buff, sizeof(buff), "%p", fAddr);
+		variable->value = buff;
 		break;
 	}
 	case LUA_TUSERDATA: {
-        void* fAddr = lua_topointer(L, -1);
-        char buff[100];
-        snprintf(buff, sizeof(buff), "%p", fAddr);
-        variable->value = buff;
+		void* fAddr = lua_topointer(L, -1);
+		char buff[100];
+		snprintf(buff, sizeof(buff), "%p", fAddr);
+		variable->value = buff;
 		break;
 	}
 	case LUA_TLIGHTUSERDATA: {
-        void* fAddr = lua_topointer(L, -1);
-        char buff[100];
-        snprintf(buff, sizeof(buff), "%p", fAddr);
-        variable->value = buff;
+		void* fAddr = lua_topointer(L, -1);
+		char buff[100];
+		snprintf(buff, sizeof(buff), "%p", fAddr);
+		variable->value = buff;
 		break;
 	}
 	case LUA_TTHREAD: {
-        void* fAddr = lua_topointer(L, -1);
-        char buff[100];
-        snprintf(buff, sizeof(buff), "%p", fAddr);
-        variable->value = buff;
+		void* fAddr = lua_topointer(L, -1);
+		char buff[100];
+		snprintf(buff, sizeof(buff), "%p", fAddr);
+		variable->value = buff;
 		break;
 	}
 	case LUA_TTABLE: {
 		int tableSize = 0;
-        void* tableAddr = lua_topointer(L, -1);
+		void* tableAddr = lua_topointer(L, -1);
 		lua_pushnil(L);
 		while (lua_next(L, -2)) {
 			// k: -2, v: -1
@@ -220,17 +220,17 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 				//todo: use allocator
 				const auto v = new Variable();
 				//todo: non-string key?
-                if (lua_type(L, -2) == LUA_TSTRING)
-                    v->name = lua_tostring(L, -2);
+				if (lua_type(L, -2) == LUA_TSTRING)
+					v->name = lua_tostring(L, -2);
 				GetVariable(v, L, -1, depth - 1);
 				variable->children.push_back(v);
 			}
 			lua_pop(L, 1);
 			tableSize++;
 		}
-        char buff[100];
-        snprintf(buff, sizeof(buff), "table(%p)", tableAddr);
-        variable->value = buff;
+		char buff[100];
+		snprintf(buff, sizeof(buff), "table(%p)", tableAddr);
+		variable->value = buff;
 		break;
 	}
 	}
@@ -280,14 +280,14 @@ int FixPath(lua_State* L) {
 		if (lua_isfunction(L, -1)) {
 			lua_pushstring(L, path);
 			lua_call(L, 1, 1);
-            return 1;
+			return 1;
 		}
 	}
 	return 0;
 }
 
 std::string Debugger::GetFile(lua_Debug* ar) const {
-    assert(L);
+	assert(L);
 	const char* file = ar->source;
 	if (ar->currentline < 0)
 		return file;
@@ -295,12 +295,12 @@ std::string Debugger::GetFile(lua_Debug* ar) const {
 		file++;
 	lua_pushcclosure(L, FixPath, 0);
 	lua_pushstring(L, file);
-    const int top = lua_gettop(L);
-    if (lua_pcall(L, 1, 1, 0) == LUA_OK && lua_gettop(L) > top) {
-        const auto p = lua_tostring(L, -1);
-        lua_pop(L, 1);
-        return p;
-    }
+	const int top = lua_gettop(L);
+	if (lua_pcall(L, 1, 1, 0) == LUA_OK && lua_gettop(L) > top) {
+		const auto p = lua_tostring(L, -1);
+		lua_pop(L, 1);
+		return p;
+	}
 	return file;
 }
 
@@ -313,23 +313,23 @@ void Debugger::HandleBreak(lua_State* L) {
 // host thread
 void Debugger::EnterDebugMode() {
 	std::unique_lock<std::mutex> lock(mutexRun);
-    blocking = true;
+	blocking = true;
 	while (true) {
 		std::unique_lock<std::mutex> lockEval(mutexEval);
-        if (evalQueue.empty() && blocking) {
+		if (evalQueue.empty() && blocking) {
 			lockEval.unlock();
-            cvRun.wait(lock);
+			cvRun.wait(lock);
 			lockEval.lock();
-        }
+		}
 		if (evalQueue.empty() == false) {
-            const auto evalContext = evalQueue.front();
-            evalQueue.pop();
+			const auto evalContext = evalQueue.front();
+			evalQueue.pop();
 			lockEval.unlock();
 			const bool skip = skipHook;
 			skipHook = false;
 			evalContext->success = DoEval(evalContext);
 			skipHook = skip;
-            EmmyFacade::Get()->OnEvalResult(evalContext);
+			EmmyFacade::Get()->OnEvalResult(evalContext);
 			continue;
 		}
 		break;
@@ -337,7 +337,7 @@ void Debugger::EnterDebugMode() {
 }
 
 void Debugger::ExitDebugMode() {
-    blocking = false;
+	blocking = false;
 	cvRun.notify_all();
 	//cvEval.notify_all();
 }
@@ -468,13 +468,13 @@ int Debugger::GetStackLevel(lua_State* L) const {
 
 // message thread
 bool Debugger::Eval(EvalContext* evalContext) {
-    if (!blocking)
-        return false;
-    std::unique_lock<std::mutex> lock(mutexEval);
-    evalQueue.push(evalContext);
+	if (!blocking)
+		return false;
+	std::unique_lock<std::mutex> lock(mutexEval);
+	evalQueue.push(evalContext);
 	lock.unlock();
-    cvRun.notify_all();
-    return true;
+	cvRun.notify_all();
+	return true;
 }
 
 // host thread
@@ -483,9 +483,9 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 	assert(evalContext);
 	const auto L = currentStateL;
 	// return expr
-    std::string statement = "return ";
-    statement.append(evalContext->expr);
-    int r = luaL_loadstring(L, statement.c_str());
+	std::string statement = "return ";
+	statement.append(evalContext->expr);
+	int r = luaL_loadstring(L, statement.c_str());
 	if (r == LUA_ERRSYNTAX) {
 		evalContext->error = "syntax err: ";
 		evalContext->error.append(evalContext->expr);
@@ -498,13 +498,13 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 		return false;
 	// setup env
 #ifndef EMMY_USE_LUA_SOURCE
-    lua_setfenv(L, fIdx);
+	lua_setfenv(L, fIdx);
 #elif EMMY_LUA_51
     lua_setfenv(L, fIdx);
 #else //52 & 53
     lua_setupvalue(L, fIdx, 1);
 #endif
-    assert(lua_gettop(L) == fIdx);
+	assert(lua_gettop(L) == fIdx);
 	// call function() return expr end
 	r = lua_pcall(L, 0, 1, 0);
 	if (r == LUA_OK) {
@@ -547,8 +547,8 @@ void Debugger::RefreshLineSet() {
 }
 
 void Debugger::ExecuteWithSkipHook(Executor exec) {
-    const bool skip = skipHook;
-    skipHook = true;
-    exec();
-    skipHook = skip;
+	const bool skip = skipHook;
+	skipHook = true;
+	exec();
+	skipHook = skip;
 }

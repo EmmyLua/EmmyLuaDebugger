@@ -30,13 +30,13 @@ typedef void (*Executor)();
 class HookState;
 
 struct EvalContext {
-    std::string expr;
-    std::string error;
-    int seq;
-    int stackLevel;
-    int depth;
-    Variable result;
-    bool success;
+	std::string expr;
+	std::string error;
+	int seq;
+	int stackLevel;
+	int depth;
+	Variable result;
+	bool success;
 };
 
 class Debugger {
@@ -45,13 +45,13 @@ class Debugger {
 	HookState* hookState;
 	bool hooked;
 	bool skipHook;
-    bool blocking;
+	bool blocking;
 	std::vector<BreakPoint*> breakPoints;
 	std::set<int> lineSet;
 	std::mutex mutexRun;
 	std::condition_variable cvRun;
-    std::mutex mutexEval;
-    std::queue<EvalContext*> evalQueue;
+	std::mutex mutexEval;
+	std::queue<EvalContext*> evalQueue;
 
 	HookState* stateBreak;
 	HookState* stateStepOver;
@@ -59,13 +59,13 @@ class Debugger {
 	HookState* stateStepOut;
 	HookState* stateContinue;
 	HookState* stateStop;
-    
-    friend class EmmyFacade;
-    friend class StackLevelBasedState;
-    friend class HookStateStepOut;
-    friend class HookStateStepOver;
-    friend class HookStateBreak;
-    friend class HookStateStop;
+
+	friend class EmmyFacade;
+	friend class StackLevelBasedState;
+	friend class HookStateStepOut;
+	friend class HookStateStepOver;
+	friend class HookStateBreak;
+	friend class HookStateStop;
 public:
 	static Debugger* Get();
 
@@ -82,7 +82,7 @@ public:
 	void DoAction(DebugAction action);
 	void EnterDebugMode();
 	void ExitDebugMode();
-    void ExecuteWithSkipHook(Executor exec);
+	void ExecuteWithSkipHook(Executor exec);
 private:
 	BreakPoint* FindBreakPoint(lua_State* L, lua_Debug* ar);
 	BreakPoint* FindBreakPoint(const std::string& file, int line);

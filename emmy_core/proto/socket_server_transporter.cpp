@@ -22,8 +22,8 @@ static void on_new_connection(uv_stream_t* server, int status) {
 }
 
 static void echo_alloc(uv_handle_t* handle,
-	size_t suggested_size,
-	uv_buf_t* buf) {
+                       size_t suggested_size,
+                       uv_buf_t* buf) {
 	buf->base = static_cast<char*>(malloc(suggested_size));
 	buf->len = suggested_size;
 }
@@ -31,8 +31,8 @@ static void echo_alloc(uv_handle_t* handle,
 static void after_read(uv_stream_t* handle,
                        ssize_t nread,
                        const uv_buf_t* buf) {
-    auto p = static_cast<SocketServerTransporter*>(handle->data);
-    p->OnAfterRead(handle, nread, buf);
+	auto p = static_cast<SocketServerTransporter*>(handle->data);
+	p->OnAfterRead(handle, nread, buf);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -56,7 +56,7 @@ bool SocketServerTransporter::Listen(const std::string& host, int port) {
 		fprintf(stderr, "Listen error %s\n", uv_strerror(r));
 		return false;
 	}
-    StartEventLoop();
+	StartEventLoop();
 	return true;
 }
 
@@ -66,7 +66,7 @@ int SocketServerTransporter::Stop() {
 		uv_read_stop(uvClient);
 		uv_close((uv_handle_t*)uvClient, nullptr);
 	}
-    Transporter::Stop();
+	Transporter::Stop();
 	return 0;
 }
 
@@ -94,12 +94,12 @@ void SocketServerTransporter::OnNewConnection(uv_stream_t* server, int status) {
 // send data
 
 void SocketServerTransporter::Send(int cmd, const char* data, size_t len) {
-    Transporter::Send((uv_stream_t*)uvClient, cmd, data, len);
+	Transporter::Send((uv_stream_t*)uvClient, cmd, data, len);
 }
 
 void SocketServerTransporter::OnDisconnect() {
-    Transporter::OnDisconnect();
-    
-    free(uvClient);
+	Transporter::OnDisconnect();
+
+	free(uvClient);
 	uvClient = nullptr;
 }
