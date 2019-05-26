@@ -159,6 +159,27 @@ bool Debugger::GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc) {
 	return false;
 }
 
+bool CallMetaFunction(lua_State* L, int valueIndex, const char* method, int numResults, int& result) {
+	if (lua_getmetatable(L, valueIndex)) {
+		const int metaIndex = lua_gettop(L);
+		if (!lua_isnil(L, metaIndex)) {
+			lua_pushstring(L, method);
+			lua_rawget(L, metaIndex);
+			if (lua_isnil(L, -1)) {
+				// The meta-method doesn't exist.
+				lua_pop(L, 1);
+				lua_remove(L, metaIndex);
+				return false;
+			}
+			lua_pushvalue(L, valueIndex);
+			result = lua_pcall(L, 1, numResults, 0);
+		}
+		lua_remove(L, metaIndex);
+		return true;
+	}
+	return false;
+}
+
 void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int depth) {
 	const int t1 = lua_gettop(L);
 	const int type = lua_type(L, index);
@@ -190,10 +211,29 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		break;
 	}
 	case LUA_TUSERDATA: {
-		void* fAddr = lua_topointer(L, -1);
-		char buff[100];
-		snprintf(buff, sizeof(buff), "%p", fAddr);
-		variable->value = buff;
+		auto string = lua_tostring(L, -1);
+		if (string == nullptr) {
+			int result;
+			if (CallMetaFunction(L, t1, "__tostring", 1, result) && result == 0) {
+				string = lua_tostring(L, -1);
+				lua_pop(L, 1);
+			}
+		}
+		if (string) {
+			variable->value = string;
+		}
+		else {
+			void* fAddr = lua_topointer(L, -1);
+			char buff[100];
+			snprintf(buff, sizeof(buff), "%p", fAddr);
+			variable->value = buff;
+		}
+		if (depth > 1) {
+			if (lua_getmetatable(L, -1)) {
+				GetVariable(variable, L, -1, depth);
+				lua_pop(L, 1); //pop meta
+			}
+		}
 		break;
 	}
 	case LUA_TLIGHTUSERDATA: {
@@ -228,6 +268,9 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 					lua_pushvalue(L, -2); // avoid error: "invalid key to 'next'" ???
 					v->name = lua_tostring(L, -1);
 					lua_pop(L, 1);
+				}
+				else {
+					//todo: object used as key
 				}
 				GetVariable(v, L, -1, depth - 1);
 				variable->children.push_back(v);

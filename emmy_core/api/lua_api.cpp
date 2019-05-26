@@ -78,12 +78,15 @@ IMPL_LUA_API(luaL_loadstring);
 IMPL_LUA_API(luaL_checklstring);
 IMPL_LUA_API(luaL_checknumber);
 IMPL_LUA_API(lua_topointer);
+IMPL_LUA_API(lua_getmetatable);
+IMPL_LUA_API(lua_rawget);
 //51
 IMPL_LUA_API_E(lua_setfenv);
 IMPL_LUA_API_E(lua_tointeger);
 IMPL_LUA_API_E(lua_tonumber);
 IMPL_LUA_API_E(lua_call);
 IMPL_LUA_API_E(lua_pcall);
+IMPL_LUA_API_E(lua_remove);
 //53
 IMPL_LUA_API_E(lua_tointegerx);
 IMPL_LUA_API_E(lua_tonumberx);
@@ -91,6 +94,7 @@ IMPL_LUA_API_E(lua_getglobal);
 IMPL_LUA_API_E(lua_callk);
 IMPL_LUA_API_E(lua_pcallk);
 IMPL_LUA_API_E(luaL_setfuncs);
+IMPL_LUA_API_E(lua_rotate);
 
 
 int lua_setfenv(lua_State* L, int idx) {
@@ -155,6 +159,16 @@ int lua_upvalueindex(int i) {
 	return -10002 - i;
 }
 
+void lua_remove(lua_State *L, int idx) {
+	if (luaVersion == LuaVersion::LUA_51) {
+		e_lua_remove(L, idx);
+	}
+	else {
+		e_lua_rotate(L, (idx), -1);
+		lua_pop(L, 1);
+	}
+}
+
 extern int LUA_REGISTRYINDEX = 0;
 
 extern "C" bool SetupLuaAPI() {
@@ -186,12 +200,15 @@ extern "C" bool SetupLuaAPI() {
 	REQUIRE_LUA_API(luaL_checklstring);
 	REQUIRE_LUA_API(luaL_checknumber);
 	REQUIRE_LUA_API(lua_topointer);
+	REQUIRE_LUA_API(lua_getmetatable);
+	REQUIRE_LUA_API(lua_rawget);
 	//51
 	REQUIRE_LUA_API_E(lua_setfenv);
 	REQUIRE_LUA_API_E(lua_tointeger);
 	REQUIRE_LUA_API_E(lua_tonumber);
 	REQUIRE_LUA_API_E(lua_call);
 	REQUIRE_LUA_API_E(lua_pcall);
+	REQUIRE_LUA_API_E(lua_remove);
 	//53
 	REQUIRE_LUA_API_E(lua_tointegerx);
 	REQUIRE_LUA_API_E(lua_tonumberx);
@@ -199,6 +216,7 @@ extern "C" bool SetupLuaAPI() {
 	REQUIRE_LUA_API_E(lua_callk);
 	REQUIRE_LUA_API_E(lua_pcallk);
 	REQUIRE_LUA_API_E(luaL_setfuncs);
+	REQUIRE_LUA_API_E(lua_rotate);
 
 	if (e_luaL_setfuncs && e_lua_call && e_lua_tointegerx) {
 		luaVersion = LuaVersion::LUA_53;
