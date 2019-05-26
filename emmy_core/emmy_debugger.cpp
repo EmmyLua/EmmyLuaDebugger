@@ -94,8 +94,8 @@ void Debugger::Stop() {
 	if (L) {
 		skipHook = true;
 		blocking = false;
-		ExitDebugMode();
 		UpdateHook(L, 0);
+		ExitDebugMode();
 	}
 }
 
@@ -272,6 +272,7 @@ void Debugger::UpdateHook(lua_State* L, int mask) {
 		lua_sethook(L, nullptr, mask, 0);
 }
 
+// _G.emmy.fixPath = function(path) return (newPath) end
 int FixPath(lua_State* L) {
 	const auto path = lua_tostring(L, 1);
 	lua_getglobal(L, "emmy");
@@ -321,12 +322,12 @@ void Debugger::EnterDebugMode() {
 			cvRun.wait(lock);
 			lockEval.lock();
 		}
-		if (evalQueue.empty() == false) {
+		if (!evalQueue.empty()) {
 			const auto evalContext = evalQueue.front();
 			evalQueue.pop();
 			lockEval.unlock();
 			const bool skip = skipHook;
-			skipHook = false;
+			skipHook = true;
 			evalContext->success = DoEval(evalContext);
 			skipHook = skip;
 			EmmyFacade::Get()->OnEvalResult(evalContext);
@@ -339,10 +340,10 @@ void Debugger::EnterDebugMode() {
 void Debugger::ExitDebugMode() {
 	blocking = false;
 	cvRun.notify_all();
-	//cvEval.notify_all();
 }
 
 void Debugger::AddBreakPoint(const BreakPoint& breakPoint) {
+	std::lock_guard <std::mutex> lock(mutexBP);
 	const auto bp = new BreakPoint();
 	bp->file = breakPoint.file;
 	bp->condition = breakPoint.condition;
@@ -352,6 +353,7 @@ void Debugger::AddBreakPoint(const BreakPoint& breakPoint) {
 }
 
 void Debugger::RemoveBreakPoint(const std::string& file, int line) {
+	std::lock_guard <std::mutex> lock(mutexBP);
 	auto it = breakPoints.begin();
 	while (it != breakPoints.end()) {
 		const auto bp = *it;
@@ -529,6 +531,7 @@ BreakPoint* Debugger::FindBreakPoint(lua_State* L, lua_Debug* ar) {
 }
 
 BreakPoint* Debugger::FindBreakPoint(const std::string& file, int line) {
+	std::lock_guard <std::mutex> lock(mutexBP);
 	auto it = breakPoints.begin();
 	while (it != breakPoints.end()) {
 		if ((*it)->file == file && (*it)->line == line) {

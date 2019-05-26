@@ -52,6 +52,7 @@ class Debugger {
 	std::condition_variable cvRun;
 	std::mutex mutexEval;
 	std::queue<EvalContext*> evalQueue;
+	std::mutex mutexBP;
 
 	HookState* stateBreak;
 	HookState* stateStepOver;
