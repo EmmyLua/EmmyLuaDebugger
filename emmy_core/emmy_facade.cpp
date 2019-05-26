@@ -195,6 +195,10 @@ void EmmyFacade::OnBreak() {
 	document.AddMember("stacks", stacksValue, allocator);
 
 	transporter->Send(int(MessageCMD::BreakNotify), document);
+
+	for (auto stack : stacks) {
+		delete stack;
+	}
 }
 
 void ReadBreakPoint(const rapidjson::Value& value, BreakPoint* bp) {
@@ -243,17 +247,16 @@ void EmmyFacade::OnEval(const rapidjson::Document& document) {
 	const auto stackLevel = document["stackLevel"].GetInt();
 	const auto depth = document["depth"].GetInt();
 
-	EvalContext* c = (EvalContext*)malloc(sizeof(EvalContext));
-	memset(c, 0, sizeof(EvalContext));
-	c->seq = seq;
-	c->expr = expr;
-	c->stackLevel = stackLevel;
-	c->depth = depth;
-	c->success = false;
-	Debugger::Get()->Eval(c);
+	auto context = new EvalContext();
+	context->seq = seq;
+	context->expr = expr;
+	context->stackLevel = stackLevel;
+	context->depth = depth;
+	context->success = false;
+	Debugger::Get()->Eval(context);
 }
 
-void EmmyFacade::OnEvalResult(const EvalContext* context) {
+void EmmyFacade::OnEvalResult(EvalContext* context) {
 	rapidjson::Document rspDoc;
 	rspDoc.SetObject();
 	auto& allocator = rspDoc.GetAllocator();
@@ -267,7 +270,7 @@ void EmmyFacade::OnEvalResult(const EvalContext* context) {
 	else {
 		rspDoc.AddMember("error", context->error, allocator);
 	}
-	//free(context);
 	if (transporter)
 		transporter->Send(int(MessageCMD::EvalRsp), rspDoc);
+	delete context;
 }

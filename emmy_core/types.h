@@ -40,6 +40,7 @@ public:
 	std::string value;
 	std::string type;
 	std::vector<Variable*> children;
+	~Variable();
 };
 
 class Stack {
@@ -54,4 +55,15 @@ public:
 	Stack();
 	~Stack();
 	Variable* CreateVariable();
+};
+
+class EvalContext {
+public:
+	std::string expr;
+	std::string error;
+	int seq;
+	int stackLevel;
+	int depth;
+	Variable result;
+	bool success;
 };

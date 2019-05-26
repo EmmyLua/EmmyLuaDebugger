@@ -42,7 +42,7 @@ public:
 	void OnReceiveMessage(const rapidjson::Document& document);
 	void OnBreak();
 	void Destroy();
-	void OnEvalResult(const EvalContext* context);
+	void OnEvalResult(EvalContext* context);
 private:
 	void OnAddBreakPoint(const rapidjson::Document& document);
 	void OnRemoveBreakPoint(const rapidjson::Document& document);

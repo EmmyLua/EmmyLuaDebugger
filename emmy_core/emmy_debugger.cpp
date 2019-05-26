@@ -323,7 +323,7 @@ void Debugger::EnterDebugMode() {
 			lockEval.lock();
 		}
 		if (!evalQueue.empty()) {
-			const auto evalContext = evalQueue.front();
+			auto evalContext = evalQueue.front();
 			evalQueue.pop();
 			lockEval.unlock();
 			const bool skip = skipHook;

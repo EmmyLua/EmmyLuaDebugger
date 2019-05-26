@@ -29,15 +29,7 @@ typedef void (*Executor)();
 
 class HookState;
 
-struct EvalContext {
-	std::string expr;
-	std::string error;
-	int seq;
-	int stackLevel;
-	int depth;
-	Variable result;
-	bool success;
-};
+class EvalContext;
 
 class Debugger {
 	lua_State* L;

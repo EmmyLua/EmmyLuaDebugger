@@ -15,7 +15,13 @@
 */
 #include "types.h"
 
-Stack::Stack(): level(0) {
+Variable::~Variable() {
+	for (auto child : children) {
+		delete child;
+	}
+}
+
+Stack::Stack(): level(0), line(0) {
 }
 
 Stack::~Stack() {
