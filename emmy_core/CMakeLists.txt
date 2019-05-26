@@ -33,10 +33,10 @@ if(EMMY_USE_LUA_SOURCE)
     list(APPEND LINK_LIBRARIES ${EMMY_LUA_VERSION}_dll)
 else(EMMY_USE_LUA_SOURCE)
     file(GLOB SRC_LIST
-        *.cpp *.c lua_copy/*.cpp proto/*.cpp
+        *.cpp *.c api/*.cpp proto/*.cpp
     )
     file(GLOB HEADER_LIST
-        *.h lua_copy/*.h proto/*.h
+        *.h api/*.h proto/*.h
     )
 endif(EMMY_USE_LUA_SOURCE)
 

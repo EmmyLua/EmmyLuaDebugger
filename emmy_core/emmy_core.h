@@ -24,7 +24,7 @@
 #endif
 
 #ifndef EMMY_USE_LUA_SOURCE
-#include "lua_copy/lua_api.h"
+#include "api/lua_api.h"
 #else//EMMY_USE_LUA_SOURCE
     extern "C" {
     #include "lua.h"
