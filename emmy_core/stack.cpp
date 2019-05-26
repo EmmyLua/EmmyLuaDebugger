@@ -14,6 +14,10 @@
 * limitations under the License.
 */
 #include "types.h"
+#include "emmy_core.h"
+
+Variable::Variable(): nameType(LUA_TSTRING){
+}
 
 Variable::~Variable() {
 	for (auto child : children) {

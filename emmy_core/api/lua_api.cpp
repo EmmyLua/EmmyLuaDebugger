@@ -81,10 +81,12 @@ IMPL_LUA_API(lua_topointer);
 //51
 IMPL_LUA_API_E(lua_setfenv);
 IMPL_LUA_API_E(lua_tointeger);
+IMPL_LUA_API_E(lua_tonumber);
 IMPL_LUA_API_E(lua_call);
 IMPL_LUA_API_E(lua_pcall);
 //53
 IMPL_LUA_API_E(lua_tointegerx);
+IMPL_LUA_API_E(lua_tonumberx);
 IMPL_LUA_API_E(lua_getglobal);
 IMPL_LUA_API_E(lua_callk);
 IMPL_LUA_API_E(lua_pcallk);
@@ -103,6 +105,13 @@ lua_Integer lua_tointeger(lua_State* L, int idx) {
 		return e_lua_tointegerx(L, idx, nullptr);
 	}
 	return e_lua_tointeger(L, idx);
+}
+
+lua_Number lua_tonumber(lua_State* L, int idx) {
+	if (luaVersion == LuaVersion::LUA_51) {
+		return e_lua_tonumber(L, idx);
+	}
+	return e_lua_tonumberx(L, idx, nullptr);
 }
 
 int lua_getglobal(lua_State* L, const char* name) {
@@ -180,10 +189,12 @@ extern "C" bool SetupLuaAPI() {
 	//51
 	REQUIRE_LUA_API_E(lua_setfenv);
 	REQUIRE_LUA_API_E(lua_tointeger);
+	REQUIRE_LUA_API_E(lua_tonumber);
 	REQUIRE_LUA_API_E(lua_call);
 	REQUIRE_LUA_API_E(lua_pcall);
 	//53
 	REQUIRE_LUA_API_E(lua_tointegerx);
+	REQUIRE_LUA_API_E(lua_tonumberx);
 	REQUIRE_LUA_API_E(lua_getglobal);
 	REQUIRE_LUA_API_E(lua_callk);
 	REQUIRE_LUA_API_E(lua_pcallk);

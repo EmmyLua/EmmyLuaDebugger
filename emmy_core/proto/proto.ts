@@ -9,9 +9,14 @@ enum ValueType {
     VUserdata
 }
 
+enum VariableNameType {
+    NString, NNumber, NComplex, 
+}
+
 interface Variable {
     type: ValueType;
     name: string;
+    nameType: VariableNameType;
     value: string;
     children?: Variable[];
 }

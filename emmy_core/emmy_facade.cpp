@@ -138,8 +138,9 @@ void FillVariables(rapidjson::Value& container, const std::vector<Variable*>& va
 
 void FillVariable(rapidjson::Value& container, const Variable* variable, rapidjson::MemoryPoolAllocator<>& allocator) {
 	container.AddMember("name", variable->name, allocator);
+	container.AddMember("nameType", variable->nameType, allocator);
 	container.AddMember("value", variable->value, allocator);
-	container.AddMember("type", variable->type, allocator);
+	container.AddMember("valueType", variable->valueType, allocator);
 	// children
 	if (!variable->children.empty()) {
 		rapidjson::Value childrenValue(rapidjson::kArrayType);

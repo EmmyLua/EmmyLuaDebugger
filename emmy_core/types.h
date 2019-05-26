@@ -38,8 +38,10 @@ class Variable {
 public:
 	std::string name;
 	std::string value;
-	std::string type;
+	std::string valueType;
+	int nameType;
 	std::vector<Variable*> children;
+	Variable();
 	~Variable();
 };
 

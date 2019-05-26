@@ -163,7 +163,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 	const int t1 = lua_gettop(L);
 	const int type = lua_type(L, index);
 	const char* typeName = lua_typename(L, type);
-	variable->type = typeName;
+	variable->valueType = typeName;
 	switch (type) {
 	case LUA_TNIL: {
 		variable->value = "nil";
@@ -219,9 +219,16 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			if (depth > 1) {
 				//todo: use allocator
 				const auto v = new Variable();
-				//todo: non-string key?
-				if (lua_type(L, -2) == LUA_TSTRING)
+				const auto t = lua_type(L, -2);
+				v->nameType = t;
+				if (t == LUA_TSTRING) {
 					v->name = lua_tostring(L, -2);
+				}
+				else if (t == LUA_TNUMBER) {
+					lua_pushvalue(L, -2); // avoid error: "invalid key to 'next'" ???
+					v->name = lua_tostring(L, -1);
+					lua_pop(L, 1);
+				}
 				GetVariable(v, L, -1, depth - 1);
 				variable->children.push_back(v);
 			}

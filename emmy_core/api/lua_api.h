@@ -136,7 +136,6 @@ typedef struct luaL_Reg {
   (luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
 
 #define lua_tostring(L,i)	lua_tolstring(L, (i), NULL)
-#define lua_tonumber(L,i)	lua_tonumberx(L,(i),NULL)
 #define lua_pop(L,n)		lua_settop(L, -(n)-1)
 #define lua_newtable(L)		lua_createtable(L, 0, 0)
 #define lua_register(L,n,f) (lua_pushcfunction(L, (f)), lua_setglobal(L, (n)))
@@ -224,6 +223,8 @@ typedef int (*dll_e_lua_setfenv)(lua_State* L, int idx);
 DEF_LUA_API_E(lua_setfenv);
 typedef lua_Integer (*dll_e_lua_tointeger)(lua_State* L, int idx);
 DEF_LUA_API_E(lua_tointeger);
+typedef lua_Number(*dll_e_lua_tonumber) (lua_State *L, int idx);
+DEF_LUA_API_E(lua_tonumber);
 typedef int (*dll_e_lua_call)(lua_State* L, int nargs, int nresults);
 DEF_LUA_API_E(lua_call);
 typedef int (*dll_e_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
@@ -231,6 +232,8 @@ DEF_LUA_API_E(lua_pcall);
 //53
 typedef lua_Integer (*dll_e_lua_tointegerx)(lua_State* L, int idx, int* isnum);
 DEF_LUA_API_E(lua_tointegerx);
+typedef lua_Number(*dll_e_lua_tonumberx) (lua_State *L, int idx, int *isnum);
+DEF_LUA_API_E(lua_tonumberx);
 typedef int (*dll_e_lua_getglobal)(lua_State* L, const char* name);
 DEF_LUA_API_E(lua_getglobal);
 typedef void (*dll_e_lua_callk)(lua_State* L, int nargs, int nresults, lua_KContext ctx, lua_KFunction k);
@@ -242,6 +245,7 @@ DEF_LUA_API_E(luaL_setfuncs);
 
 int lua_setfenv(lua_State* L, int idx);
 lua_Integer lua_tointeger(lua_State* L, int idx);
+lua_Number lua_tonumber(lua_State* L, int idx);
 int lua_getglobal(lua_State* L, const char* name);
 void lua_call(lua_State* L, int nargs, int nresults);
 int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc);
