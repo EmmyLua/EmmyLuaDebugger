@@ -169,7 +169,7 @@ void lua_remove(lua_State *L, int idx) {
 	}
 }
 
-extern int LUA_REGISTRYINDEX = 0;
+int LUA_REGISTRYINDEX = 0;
 
 extern "C" bool SetupLuaAPI() {
 	REQUIRE_LUA_API(lua_gettop);

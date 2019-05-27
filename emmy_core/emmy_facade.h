@@ -20,7 +20,7 @@
 #include <condition_variable>
 
 class Transporter;
-struct EvalContext;
+class EvalContext;
 
 class EmmyFacade {
 	Transporter* transporter;

@@ -251,12 +251,12 @@ DEF_LUA_API_E(luaL_setfuncs);
 typedef void (*dll_e_lua_rotate)(lua_State *L, int idx, int n);
 DEF_LUA_API_E(lua_rotate);
 
-int lua_setfenv(lua_State* L, int idx);
 lua_Integer lua_tointeger(lua_State* L, int idx);
 lua_Number lua_tonumber(lua_State* L, int idx);
+int lua_setfenv(lua_State* L, int idx);
 int lua_getglobal(lua_State* L, const char* name);
-void lua_call(lua_State* L, int nargs, int nresults);
 int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc);
-void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 int lua_upvalueindex(int i);
+void lua_call(lua_State* L, int nargs, int nresults);
+void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 void lua_remove(lua_State *L, int idx);
