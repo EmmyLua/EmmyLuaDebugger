@@ -14,7 +14,7 @@
 * limitations under the License.
 */
 #include "../emmy_core.h"
-#include <stdio.h>
+#include <cstdio>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -160,7 +160,7 @@ int lua_upvalueindex(int i) {
 }
 
 void lua_remove(lua_State *L, int idx) {
-	if (luaVersion == LuaVersion::LUA_51) {
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52) {
 		e_lua_remove(L, idx);
 	}
 	else {
@@ -208,21 +208,23 @@ extern "C" bool SetupLuaAPI() {
 	REQUIRE_LUA_API_E(lua_tonumber);
 	REQUIRE_LUA_API_E(lua_call);
 	REQUIRE_LUA_API_E(lua_pcall);
+	//51 & 52
 	REQUIRE_LUA_API_E(lua_remove);
-	//53
+	//52 & 53
 	REQUIRE_LUA_API_E(lua_tointegerx);
 	REQUIRE_LUA_API_E(lua_tonumberx);
 	REQUIRE_LUA_API_E(lua_getglobal);
 	REQUIRE_LUA_API_E(lua_callk);
 	REQUIRE_LUA_API_E(lua_pcallk);
 	REQUIRE_LUA_API_E(luaL_setfuncs);
+	//53
 	REQUIRE_LUA_API_E(lua_rotate);
 
-	if (e_luaL_setfuncs && e_lua_call && e_lua_tointegerx) {
+	if (e_lua_rotate) {
 		luaVersion = LuaVersion::LUA_53;
 		LUA_REGISTRYINDEX = -1001000;
 	}
-	else if (LoadAPI("lua_version")) {
+	else if (e_lua_callk) {
 		luaVersion = LuaVersion::LUA_52;
 		//todo
 		LUA_REGISTRYINDEX = -1001000;

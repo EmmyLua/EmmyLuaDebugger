@@ -233,9 +233,10 @@ typedef int (*dll_e_lua_call)(lua_State* L, int nargs, int nresults);
 DEF_LUA_API_E(lua_call);
 typedef int (*dll_e_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
 DEF_LUA_API_E(lua_pcall);
+//51 & 52
 typedef void (*dll_e_lua_remove)(lua_State *L, int idx);
 DEF_LUA_API_E(lua_remove);
-//53
+//52 & 53
 typedef lua_Integer (*dll_e_lua_tointegerx)(lua_State* L, int idx, int* isnum);
 DEF_LUA_API_E(lua_tointegerx);
 typedef lua_Number(*dll_e_lua_tonumberx) (lua_State *L, int idx, int *isnum);
@@ -248,6 +249,7 @@ typedef int (*dll_e_lua_pcallk)(lua_State* L, int nargs, int nresults, int errfu
 DEF_LUA_API_E(lua_pcallk);
 typedef void (*dll_e_luaL_setfuncs)(lua_State* L, const luaL_Reg* l, int nup);
 DEF_LUA_API_E(luaL_setfuncs);
+//53
 typedef void (*dll_e_lua_rotate)(lua_State *L, int idx, int n);
 DEF_LUA_API_E(lua_rotate);
 
