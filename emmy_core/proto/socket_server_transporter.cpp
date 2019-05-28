@@ -99,7 +99,8 @@ void SocketServerTransporter::Send(int cmd, const char* data, size_t len) {
 
 void SocketServerTransporter::OnDisconnect() {
 	Transporter::OnDisconnect();
-
-	free(uvClient);
-	uvClient = nullptr;
+    
+    uv_read_stop((uv_stream_t*)uvClient);
+    // todo: free uvClient
+    uvClient = nullptr;
 }

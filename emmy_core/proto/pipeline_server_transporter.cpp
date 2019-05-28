@@ -99,6 +99,7 @@ void PipelineServerTransporter::OnPipeConnection(uv_stream_t* pipe, int status) 
 		Stop();
 	}
 	else {
+        // todo: close prev uvClient
 		uvClient = (uv_pipe_t*)malloc(sizeof(uv_pipe_t));
 		uv_pipe_init(loop, uvClient, 0);
 		uvClient->data = this;
