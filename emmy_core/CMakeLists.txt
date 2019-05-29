@@ -34,22 +34,28 @@ if(EMMY_USE_LUA_SOURCE)
 else(EMMY_USE_LUA_SOURCE)
     file(GLOB SRC_LIST
         *.cpp *.c api/*.cpp proto/*.cpp
+        hook/*.cpp
     )
     file(GLOB HEADER_LIST
         *.h api/*.h proto/*.h
+        hook/*.h
     )
 endif(EMMY_USE_LUA_SOURCE)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/third-party/libuv-1.29.0/include
     ${CMAKE_SOURCE_DIR}/third-party/rapidjson-1.1.0/include
+    ${CMAKE_SOURCE_DIR}/third-party/EasyHook/EasyHookDll
 )
 
-add_library(emmy_core SHARED ${SRC_LIST} ${HEADER_LIST})
+source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} SRC_LIST)
+source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} HEADER_LIST)
+
+add_library(emmy_core MODULE ${SRC_LIST} ${HEADER_LIST})
 set_target_properties(emmy_core PROPERTIES PREFIX "")
 if(WIN32)
-    add_dependencies(emmy_core easy_hook uv_a)
-    target_link_libraries(emmy_core easy_hook uv_a)
+    add_dependencies(emmy_core EasyHookDll uv_a)
+    target_link_libraries(emmy_core EasyHookDll uv_a)
 else(WIN32)
     add_dependencies(emmy_core ${LINK_LIBRARIES})
     target_link_libraries(emmy_core ${LINK_LIBRARIES})

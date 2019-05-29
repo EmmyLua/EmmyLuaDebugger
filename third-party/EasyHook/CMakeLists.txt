@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-project (emmy.hook)
+project(EasyHookDll)
 enable_language(ASM_MASM)
 
 #easy_hook
@@ -48,34 +48,17 @@ link_directories(
 source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} SRC_LIST)
 source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} HEADER_LIST)
 
-add_library (easy_hook SHARED
+add_library (EasyHookDll SHARED
     EasyHookDll/dllmain.c
     ${HEADER_LIST}
     ${SRC_LIST}
 )
 
-set_target_properties(easy_hook PROPERTIES LINK_FLAGS "/SAFESEH:NO")
-set_target_properties(easy_hook PROPERTIES COMPILE_FLAGS "/Gz")
+set_target_properties(EasyHookDll PROPERTIES LINK_FLAGS "/SAFESEH:NO")
+set_target_properties(EasyHookDll PROPERTIES COMPILE_FLAGS "/Gz")
 
 target_link_libraries(
-    easy_hook
+    EasyHookDll
     ${CMAKE_CURRENT_SOURCE_DIR}/EasyHookDll/${AUX_ULIB}.lib
     psapi
 )
-
-#>>emmy_hook
-file(GLOB
-    EMMY_HOOK_SRC_LIST
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-)
-
-source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} EMMY_HOOK_SRC_LIST)
-
-add_library(emmy_hook STATIC ${EMMY_HOOK_SRC_LIST})
-
-target_link_libraries(
-    emmy_hook
-    easy_hook
-)
-#<<emmy_hook

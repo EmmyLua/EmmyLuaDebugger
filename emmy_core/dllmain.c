@@ -13,3 +13,22 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+
+#if WIN32
+#include <Windows.h>
+
+HINSTANCE g_hInstance = NULL;
+
+BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD reason, LPVOID reserved) {
+	g_hInstance = hInstance;
+
+	if (reason == DLL_PROCESS_ATTACH) {
+		// MessageBox(NULL, "Waiting to attach the debugger", NULL, MB_OK);
+	}
+	else if (reason == DLL_PROCESS_DETACH) {
+		// Destroy();
+	}
+
+	return TRUE;
+}
+#endif
