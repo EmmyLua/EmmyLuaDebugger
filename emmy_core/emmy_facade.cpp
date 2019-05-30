@@ -117,16 +117,16 @@ void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 	case MessageCMD::InitReq:
 		break;
 	case MessageCMD::ActionReq:
-		OnAction(document);
+		OnActionReq(document);
 		break;
 	case MessageCMD::AddBreakPointReq:
-		OnAddBreakPoint(document);
+		OnAddBreakPointReq(document);
 		break;
 	case MessageCMD::RemoveBreakPointReq:
-		OnRemoveBreakPoint(document);
+		OnRemoveBreakPointReq(document);
 		break;
 	case MessageCMD::EvalReq:
-		OnEval(document);
+		OnEvalReq(document);
 		break;
 	default:
 		break;
@@ -211,7 +211,7 @@ void ReadBreakPoint(const rapidjson::Value& value, BreakPoint* bp) {
 	}
 }
 
-void EmmyFacade::OnAddBreakPoint(const rapidjson::Document& document) {
+void EmmyFacade::OnAddBreakPointReq(const rapidjson::Document& document) {
 	if (document.HasMember("breakPoints")) {
 		const auto breakPoints = document["breakPoints"].GetArray();
 		auto it = breakPoints.begin();
@@ -222,9 +222,10 @@ void EmmyFacade::OnAddBreakPoint(const rapidjson::Document& document) {
 			++it;
 		}
 	}
+	// todo: response
 }
 
-void EmmyFacade::OnRemoveBreakPoint(const rapidjson::Document& document) {
+void EmmyFacade::OnRemoveBreakPointReq(const rapidjson::Document& document) {
 	if (document.HasMember("breakPoints")) {
 		const auto breakPoints = document["breakPoints"].GetArray();
 		auto it = breakPoints.begin();
@@ -235,14 +236,16 @@ void EmmyFacade::OnRemoveBreakPoint(const rapidjson::Document& document) {
 			++it;
 		}
 	}
+	// todo: response
 }
 
-void EmmyFacade::OnAction(const rapidjson::Document& document) {
+void EmmyFacade::OnActionReq(const rapidjson::Document& document) {
 	const auto action = static_cast<DebugAction>(document["action"].GetInt());
 	Debugger::Get()->DoAction(action);
+	// todo: response
 }
 
-void EmmyFacade::OnEval(const rapidjson::Document& document) {
+void EmmyFacade::OnEvalReq(const rapidjson::Document& document) {
 	const auto seq = document["seq"].GetInt();
 	const auto expr = document["expr"].GetString();
 	const auto stackLevel = document["stackLevel"].GetInt();

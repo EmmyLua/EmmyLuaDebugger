@@ -95,9 +95,10 @@ LuaVersion luaVersion = LuaVersion::UNKNOWN;
 #endif
 
 extern "C" {
+	bool SetupLuaAPI();
+
 EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
 #ifndef EMMY_USE_LUA_SOURCE
-	extern bool SetupLuaAPI();
 	if (!SetupLuaAPI()) {
 		return 0;
 	}

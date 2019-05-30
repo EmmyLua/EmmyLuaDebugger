@@ -44,8 +44,8 @@ public:
 	void Destroy();
 	void OnEvalResult(EvalContext* context);
 private:
-	void OnAddBreakPoint(const rapidjson::Document& document);
-	void OnRemoveBreakPoint(const rapidjson::Document& document);
-	void OnAction(const rapidjson::Document& document);
-	void OnEval(const rapidjson::Document& document);
+	void OnAddBreakPointReq(const rapidjson::Document& document);
+	void OnRemoveBreakPointReq(const rapidjson::Document& document);
+	void OnActionReq(const rapidjson::Document& document);
+	void OnEvalReq(const rapidjson::Document& document);
 };
