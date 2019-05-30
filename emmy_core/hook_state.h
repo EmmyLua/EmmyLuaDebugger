@@ -50,6 +50,8 @@ protected:
 
 // step in
 class HookStateStepIn : public StackLevelBasedState {
+	std::string file;
+	int line = 0;
 	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
 	void ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) override;
 };

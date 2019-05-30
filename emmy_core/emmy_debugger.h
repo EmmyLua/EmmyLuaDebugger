@@ -55,6 +55,7 @@ class Debugger {
 
 	friend class EmmyFacade;
 	friend class StackLevelBasedState;
+	friend class HookStateStepIn;
 	friend class HookStateStepOut;
 	friend class HookStateStepOver;
 	friend class HookStateBreak;
@@ -72,6 +73,7 @@ public:
 	void RemoveBreakPoint(const std::string& file, int line);
 	bool Eval(EvalContext* evalContext);
 	bool GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc);
+	void GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper = true);
 	void DoAction(DebugAction action);
 	void EnterDebugMode();
 	void ExitDebugMode();
@@ -81,7 +83,6 @@ private:
 	BreakPoint* FindBreakPoint(const std::string& file, int line);
 	std::string GetFile(lua_Debug* ar) const;
 	int GetStackLevel(lua_State* L) const;
-	void GetVariable(Variable* variable, lua_State* L, int index, int depth);
 	void RefreshLineSet();
 	void UpdateHook(lua_State* L, int mask);
 	void HandleBreak(lua_State* L);

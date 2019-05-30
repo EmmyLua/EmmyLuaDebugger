@@ -89,6 +89,9 @@ typedef void * (*lua_Alloc) (void *ud, void *ptr, size_t osize, size_t nsize);
 #define LUA_HOOKRET	1
 #define LUA_HOOKLINE	2
 #define LUA_HOOKCOUNT	3
+// LUA 5.1
+#define LUA_HOOKTAILRET 4
+// LUA 5.2+
 #define LUA_HOOKTAILCALL 4
 
 
@@ -221,6 +224,12 @@ typedef int(*dll_lua_getmetatable)(lua_State *L, int objindex);
 DEF_LUA_API(lua_getmetatable);
 typedef int(*dll_lua_rawget)(lua_State *L, int idx);
 DEF_LUA_API(lua_rawget);
+typedef void(*dll_lua_rawset)(lua_State *L, int idx);
+DEF_LUA_API(lua_rawset);
+typedef void(*dll_lua_pushlightuserdata)(lua_State *L, void *p);
+DEF_LUA_API(lua_pushlightuserdata);
+typedef void*(*dll_lua_touserdata)(lua_State *L, int idx);
+DEF_LUA_API(lua_touserdata);
 
 //51
 typedef int (*dll_e_lua_setfenv)(lua_State* L, int idx);
@@ -249,6 +258,8 @@ typedef int (*dll_e_lua_pcallk)(lua_State* L, int nargs, int nresults, int errfu
 DEF_LUA_API_E(lua_pcallk);
 typedef void (*dll_e_luaL_setfuncs)(lua_State* L, const luaL_Reg* l, int nup);
 DEF_LUA_API_E(luaL_setfuncs);
+typedef int(*dll_e_lua_absindex)(lua_State *L, int idx);
+DEF_LUA_API_E(lua_absindex);
 //53
 typedef void (*dll_e_lua_rotate)(lua_State *L, int idx, int n);
 DEF_LUA_API_E(lua_rotate);
@@ -259,6 +270,7 @@ int lua_setfenv(lua_State* L, int idx);
 int lua_getglobal(lua_State* L, const char* name);
 int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc);
 int lua_upvalueindex(int i);
+int lua_absindex(lua_State *L, int idx);
 void lua_call(lua_State* L, int nargs, int nresults);
 void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 void lua_remove(lua_State *L, int idx);

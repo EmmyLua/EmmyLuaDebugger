@@ -141,6 +141,7 @@ void FillVariable(rapidjson::Value& container, const Variable* variable, rapidjs
 	container.AddMember("nameType", variable->nameType, allocator);
 	container.AddMember("value", variable->value, allocator);
 	container.AddMember("valueType", variable->valueType, allocator);
+	container.AddMember("valueTypeName", variable->valueTypeName, allocator);
 	// children
 	if (!variable->children.empty()) {
 		rapidjson::Value childrenValue(rapidjson::kArrayType);

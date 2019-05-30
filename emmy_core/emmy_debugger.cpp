@@ -18,6 +18,8 @@
 #include "emmy_facade.h"
 #include "hook_state.h"
 
+bool query_variable(Variable* variable, lua_State* L, const char* typeName, int object, int depth);
+
 void HookLua(lua_State* L, lua_Debug* ar) {
 	Debugger::Get()->Hook(L, ar);
 }
@@ -68,6 +70,7 @@ void Debugger::Start(lua_State* L) {
 	this->L = L;
 	skipHook = false;
 	blocking = false;
+
 	// todo: just set hook when break point added.
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 
@@ -77,7 +80,7 @@ void Debugger::Start(lua_State* L) {
 }
 
 void Debugger::Hook(lua_State* L, lua_Debug* ar) {
-	if (skipHook || ar->currentline < 0) {
+	if (skipHook) {
 		return;
 	}
 	if (ar->event == LUA_HOOKLINE) {
@@ -180,11 +183,18 @@ bool CallMetaFunction(lua_State* L, int valueIndex, const char* method, int numR
 	return false;
 }
 
-void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int depth) {
+void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper) {
 	const int t1 = lua_gettop(L);
+	index = lua_absindex(L, index);
 	const int type = lua_type(L, index);
 	const char* typeName = lua_typename(L, type);
-	variable->valueType = typeName;
+	variable->valueTypeName = typeName;
+	variable->valueType = type;
+	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA)) {
+		if (query_variable(variable, L, typeName, index, depth)) {
+			return;
+		}
+	}
 	switch (type) {
 	case LUA_TNIL: {
 		variable->value = "nil";
@@ -204,14 +214,14 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		break;
 	}
 	case LUA_TFUNCTION: {
-		void* fAddr = lua_topointer(L, -1);
+		void* fAddr = lua_topointer(L, index);
 		char buff[100];
 		snprintf(buff, sizeof(buff), "%p", fAddr);
 		variable->value = buff;
 		break;
 	}
 	case LUA_TUSERDATA: {
-		auto string = lua_tostring(L, -1);
+		auto string = lua_tostring(L, index);
 		if (string == nullptr) {
 			int result;
 			if (CallMetaFunction(L, t1, "__tostring", 1, result) && result == 0) {
@@ -223,13 +233,13 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			variable->value = string;
 		}
 		else {
-			void* fAddr = lua_topointer(L, -1);
+			void* fAddr = lua_topointer(L, index);
 			char buff[100];
 			snprintf(buff, sizeof(buff), "%p", fAddr);
 			variable->value = buff;
 		}
 		if (depth > 1) {
-			if (lua_getmetatable(L, -1)) {
+			if (lua_getmetatable(L, index)) {
 				GetVariable(variable, L, -1, depth);
 				lua_pop(L, 1); //pop meta
 			}
@@ -237,14 +247,14 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		break;
 	}
 	case LUA_TLIGHTUSERDATA: {
-		void* fAddr = lua_topointer(L, -1);
+		void* fAddr = lua_topointer(L, index);
 		char buff[100];
 		snprintf(buff, sizeof(buff), "%p", fAddr);
 		variable->value = buff;
 		break;
 	}
 	case LUA_TTHREAD: {
-		void* fAddr = lua_topointer(L, -1);
+		void* fAddr = lua_topointer(L, index);
 		char buff[100];
 		snprintf(buff, sizeof(buff), "%p", fAddr);
 		variable->value = buff;
@@ -252,9 +262,9 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 	}
 	case LUA_TTABLE: {
 		int tableSize = 0;
-		void* tableAddr = lua_topointer(L, -1);
+		void* tableAddr = lua_topointer(L, index);
 		lua_pushnil(L);
-		while (lua_next(L, -2)) {
+		while (lua_next(L, index)) {
 			// k: -2, v: -1
 			if (depth > 1) {
 				//todo: use allocator
@@ -346,12 +356,15 @@ std::string Debugger::GetFile(lua_Debug* ar) const {
 		file++;
 	lua_pushcclosure(L, FixPath, 0);
 	lua_pushstring(L, file);
-	const int top = lua_gettop(L);
-	if (lua_pcall(L, 1, 1, 0) == LUA_OK && lua_gettop(L) > top) {
+	const int result = lua_pcall(L, 1, 1, 0);
+	if (result == LUA_OK) {
 		const auto p = lua_tostring(L, -1);
 		lua_pop(L, 1);
-		return p;
+		if (p) {
+			return p;
+		}
 	}
+	// todo: handle error
 	return file;
 }
 

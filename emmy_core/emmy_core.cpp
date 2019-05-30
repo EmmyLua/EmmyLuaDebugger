@@ -16,6 +16,8 @@
 #include "emmy_core.h"
 #include "emmy_facade.h"
 
+int luaopen_emmy_helper(lua_State* L);
+
 // emmy.tcpListen(host: string, port: int): bool
 int tcpListen(struct lua_State* L) {
 	luaL_checkstring(L, 1);
@@ -103,6 +105,10 @@ EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
 		return 0;
 	}
 #endif
+
+	// register helper lib
+	luaopen_emmy_helper(L);
+
 	luaL_newlib(L, lib);
 
 	// setmetatable(lib, { __gc = gc })

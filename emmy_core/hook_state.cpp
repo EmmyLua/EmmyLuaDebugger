@@ -53,20 +53,29 @@ void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lu
 	else if (ar->event == LUA_HOOKRET) {
 		isRetPrevTime = true;
 	}
-	else if (ar->event == LUA_HOOKTAILCALL) {
+	if (luaVersion == LuaVersion::LUA_51 && ar->event == LUA_HOOKTAILRET) {
+		isRetPrevTime = true;
+	}
+	if (luaVersion != LuaVersion::LUA_51 && ar->event == LUA_HOOKTAILCALL) {
 		isTailCall = true;
 	}
 }
 
 void HookStateStepIn::Start(Debugger* debugger, lua_State* L, lua_State* current) {
 	StackLevelBasedState::Start(debugger, L, current);
+	lua_Debug ar{};
+	lua_getstack(current, 0, &ar);
+	lua_getinfo(current, "nSl", &ar);
+	file = ar.source;
+	line = ar.currentline;
 	debugger->ExitDebugMode();
 }
 
 void HookStateStepIn::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
 	UpdateStackLevel(debugger, L, ar);
-	if (newStackLevel > oriStackLevel) {
-		debugger->DoAction(DebugAction::Break);
+	if (ar->event == LUA_HOOKLINE && ar->currentline != line) {
+		// todo : && file != ar->source
+		debugger->HandleBreak(L);
 	}
 	else StackLevelBasedState::ProcessHook(debugger, L, ar);
 }
@@ -87,7 +96,7 @@ void HookStateStepOut::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* 
 
 void HookStateStepOver::Start(Debugger* debugger, lua_State* L, lua_State* current) {
 	StackLevelBasedState::Start(debugger, L, current);
-	lua_Debug ar;
+	lua_Debug ar{};
 	lua_getstack(current, 0, &ar);
 	lua_getinfo(current, "nSl", &ar);
 	file = ar.source;
@@ -102,7 +111,9 @@ void HookStateStepOver::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug*
 		debugger->HandleBreak(L);
 		return;
 	}
-	if (ar->event == LUA_HOOKLINE && ar->currentline != line) {
+	if (ar->event == LUA_HOOKLINE &&
+		ar->currentline != line &&
+		newStackLevel == oriStackLevel) {
 		lua_getinfo(L, "Sl", ar);
 		if (ar->source == file || line == -1) {
 			debugger->HandleBreak(L);
