@@ -73,11 +73,12 @@ bool SocketClientTransporter::Connect(const std::string& host, int port) {
 
 void SocketClientTransporter::OnConnection(uv_connect_t* req, int status) {
 	if (status >= 0) {
-		OnConnect();
+		OnConnect(true);
 		uv_read_start((uv_stream_t*)&uvClient, echo_alloc, after_read);
 	}
 	else {
 		Stop();
+		OnConnect(false);
 	}
 	cv.notify_all();
 }

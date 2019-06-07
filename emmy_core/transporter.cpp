@@ -124,12 +124,12 @@ void Transporter::OnDisconnect() {
 	}
 }
 
-void Transporter::OnConnect() {
-	connected = true;
+void Transporter::OnConnect(bool suc) {
+	connected = suc;
 	readHead = true;
 	receiveSize = 0;
 	if (facade) {
-		facade->OnConnect();
+		facade->OnConnect(suc);
 	}
 }
 

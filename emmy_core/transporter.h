@@ -74,5 +74,5 @@ protected:
 	void StartEventLoop();
 	void Run();
 	virtual void OnDisconnect();
-	virtual void OnConnect();
+	virtual void OnConnect(bool suc);
 };

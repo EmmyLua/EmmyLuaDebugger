@@ -28,6 +28,7 @@ class EmmyFacade {
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
 	bool isIDEReady;
+	bool isWaitingForIDE;
 public:
 	static EmmyFacade* Get();
 	EmmyFacade();
@@ -37,9 +38,9 @@ public:
 	int PipeListen(lua_State* L, const std::string& name);
 	int PipeConnect(lua_State* L, const std::string& name);
 	int BreakHere(lua_State* L);
-	int OnConnect();
+	int OnConnect(bool suc);
 	int OnDisconnect();
-	void WaitIDE();
+	void WaitIDE(bool force = false);
 	void OnReceiveMessage(const rapidjson::Document& document);
 	void OnBreak();
 	void Destroy();

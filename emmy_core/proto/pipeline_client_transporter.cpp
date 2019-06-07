@@ -87,9 +87,10 @@ void PipelineClientTransporter::Send(int cmd, const char* data, size_t len) {
 void PipelineClientTransporter::OnPipeConnection(uv_connect_t* pipe, int status) {
 	if (status < 0) {
 		Stop();
+		OnConnect(false);
 	}
 	else {
-		OnConnect();
+		OnConnect(true);
 		uv_read_start((uv_stream_t*)&uvClient, echo_alloc, after_read);
 	}
 	cv.notify_all();

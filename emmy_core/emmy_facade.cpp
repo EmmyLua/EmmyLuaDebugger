@@ -29,7 +29,8 @@ EmmyFacade* EmmyFacade::Get() {
 EmmyFacade::EmmyFacade():
 	transporter(nullptr),
 	L(nullptr),
-	isIDEReady(false) {
+	isIDEReady(false),
+	isWaitingForIDE(false) {
 }
 
 EmmyFacade::~EmmyFacade() {
@@ -53,6 +54,9 @@ int EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port) {
 	transporter = c;
 	c->SetHandler(this);
 	const auto suc = c->Connect(host, port);
+	if (suc) {
+		WaitIDE(true);
+	}
 	return suc ? 0 : 1;
 }
 
@@ -73,15 +77,21 @@ int EmmyFacade::PipeConnect(lua_State* L, const std::string& name) {
 	transporter = p;
 	p->SetHandler(this);
 	const auto suc = p->Connect(name);
+	if (suc) {
+		WaitIDE(true);
+	}
 	return suc ? 0 : 1;
 }
 
-void EmmyFacade::WaitIDE() {
+void EmmyFacade::WaitIDE(bool force) {
 	if (transporter != nullptr
-		&& transporter->IsServerMode()
+		&& (transporter->IsServerMode() || force)
+		&& !isWaitingForIDE
 		&& !isIDEReady) {
+		isWaitingForIDE = true;
 		std::unique_lock<std::mutex> lock(waitIDEMutex);
 		waitIDECV.wait(lock);
+		isWaitingForIDE = false;
 	}
 }
 
@@ -92,12 +102,13 @@ int EmmyFacade::BreakHere(lua_State* L) {
 	return 1;
 }
 
-int EmmyFacade::OnConnect() {
+int EmmyFacade::OnConnect(bool suc) {
 	return 0;
 }
 
 int EmmyFacade::OnDisconnect() {
 	isIDEReady = false;
+	isWaitingForIDE = false;
 	Debugger::Get()->Stop();
 	return 0;
 }
@@ -152,8 +163,6 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document) {
 
 		Debugger::Get()->Eval(context, true);
 	}
-	isIDEReady = true;
-	waitIDECV.notify_all();
 }
 
 void EmmyFacade::OnReadyReq(const rapidjson::Document& document) {

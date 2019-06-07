@@ -87,7 +87,7 @@ void SocketServerTransporter::OnNewConnection(uv_stream_t* server, int status) {
 	r = uv_read_start(uvClient, echo_alloc, after_read);
 	assert(r == 0);
 
-	OnConnect();
+	OnConnect(true);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -105,7 +105,7 @@ void PipelineServerTransporter::OnPipeConnection(uv_stream_t* pipe, int status) 
 		uvClient->data = this;
 		const int r = uv_accept((uv_stream_t*)&uvServer, (uv_stream_t*)uvClient);
 		assert(r == 0);
-		OnConnect();
+		OnConnect(true);
 		uv_read_start((uv_stream_t*)uvClient, echo_alloc, after_read);
 	}
 }
