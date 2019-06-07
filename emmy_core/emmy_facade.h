@@ -27,6 +27,7 @@ class EmmyFacade {
 	lua_State* L;
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
+	bool isIDEReady;
 public:
 	static EmmyFacade* Get();
 	EmmyFacade();
@@ -37,13 +38,15 @@ public:
 	int PipeConnect(lua_State* L, const std::string& name);
 	int BreakHere(lua_State* L);
 	int OnConnect();
-	int Stop();
+	int OnDisconnect();
 	void WaitIDE();
 	void OnReceiveMessage(const rapidjson::Document& document);
 	void OnBreak();
 	void Destroy();
 	void OnEvalResult(EvalContext* context);
 private:
+	void OnInitReq(const rapidjson::Document& document);
+	void OnReadyReq(const rapidjson::Document& document);
 	void OnAddBreakPointReq(const rapidjson::Document& document);
 	void OnRemoveBreakPointReq(const rapidjson::Document& document);
 	void OnActionReq(const rapidjson::Document& document);

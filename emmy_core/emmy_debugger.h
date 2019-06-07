@@ -71,7 +71,7 @@ public:
 	void Stop();
 	void AddBreakPoint(const BreakPoint& breakPoint);
 	void RemoveBreakPoint(const std::string& file, int line);
-	bool Eval(EvalContext* evalContext);
+	bool Eval(EvalContext* evalContext, bool force = false);
 	bool GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc);
 	void GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper = true);
 	void DoAction(DebugAction action);

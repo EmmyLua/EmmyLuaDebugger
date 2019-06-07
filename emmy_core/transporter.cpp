@@ -120,7 +120,7 @@ void Transporter::OnDisconnect() {
 	readHead = true;
 	receiveSize = 0;
 	if (facade) {
-		facade->Stop();
+		facade->OnDisconnect();
 	}
 }
 

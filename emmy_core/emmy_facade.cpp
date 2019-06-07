@@ -28,7 +28,8 @@ EmmyFacade* EmmyFacade::Get() {
 
 EmmyFacade::EmmyFacade():
 	transporter(nullptr),
-	L(nullptr) {
+	L(nullptr),
+	isIDEReady(false) {
 }
 
 EmmyFacade::~EmmyFacade() {
@@ -77,33 +78,32 @@ int EmmyFacade::PipeConnect(lua_State* L, const std::string& name) {
 
 void EmmyFacade::WaitIDE() {
 	if (transporter != nullptr
-		&& !transporter->IsConnected()
-		&& transporter->IsServerMode()) {
+		&& transporter->IsServerMode()
+		&& !isIDEReady) {
 		std::unique_lock<std::mutex> lock(waitIDEMutex);
 		waitIDECV.wait(lock);
 	}
 }
 
 int EmmyFacade::BreakHere(lua_State* L) {
-	if (transporter == nullptr || !transporter->IsConnected())
+	if (!isIDEReady)
 		return 0;
 	Debugger::Get()->HandleBreak(L);
 	return 1;
 }
 
 int EmmyFacade::OnConnect() {
-	Debugger::Get()->Start(L);
-	waitIDECV.notify_all();
 	return 0;
 }
 
-int EmmyFacade::Stop() {
+int EmmyFacade::OnDisconnect() {
+	isIDEReady = false;
 	Debugger::Get()->Stop();
 	return 0;
 }
 
 void EmmyFacade::Destroy() {
-	Stop();
+	OnDisconnect();
 	if (transporter) {
 		transporter->Stop();
 		delete transporter;
@@ -115,9 +115,10 @@ void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 	const auto cmd = static_cast<MessageCMD>(document["cmd"].GetInt());
 	switch (cmd) {
 	case MessageCMD::InitReq:
+		OnInitReq(document);
 		break;
-	case MessageCMD::ActionReq:
-		OnActionReq(document);
+	case MessageCMD::ReadyReq:
+		OnReadyReq(document);
 		break;
 	case MessageCMD::AddBreakPointReq:
 		OnAddBreakPointReq(document);
@@ -125,12 +126,39 @@ void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 	case MessageCMD::RemoveBreakPointReq:
 		OnRemoveBreakPointReq(document);
 		break;
+	case MessageCMD::ActionReq:
+		assert(isIDEReady);
+		OnActionReq(document);
+		break;
 	case MessageCMD::EvalReq:
+		assert(isIDEReady);
 		OnEvalReq(document);
 		break;
 	default:
 		break;
 	}
+}
+
+void EmmyFacade::OnInitReq(const rapidjson::Document& document) {
+	Debugger::Get()->Start(L);
+	if (document.HasMember("emmyHelper")) {
+		const auto code = document["emmyHelper"].GetString();
+		auto context = new EvalContext();
+		context->seq = -1;
+		context->expr = code;
+		context->stackLevel = 0;
+		context->depth = 0;
+		context->success = false;
+
+		Debugger::Get()->Eval(context, true);
+	}
+	isIDEReady = true;
+	waitIDECV.notify_all();
+}
+
+void EmmyFacade::OnReadyReq(const rapidjson::Document& document) {
+	isIDEReady = true;
+	waitIDECV.notify_all();
 }
 
 void FillVariables(rapidjson::Value& container, const std::vector<Variable*>& variables,

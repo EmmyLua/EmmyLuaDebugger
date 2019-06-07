@@ -68,6 +68,7 @@ Debugger::~Debugger() {
 
 void Debugger::Start(lua_State* L) {
 	this->L = L;
+	currentStateL = L;
 	skipHook = false;
 	blocking = false;
 
@@ -386,7 +387,7 @@ void Debugger::EnterDebugMode() {
 			lockEval.lock();
 		}
 		if (!evalQueue.empty()) {
-			auto evalContext = evalQueue.front();
+			const auto evalContext = evalQueue.front();
 			evalQueue.pop();
 			lockEval.unlock();
 			const bool skip = skipHook;
@@ -532,7 +533,9 @@ int Debugger::GetStackLevel(lua_State* L) const {
 }
 
 // message thread
-bool Debugger::Eval(EvalContext* evalContext) {
+bool Debugger::Eval(EvalContext* evalContext, bool force) {
+	if (force)
+		return DoEval(evalContext);
 	if (!blocking)
 		return false;
 	std::unique_lock<std::mutex> lock(mutexEval);
@@ -547,14 +550,19 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 	assert(currentStateL);
 	assert(evalContext);
 	const auto L = currentStateL;
-	// return expr
-	std::string statement = "return ";
-	statement.append(evalContext->expr);
-	int r = luaL_loadstring(L, statement.c_str());
+	// LOAD AS BLOCK
+	const std::string block = evalContext->expr;
+	int r = luaL_loadstring(L, block.c_str());
 	if (r == LUA_ERRSYNTAX) {
-		evalContext->error = "syntax err: ";
-		evalContext->error.append(evalContext->expr);
-		return false;
+		// LOAD AS "return expr"
+		std::string statement = "return ";
+		statement.append(evalContext->expr);
+		r = luaL_loadstring(L, statement.c_str());
+		if (r == LUA_ERRSYNTAX) {
+			evalContext->error = "syntax err: ";
+			evalContext->error.append(evalContext->expr);
+			return false;
+		}
 	}
 	// call
 	const int fIdx = lua_gettop(L);

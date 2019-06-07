@@ -26,6 +26,9 @@ enum class MessageCMD {
 	InitReq,
 	InitRsp,
 
+	ReadyReq,
+	ReadyRsq,
+
 	AddBreakPointReq,
 	AddBreakPointRsp,
 
