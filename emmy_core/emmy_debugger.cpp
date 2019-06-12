@@ -575,19 +575,14 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 	assert(currentStateL);
 	assert(evalContext);
 	const auto L = currentStateL;
-	// LOAD AS BLOCK
-	const std::string block = evalContext->expr;
-	int r = luaL_loadstring(L, block.c_str());
+	// LOAD AS "return expr"
+	std::string statement = "return ";
+	statement.append(evalContext->expr);
+	int r = luaL_loadstring(L, statement.c_str());
 	if (r == LUA_ERRSYNTAX) {
-		// LOAD AS "return expr"
-		std::string statement = "return ";
-		statement.append(evalContext->expr);
-		r = luaL_loadstring(L, statement.c_str());
-		if (r == LUA_ERRSYNTAX) {
-			evalContext->error = "syntax err: ";
-			evalContext->error.append(evalContext->expr);
-			return false;
-		}
+		evalContext->error = "syntax err: ";
+		evalContext->error.append(evalContext->expr);
+		return false;
 	}
 	// call
 	const int fIdx = lua_gettop(L);
