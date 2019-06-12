@@ -17,6 +17,8 @@
 #include "types.h"
 #include "emmy_debugger.h"
 
+#define HELPER_NAME "emmyHelper"
+
 bool initialized = false;
 
 int metaQuery(lua_State* L) {
@@ -122,7 +124,7 @@ bool query_variable(Variable* variable, lua_State* L, const char* typeName, int 
 	bool result = false;
 	object = lua_absindex(L, object);
 	const int t = lua_gettop(L);
-	lua_getglobal(L, "emmy");
+	lua_getglobal(L, HELPER_NAME);
 	lua_getfield(L, -1, "queryVariable");
 	if (lua_isfunction(L, -1)) {
 		lua_pushlightuserdata(L, variable);
@@ -144,8 +146,8 @@ bool query_variable(Variable* variable, lua_State* L, const char* typeName, int 
 }
 
 // emmy_init(emmy)
-int emmyInit(lua_State* L) {
-	lua_getglobal(L, "emmy");
+int emmyHelperInit(lua_State* L) {
+	lua_getglobal(L, HELPER_NAME);
 	if (lua_istable(L, -1)) {
 		// create node
 		lua_pushcfunction(L, createNode);
@@ -161,8 +163,8 @@ int luaopen_emmy_helper(lua_State* L) {
 	initialized = false;
 	lua_getglobal(L, "_G");
 
-	lua_pushstring(L, "emmy_init");
-	lua_pushcfunction(L, emmyInit);
+	lua_pushstring(L, "emmyHelperInit");
+	lua_pushcfunction(L, emmyHelperInit);
 	lua_rawset(L, -3);
 
 	lua_pop(L, 1);
