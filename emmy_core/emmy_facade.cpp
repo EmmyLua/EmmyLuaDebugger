@@ -154,14 +154,7 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document) {
 	Debugger::Get()->Start(L);
 	if (document.HasMember("emmyHelper")) {
 		const auto code = document["emmyHelper"].GetString();
-		auto context = new EvalContext();
-		context->seq = -1;
-		context->expr = code;
-		context->stackLevel = 0;
-		context->depth = 0;
-		context->success = false;
-
-		Debugger::Get()->Eval(context, true);
+		Debugger::Get()->AsyncDoString(code);
 	}
 }
 

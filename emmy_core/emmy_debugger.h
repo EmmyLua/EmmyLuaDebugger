@@ -38,6 +38,7 @@ class Debugger {
 	bool hooked;
 	bool skipHook;
 	bool blocking;
+	std::vector<std::string> doStringList;
 	std::vector<BreakPoint*> breakPoints;
 	std::set<int> lineSet;
 	std::mutex mutexRun;
@@ -71,6 +72,7 @@ public:
 	void Stop();
 	void AddBreakPoint(const BreakPoint& breakPoint);
 	void RemoveBreakPoint(const std::string& file, int line);
+	void AsyncDoString(const char* code);
 	bool Eval(EvalContext* evalContext, bool force = false);
 	bool GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc);
 	void GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper = true);
@@ -87,6 +89,7 @@ private:
 	void UpdateHook(lua_State* L, int mask);
 	void HandleBreak(lua_State* L);
 	void SetHookState(HookState* newState);
+	void CheckDoString();
 	bool CreateEnv(int stackLevel);
 	bool DoEval(EvalContext* evalContext);
 };

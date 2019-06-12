@@ -73,6 +73,7 @@ void Debugger::Start(lua_State* L) {
 	blocking = false;
 	lineSet.clear();
 	breakPoints.clear();
+	doStringList.clear();
 	// todo: just set hook when break point added.
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 
@@ -82,6 +83,7 @@ void Debugger::Start(lua_State* L) {
 }
 
 void Debugger::Hook(lua_State* L, lua_Debug* ar) {
+	CheckDoString();
 	if (skipHook) {
 		return;
 	}
@@ -531,6 +533,28 @@ int Debugger::GetStackLevel(lua_State* L) const {
 		level++;
 	}
 	return level;
+}
+
+void Debugger::AsyncDoString(const char* code) {
+	doStringList.emplace_back(code);
+}
+
+void Debugger::CheckDoString() {
+	if (!doStringList.empty()) {
+		const auto skip = skipHook;
+		skipHook = true;
+		const int t = lua_gettop(L);
+		for (const auto& code : doStringList) {
+			const int r = luaL_loadstring(L, code.c_str());
+			if (r == LUA_OK) {
+				lua_pcall(L, 0, 0, 0);
+			}
+			lua_settop(L, t);
+		}
+		skipHook = skip;
+		assert(lua_gettop(L) == t);
+		doStringList.clear();
+	}
 }
 
 // message thread
