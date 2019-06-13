@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.2)
 
 project (emmy)
-set(CMAKE_INSTALL_PREFIX build)
+set(CMAKE_INSTALL_PREFIX install)
 
 if (MSVC)
     set(CompilerFlags
@@ -58,11 +58,13 @@ if(WIN32)
 
     install(
         TARGETS emmy_core ${EMMY_LUA_VERSION}_dll ${EMMY_LUA_VERSION}_exe
-        LIBRARY DESTINATION emmy_core
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
     )
 else(WIN32)
     install(
         TARGETS emmy_core ${EMMY_LUA_VERSION}_dll ${EMMY_LUA_VERSION}_exe
-        LIBRARY DESTINATION emmy_core
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
     )
 endif(WIN32)
