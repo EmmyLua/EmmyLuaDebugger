@@ -427,11 +427,11 @@ void Debugger::RemoveBreakPoint(const std::string& file, int line) {
 		if (bp->file == file && bp->line == line) {
 			breakPoints.erase(it);
 			delete bp;
-			RefreshLineSet();
 			break;
 		}
 		++it;
 	}
+	RefreshLineSet();
 }
 
 int EnvIndexFunction(lua_State* L) {
@@ -613,7 +613,7 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 }
 
 BreakPoint* Debugger::FindBreakPoint(lua_State* L, lua_Debug* ar) {
-	if (lineSet.find(ar->currentline) != lineSet.end()) {
+	if (ar->currentline >= 0 && lineSet.find(ar->currentline) != lineSet.end()) {
 		lua_getinfo(L, "S", ar);
 		const auto file = GetFile(ar);
 		return FindBreakPoint(file, ar->currentline);
