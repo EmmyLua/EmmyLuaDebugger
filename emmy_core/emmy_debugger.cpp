@@ -409,12 +409,31 @@ void Debugger::ExitDebugMode() {
 	cvRun.notify_all();
 }
 
+void ParsePathParts(const std::string& file, std::vector<std::string>& paths) {
+	size_t idx = 0;
+	for (size_t i = 0; i < file.length(); i++) {
+		const char c = file.at(i);
+		if (c == '/' || c == '\\') {
+			const auto part = file.substr(idx, i - idx);
+			idx = i + 1;
+			// ./a/b/c
+			if ((part == "." || part.empty()) && paths.empty()) {
+				continue;
+			}
+			paths.emplace_back(part);
+		}
+	}
+	// file name
+	paths.emplace_back(file.substr(idx));
+}
+
 void Debugger::AddBreakPoint(const BreakPoint& breakPoint) {
 	std::lock_guard <std::mutex> lock(mutexBP);
 	const auto bp = new BreakPoint();
 	bp->file = breakPoint.file;
 	bp->condition = breakPoint.condition;
 	bp->line = breakPoint.line;
+	ParsePathParts(bp->file, bp->pathParts);
 	breakPoints.push_back(bp);
 	RefreshLineSet();
 }
@@ -623,13 +642,33 @@ BreakPoint* Debugger::FindBreakPoint(lua_State* L, lua_Debug* ar) {
 
 BreakPoint* Debugger::FindBreakPoint(const std::string& file, int line) {
 	std::lock_guard <std::mutex> lock(mutexBP);
+	std::vector<std::string> pathParts;
+	ParsePathParts(file, pathParts);
 	auto it = breakPoints.begin();
 	while (it != breakPoints.end()) {
-		if ((*it)->file == file && (*it)->line == line) {
-			return *it;
+		const auto bp = *it;
+		if (bp->line == line) {
+			// full match: bp(a/b/c), file(a/b/c)
+			if (bp->file == file) {
+				return *it;
+			}
+			// fuzz match: bp(x/a/b/c), file(a/b/c)
+			if (bp->pathParts.size() >= pathParts.size()) {
+				for (size_t i = 0; i < pathParts.size(); i++) {
+					const auto p = *(bp->pathParts.end() - i - 1);
+					const auto f = *(pathParts.end() - i - 1);
+					if (p != f) {
+						break;
+					}
+					if (i == pathParts.size() - 1) {
+						return bp;
+					}
+				}
+			}
 		}
 		++it;
 	}
+
 	return nullptr;
 }
 

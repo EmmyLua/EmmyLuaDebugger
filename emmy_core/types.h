@@ -31,6 +31,7 @@ class BreakPoint {
 public:
 	std::string file;
 	std::string condition;
+	std::vector<std::string> pathParts;
 	int line;
 };
 
