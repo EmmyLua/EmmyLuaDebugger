@@ -41,9 +41,7 @@ class StackLevelBasedState : public HookState {
 protected:
 	int oriStackLevel;
 	int newStackLevel;
-	int oldStackLevel;
-	bool isRetPrevTime;
-	bool isTailCall;
+	bool reduceNextTime;
 	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
 	void UpdateStackLevel(Debugger* debugger, lua_State* L, lua_Debug* ar);
 };

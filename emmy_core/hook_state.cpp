@@ -33,9 +33,8 @@ void HookStateContinue::Start(Debugger* debugger, lua_State* L, lua_State* curre
 
 void StackLevelBasedState::Start(Debugger* debugger, lua_State* L, lua_State* current) {
 	HookState::Start(debugger, L, current);
-	oriStackLevel = newStackLevel = oldStackLevel = debugger->GetStackLevel(current, true);
-	isTailCall = false;
-	isRetPrevTime = false;
+	oriStackLevel = newStackLevel = debugger->GetStackLevel(current, true);
+	reduceNextTime = false;
 }
 
 void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lua_Debug* ar) {
@@ -43,26 +42,22 @@ void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lu
 		return;
 	}
 	lua_getinfo(L, "nl", ar);
-	if (ar->currentline < 0) {
-		return;
+
+	if (reduceNextTime)
+		newStackLevel--;
+	reduceNextTime = false;
+
+	if (luaVersion == LuaVersion::LUA_51 && ar->event == LUA_HOOKTAILRET) {
+		reduceNextTime = true;
 	}
 
-	oldStackLevel = newStackLevel;
-	if (isRetPrevTime)
-		newStackLevel--;
-	isTailCall = false;
-	isRetPrevTime = false;
-	if (ar->event == LUA_HOOKCALL) {
-		newStackLevel++;
-	}
-	else if (ar->event == LUA_HOOKRET) {
-		isRetPrevTime = true;
-	}
-	if (luaVersion == LuaVersion::LUA_51 && ar->event == LUA_HOOKTAILRET) {
-		isRetPrevTime = true;
-	}
-	if (luaVersion != LuaVersion::LUA_51 && ar->event == LUA_HOOKTAILCALL) {
-		isTailCall = true;
+	if (ar->currentline > 0) {
+		if (ar->event == LUA_HOOKCALL) {
+			newStackLevel++;
+		}
+		else if (ar->event == LUA_HOOKRET) {
+			reduceNextTime = true;
+		}
 	}
 }
 
