@@ -84,7 +84,7 @@ private:
 	BreakPoint* FindBreakPoint(lua_State* L, lua_Debug* ar);
 	BreakPoint* FindBreakPoint(const std::string& file, int line);
 	std::string GetFile(lua_Debug* ar) const;
-	int GetStackLevel(lua_State* L) const;
+	int GetStackLevel(lua_State* L, bool skipC) const;
 	void RefreshLineSet();
 	void UpdateHook(lua_State* L, int mask);
 	void HandleBreak(lua_State* L);

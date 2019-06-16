@@ -545,11 +545,14 @@ void Debugger::SetHookState(HookState* newState) {
 	hookState->Start(this, L, currentStateL);
 }
 
-int Debugger::GetStackLevel(lua_State* L) const {
-	int level = 0;
+int Debugger::GetStackLevel(lua_State* L, bool skipC) const {
+	int level = 0, i = 0;
 	lua_Debug ar{};
-	while (lua_getstack(L, level, &ar)) {
-		level++;
+	while (lua_getstack(L, i, &ar)) {
+		lua_getinfo(L, "l", &ar);
+		if (ar.currentline >= 0 || !skipC)
+			level++;
+		i++;
 	}
 	return level;
 }

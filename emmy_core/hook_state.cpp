@@ -33,7 +33,7 @@ void HookStateContinue::Start(Debugger* debugger, lua_State* L, lua_State* curre
 
 void StackLevelBasedState::Start(Debugger* debugger, lua_State* L, lua_State* current) {
 	HookState::Start(debugger, L, current);
-	oriStackLevel = newStackLevel = oldStackLevel = debugger->GetStackLevel(current);
+	oriStackLevel = newStackLevel = oldStackLevel = debugger->GetStackLevel(current, true);
 	isTailCall = false;
 	isRetPrevTime = false;
 }
@@ -42,6 +42,11 @@ void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lu
 	if (L != currentStateL) {
 		return;
 	}
+	lua_getinfo(L, "nl", ar);
+	if (ar->currentline < 0) {
+		return;
+	}
+
 	oldStackLevel = newStackLevel;
 	if (isRetPrevTime)
 		newStackLevel--;
