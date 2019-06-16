@@ -46,6 +46,7 @@ class Debugger {
 	std::mutex mutexEval;
 	std::queue<EvalContext*> evalQueue;
 	std::mutex mutexBP;
+	std::vector <std::string> extNames;
 
 	HookState* stateBreak;
 	HookState* stateStepOver;
@@ -80,6 +81,7 @@ public:
 	void EnterDebugMode();
 	void ExitDebugMode();
 	void ExecuteWithSkipHook(Executor exec);
+	void SetExtNames(const std::vector <std::string>& names);
 private:
 	BreakPoint* FindBreakPoint(lua_State* L, lua_Debug* ar);
 	BreakPoint* FindBreakPoint(const std::string& file, int line);
@@ -92,4 +94,5 @@ private:
 	void CheckDoString();
 	bool CreateEnv(int stackLevel);
 	bool DoEval(EvalContext* evalContext);
+	bool MathFileName(const std::string& chunkName, const std::string& fileName) const;
 };

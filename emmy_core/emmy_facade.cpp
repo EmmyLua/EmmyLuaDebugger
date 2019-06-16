@@ -156,6 +156,17 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document) {
 		const auto code = document["emmyHelper"].GetString();
 		Debugger::Get()->AsyncDoString(code);
 	}
+	if (document.HasMember("ext")) {
+		std::vector<std::string> extNames;
+		const auto ext = document["ext"].GetArray();
+		auto it = ext.begin();
+		while (it != ext.end()) {
+			const auto extName = (*it).GetString();
+			extNames.emplace_back(extName);
+			++it;
+		}
+		Debugger::Get()->SetExtNames(extNames);
+	}
 }
 
 void EmmyFacade::OnReadyReq(const rapidjson::Document& document) {
