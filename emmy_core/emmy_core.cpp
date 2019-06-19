@@ -72,7 +72,7 @@ int waitIDE(lua_State* L) {
 }
 
 int gc(lua_State* L) {
-	//EmmyFacade::Get()->Destroy();
+	EmmyFacade::Get()->Destroy();
 	return 0;
 }
 
@@ -115,11 +115,7 @@ EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
 	lua_newtable(L);
 	lua_pushcfunction(L, gc);
 	lua_setfield(L, -2, "__gc");
-	lua_setmetatable(L, -1);
-
-	// reg["__emmy__"] = lib
-	lua_pushvalue(L, -1);
-	lua_setfield(L, LUA_REGISTRYINDEX, "$__emmy__$");
+	lua_setmetatable(L, -2);
 
 	return 1;
 }
