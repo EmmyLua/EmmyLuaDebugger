@@ -254,6 +254,12 @@ void ReadBreakPoint(const rapidjson::Value& value, BreakPoint* bp) {
 }
 
 void EmmyFacade::OnAddBreakPointReq(const rapidjson::Document& document) {
+	if (document.HasMember("clear")) {
+		const auto all = document["clear"].GetBool();
+		if (all) {
+			Debugger::Get()->RemoveAllBreakpoints();
+		}
+	}
 	if (document.HasMember("breakPoints")) {
 		const auto breakPoints = document["breakPoints"].GetArray();
 		auto it = breakPoints.begin();

@@ -71,9 +71,8 @@ void Debugger::Start(lua_State* L) {
 	currentStateL = L;
 	skipHook = false;
 	blocking = false;
-	lineSet.clear();
-	breakPoints.clear();
 	doStringList.clear();
+	RemoveAllBreakpoints();
 	// todo: just set hook when break point added.
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 
@@ -452,6 +451,11 @@ void Debugger::RemoveBreakPoint(const std::string& file, int line) {
 		++it;
 	}
 	RefreshLineSet();
+}
+
+void Debugger::RemoveAllBreakpoints() {
+	lineSet.clear();
+	breakPoints.clear();
 }
 
 int EnvIndexFunction(lua_State* L) {

@@ -73,6 +73,7 @@ public:
 	void Stop();
 	void AddBreakPoint(const BreakPoint& breakPoint);
 	void RemoveBreakPoint(const std::string& file, int line);
+	void RemoveAllBreakpoints();
 	void AsyncDoString(const char* code);
 	bool Eval(EvalContext* evalContext, bool force = false);
 	bool GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc);
