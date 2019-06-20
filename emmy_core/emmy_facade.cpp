@@ -37,17 +37,17 @@ EmmyFacade::~EmmyFacade() {
 	delete transporter;
 }
 
-int EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port) {
+bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port) {
 	Destroy();
 	this->L = L;
 	const auto s = new SocketServerTransporter();
 	transporter = s;
 	s->SetHandler(this);
 	const auto suc = s->Listen(host, port);
-	return suc ? 0 : 1;
+	return suc;
 }
 
-int EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port) {
+bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port) {
 	Destroy();
 	this->L = L;
 	const auto c = new SocketClientTransporter();
@@ -57,20 +57,20 @@ int EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port) {
 	if (suc) {
 		WaitIDE(true);
 	}
-	return suc ? 0 : 1;
+	return suc;
 }
 
-int EmmyFacade::PipeListen(lua_State* L, const std::string& name) {
+bool EmmyFacade::PipeListen(lua_State* L, const std::string& name) {
 	Destroy();
 	this->L = L;
 	const auto p = new PipelineServerTransporter();
 	transporter = p;
 	p->SetHandler(this);
 	const auto suc = p->pipe(name);
-	return suc ? 0 : 1;
+	return suc;
 }
 
-int EmmyFacade::PipeConnect(lua_State* L, const std::string& name) {
+bool EmmyFacade::PipeConnect(lua_State* L, const std::string& name) {
 	Destroy();
 	this->L = L;
 	const auto p = new PipelineClientTransporter();
@@ -80,7 +80,7 @@ int EmmyFacade::PipeConnect(lua_State* L, const std::string& name) {
 	if (suc) {
 		WaitIDE(true);
 	}
-	return suc ? 0 : 1;
+	return suc;
 }
 
 void EmmyFacade::WaitIDE(bool force) {

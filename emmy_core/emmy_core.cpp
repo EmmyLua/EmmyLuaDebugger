@@ -24,7 +24,7 @@ int tcpListen(struct lua_State* L) {
 	const auto host = lua_tostring(L, 1);
 	luaL_checknumber(L, 2);
 	const auto port = lua_tointeger(L, 2);
-	const auto suc = EmmyFacade::Get()->TcpListen(L, host, port) == 0;
+	const auto suc = EmmyFacade::Get()->TcpListen(L, host, port);
 	lua_pushboolean(L, suc);
 	return 1;
 }
@@ -35,7 +35,7 @@ int tcpConnect(lua_State* L) {
 	const auto host = lua_tostring(L, 1);
 	luaL_checknumber(L, 2);
 	const auto port = lua_tointeger(L, 2);
-	const auto suc = EmmyFacade::Get()->TcpConnect(L, host, port) == 0;
+	const auto suc = EmmyFacade::Get()->TcpConnect(L, host, port);
 	lua_pushboolean(L, suc);
 	return 1;
 }
@@ -44,7 +44,7 @@ int tcpConnect(lua_State* L) {
 int pipeListen(lua_State* L) {
 	luaL_checkstring(L, 1);
 	const auto pipeName = lua_tostring(L, 1);
-	const auto suc = EmmyFacade::Get()->PipeListen(L, pipeName) == 0;
+	const auto suc = EmmyFacade::Get()->PipeListen(L, pipeName);
 	lua_pushboolean(L, suc);
 	return 1;
 }
@@ -53,7 +53,7 @@ int pipeListen(lua_State* L) {
 int pipeConnect(lua_State* L) {
 	luaL_checkstring(L, 1);
 	const auto pipeName = lua_tostring(L, 1);
-	const auto suc = EmmyFacade::Get()->PipeConnect(L, pipeName) == 0;
+	const auto suc = EmmyFacade::Get()->PipeConnect(L, pipeName);
 	lua_pushboolean(L, suc);
 	return 1;
 }

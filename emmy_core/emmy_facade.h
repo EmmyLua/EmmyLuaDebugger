@@ -33,10 +33,10 @@ public:
 	static EmmyFacade* Get();
 	EmmyFacade();
 	~EmmyFacade();
-	int TcpListen(lua_State* L, const std::string& host, int port);
-	int TcpConnect(lua_State* L, const std::string& host, int port);
-	int PipeListen(lua_State* L, const std::string& name);
-	int PipeConnect(lua_State* L, const std::string& name);
+	bool TcpListen(lua_State* L, const std::string& host, int port);
+	bool TcpConnect(lua_State* L, const std::string& host, int port);
+	bool PipeListen(lua_State* L, const std::string& name);
+	bool PipeConnect(lua_State* L, const std::string& name);
 	int BreakHere(lua_State* L);
 	int OnConnect(bool suc);
 	int OnDisconnect();
