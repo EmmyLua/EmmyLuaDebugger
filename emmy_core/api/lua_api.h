@@ -230,6 +230,8 @@ typedef void(*dll_lua_pushlightuserdata)(lua_State *L, void *p);
 DEF_LUA_API(lua_pushlightuserdata);
 typedef void*(*dll_lua_touserdata)(lua_State *L, int idx);
 DEF_LUA_API(lua_touserdata);
+typedef void*(*dll_lua_newuserdata)(lua_State *L, int size);
+DEF_LUA_API(lua_newuserdata);
 
 //51
 typedef int (*dll_e_lua_setfenv)(lua_State* L, int idx);
