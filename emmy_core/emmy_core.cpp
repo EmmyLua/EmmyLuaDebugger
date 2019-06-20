@@ -76,6 +76,20 @@ int gc(lua_State* L) {
 	return 0;
 }
 
+void handleStateClose(lua_State* L) {
+	lua_newtable(L);
+	lua_pushcfunction(L, gc);
+	lua_setfield(L, -2, "__gc");
+	
+	lua_newuserdata(L, 1);
+	lua_pushvalue(L, -2);
+	lua_setmetatable(L, -2);
+	
+	lua_setfield(L, LUA_REGISTRYINDEX, "__EMMY__GC__");
+	
+	lua_pop(L, 1);
+}
+
 static const luaL_Reg lib[] = {
 	{"tcpListen", tcpListen},
 	{"tcpConnect", tcpConnect},
@@ -108,14 +122,8 @@ EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
 
 	// register helper lib
 	luaopen_emmy_helper(L);
-
+	handleStateClose(L);
 	luaL_newlib(L, lib);
-
-	// setmetatable(lib, { __gc = gc })
-	lua_newtable(L);
-	lua_pushcfunction(L, gc);
-	lua_setfield(L, -2, "__gc");
-	lua_setmetatable(L, -2);
 
 	return 1;
 }
