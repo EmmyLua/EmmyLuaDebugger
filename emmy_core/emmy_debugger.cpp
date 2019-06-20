@@ -103,6 +103,7 @@ void Debugger::Stop() {
 		blocking = false;
 		UpdateHook(L, 0);
 		ExitDebugMode();
+		L = nullptr;
 	}
 }
 
