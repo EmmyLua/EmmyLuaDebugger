@@ -50,7 +50,7 @@ int PipelineClientTransporter::Stop() {
 	return 0;
 }
 
-bool PipelineClientTransporter::Connect(const std::string& name) {
+bool PipelineClientTransporter::Connect(const std::string& name, std::string& err) {
 	std::string fullName;
 #ifdef _WIN32
 	{

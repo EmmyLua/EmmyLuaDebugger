@@ -43,7 +43,7 @@ PipelineServerTransporter::~PipelineServerTransporter() {
 
 }
 
-bool PipelineServerTransporter::pipe(const std::string& name) {
+bool PipelineServerTransporter::pipe(const std::string& name, std::string& err) {
 	loop = uv_default_loop();
 	std::string fullName;
 #ifdef _WIN32
@@ -68,12 +68,12 @@ bool PipelineServerTransporter::pipe(const std::string& name) {
 	uv_pipe_init(loop, &uvServer, 0);
 	int r = uv_pipe_bind(&uvServer, fullName.c_str());
 	if (r) {
-		fprintf(stderr, "Bind error: %s\n", uv_err_name(r));
+		err = uv_err_name(r);
 		return false;
 	}
 	r = uv_listen((uv_stream_t*)&uvServer, 128, onPipeConnectionCB);
 	if (r) {
-		fprintf(stderr, "Listen error: %s\n", uv_err_name(r));
+		err = uv_err_name(r);
 		return false;
 	}
 	StartEventLoop();

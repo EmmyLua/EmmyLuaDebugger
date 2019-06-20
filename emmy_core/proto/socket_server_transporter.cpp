@@ -45,7 +45,7 @@ SocketServerTransporter::SocketServerTransporter() : Transporter(true), uvServer
 SocketServerTransporter::~SocketServerTransporter() {
 }
 
-bool SocketServerTransporter::Listen(const std::string& host, int port) {
+bool SocketServerTransporter::Listen(const std::string& host, int port, std::string& err) {
 	sockaddr_in addr{};
 	uvServer.data = this;
 	uv_tcp_init(loop, &uvServer);
@@ -53,7 +53,7 @@ bool SocketServerTransporter::Listen(const std::string& host, int port) {
 	uv_tcp_bind(&uvServer, reinterpret_cast<const struct sockaddr*>(&addr), 0);
 	const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&uvServer), SOMAXCONN, on_new_connection);
 	if (r) {
-		fprintf(stderr, "Listen error %s\n", uv_strerror(r));
+		err = uv_strerror(r);
 		return false;
 	}
 	StartEventLoop();

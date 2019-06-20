@@ -28,7 +28,7 @@ public:
 	SocketClientTransporter();
 	~SocketClientTransporter();
 
-	bool Connect(const std::string& host, int port);
+	bool Connect(const std::string& host, int port, std::string& err);
 	int Stop() override;
 	void Send(int cmd, const char* data, size_t len) override;
 	void OnConnection(uv_connect_t* req, int status);

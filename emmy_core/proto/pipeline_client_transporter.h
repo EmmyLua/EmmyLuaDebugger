@@ -27,7 +27,7 @@ public:
 	PipelineClientTransporter();
 	~PipelineClientTransporter();
 
-	bool Connect(const std::string& name);
+	bool Connect(const std::string& name, std::string& err);
 	int Stop() override;
 	void Send(int cmd, const char* data, size_t len) override;
 	void OnPipeConnection(uv_connect_t* req, int status);

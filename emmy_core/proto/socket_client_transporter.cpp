@@ -54,7 +54,7 @@ int SocketClientTransporter::Stop() {
 	return 0;
 }
 
-bool SocketClientTransporter::Connect(const std::string& host, int port) {
+bool SocketClientTransporter::Connect(const std::string& host, int port, std::string& err) {
 	sockaddr_in addr{};
 	uvClient.data = this;
 	uv_tcp_init(loop, &uvClient);
@@ -62,7 +62,7 @@ bool SocketClientTransporter::Connect(const std::string& host, int port) {
 	connect_req.data = this;
 	const int r = uv_tcp_connect(&connect_req, &uvClient, reinterpret_cast<const struct sockaddr*>(&addr), OnConnectCB);
 	if (r) {
-		fprintf(stderr, "Connect error %s\n", uv_strerror(r));
+		err = uv_strerror(r);
 		return false;
 	}
 	StartEventLoop();
