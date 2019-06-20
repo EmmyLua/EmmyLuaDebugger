@@ -71,6 +71,12 @@ int waitIDE(lua_State* L) {
 	return 0;
 }
 
+// emmy.stop()
+int stop(lua_State* L) {
+	EmmyFacade::Get()->Destroy();
+	return 0;
+}
+
 int gc(lua_State* L) {
 	EmmyFacade::Get()->Destroy();
 	return 0;
@@ -97,6 +103,7 @@ static const luaL_Reg lib[] = {
 	{"pipeConnect", pipeConnect},
 	{"waitIDE", waitIDE},
 	{"breakHere", breakHere},
+	{"stop", stop},
 	{nullptr, nullptr}
 };
 
