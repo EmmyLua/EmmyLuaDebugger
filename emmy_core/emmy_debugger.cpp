@@ -431,6 +431,7 @@ void Debugger::AddBreakPoint(const BreakPoint& breakPoint) {
 	std::lock_guard <std::mutex> lock(mutexBP);
 	const auto bp = new BreakPoint();
 	bp->file = breakPoint.file;
+	std::transform(bp->file.begin(), bp->file.end(), bp->file.begin(), tolower);
 	bp->condition = breakPoint.condition;
 	bp->line = breakPoint.line;
 	ParsePathParts(bp->file, bp->pathParts);
@@ -439,11 +440,13 @@ void Debugger::AddBreakPoint(const BreakPoint& breakPoint) {
 }
 
 void Debugger::RemoveBreakPoint(const std::string& file, int line) {
+	std::string lowerCaseFile = file;
+	std::transform(file.begin(), file.end(), lowerCaseFile.begin(), tolower);
 	std::lock_guard <std::mutex> lock(mutexBP);
 	auto it = breakPoints.begin();
 	while (it != breakPoints.end()) {
 		const auto bp = *it;
-		if (bp->file == file && bp->line == line) {
+		if (bp->file == lowerCaseFile && bp->line == line) {
 			breakPoints.erase(it);
 			delete bp;
 			break;
@@ -651,13 +654,15 @@ BreakPoint* Debugger::FindBreakPoint(lua_State* L, lua_Debug* ar) {
 BreakPoint* Debugger::FindBreakPoint(const std::string& file, int line) {
 	std::lock_guard <std::mutex> lock(mutexBP);
 	std::vector<std::string> pathParts;
-	ParsePathParts(file, pathParts);
+	std::string lowerCaseFile = file;
+	std::transform(file.begin(), file.end(), lowerCaseFile.begin(), tolower);
+	ParsePathParts(lowerCaseFile, pathParts);
 	auto it = breakPoints.begin();
 	while (it != breakPoints.end()) {
 		const auto bp = *it;
 		if (bp->line == line) {
 			// full match: bp(a/b/c), file(a/b/c)
-			if (bp->file == file) {
+			if (bp->file == lowerCaseFile) {
 				return *it;
 			}
 			// fuzz match: bp(x/a/b/c), file(a/b/c)
