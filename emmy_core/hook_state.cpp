@@ -107,10 +107,10 @@ void HookStateStepOver::Start(Debugger* debugger, lua_State* L, lua_State* curre
 void HookStateStepOver::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
 	UpdateStackLevel(debugger, L, ar);
 	// step out
-	if (newStackLevel < oriStackLevel) {
-		debugger->HandleBreak(L);
-		return;
-	}
+	// if (newStackLevel < oriStackLevel) {
+	// 	debugger->HandleBreak(L);
+	// 	return;
+	// }
 	if (ar->event == LUA_HOOKLINE &&
 		ar->currentline != line &&
 		newStackLevel == oriStackLevel) {
