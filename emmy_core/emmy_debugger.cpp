@@ -415,6 +415,7 @@ void Debugger::HandleBreak(lua_State* L) {
 void Debugger::EnterDebugMode() {
 	std::unique_lock<std::mutex> lock(mutexRun);
 	blocking = true;
+	const auto L = this->currentStateL;
 	while (true) {
 		std::unique_lock<std::mutex> lockEval(mutexEval);
 		if (evalQueue.empty() && blocking) {
