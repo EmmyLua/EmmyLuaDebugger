@@ -183,6 +183,7 @@ void FillVariable(rapidjson::Value& container, const Variable* variable, rapidjs
 	container.AddMember("value", variable->value, allocator);
 	container.AddMember("valueType", variable->valueType, allocator);
 	container.AddMember("valueTypeName", variable->valueTypeName, allocator);
+	container.AddMember("cacheId", variable->cacheId, allocator);
 	// children
 	if (!variable->children.empty()) {
 		rapidjson::Value childrenValue(rapidjson::kArrayType);
@@ -298,12 +299,17 @@ void EmmyFacade::OnEvalReq(const rapidjson::Document& document) {
 	const auto expr = document["expr"].GetString();
 	const auto stackLevel = document["stackLevel"].GetInt();
 	const auto depth = document["depth"].GetInt();
+	auto cacheId = 0;
+	if (document.HasMember("cacheId")) {
+		cacheId = document["cacheId"].GetInt();
+	}
 
 	auto context = new EvalContext();
 	context->seq = seq;
 	context->expr = expr;
 	context->stackLevel = stackLevel;
 	context->depth = depth;
+	context->cacheId = cacheId;
 	context->success = false;
 	Debugger::Get()->Eval(context);
 }

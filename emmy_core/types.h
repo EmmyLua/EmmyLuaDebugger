@@ -43,6 +43,7 @@ public:
 	int valueType;
 	std::string valueTypeName;
 	std::vector<Variable*> children;
+	int cacheId;
 	Variable();
 	~Variable();
 };
@@ -68,6 +69,7 @@ public:
 	int seq;
 	int stackLevel;
 	int depth;
+	int cacheId;
 	Variable result;
 	bool success;
 };

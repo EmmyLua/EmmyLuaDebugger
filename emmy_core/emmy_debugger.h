@@ -96,4 +96,6 @@ private:
 	bool CreateEnv(int stackLevel);
 	bool DoEval(EvalContext* evalContext);
 	bool MathFileName(const std::string& chunkName, const std::string& fileName) const;
+	void CacheValue(lua_State* L, int valueIndex, Variable* variable) const;
+	void ClearCache(lua_State* L) const;
 };

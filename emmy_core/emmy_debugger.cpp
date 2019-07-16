@@ -20,6 +20,10 @@
 
 bool query_variable(Variable* variable, lua_State* L, const char* typeName, int object, int depth);
 
+#define CACHE_TABLE_NAME "_emmy_cache_table_"
+
+int cacheId = 1;
+
 void HookLua(lua_State* L, lua_Debug* ar) {
 	Debugger::Get()->Hook(L, ar);
 }
@@ -190,6 +194,7 @@ bool CallMetaFunction(lua_State* L, int valueIndex, const char* method, int numR
 void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper) {
 	const int t1 = lua_gettop(L);
 	index = lua_absindex(L, index);
+	CacheValue(L, index, variable);
 	const int type = lua_type(L, index);
 	const char* typeName = lua_typename(L, type);
 	variable->valueTypeName = typeName;
@@ -284,7 +289,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 					lua_pop(L, 1);
 				}
 				else {
-					//todo: object used as key
+					v->name = lua_typename(L, t);
 				}
 				GetVariable(v, L, -1, depth - 1);
 				variable->children.push_back(v);
@@ -300,6 +305,34 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 	}
 	const int t2 = lua_gettop(L);
 	assert(t2 == t1);
+}
+
+void Debugger::CacheValue(lua_State* L, int valueIndex, Variable* variable) const {
+	const int type = lua_type(L, valueIndex);
+	if (type == LUA_TUSERDATA || type == LUA_TTABLE) {
+		const int id = cacheId++;
+		variable->cacheId = id;
+		const int t1 = lua_gettop(L);
+		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);		// 1: cacheTable|nil
+		if (lua_isnil(L, -1)) {
+			lua_pop(L, 1);											//
+			lua_newtable(L);										// 1: {}
+			lua_setfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	//
+			lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable
+		}
+		lua_pushvalue(L, valueIndex);								// 1: cacheTable, 2: value
+		lua_seti(L, -2, id);										// 1: cacheTable
+		lua_settop(L, t1);
+	}
+}
+
+void Debugger::ClearCache(lua_State* L) const {
+	lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);
+	if (!lua_isnil(L, -1)) {
+		lua_pushnil(L);
+		lua_setfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);
+	}
+	lua_pop(L, 1);
 }
 
 void Debugger::DoAction(DebugAction action) {
@@ -402,6 +435,7 @@ void Debugger::EnterDebugMode() {
 		}
 		break;
 	}
+	ClearCache(L);
 }
 
 void Debugger::ExitDebugMode() {
@@ -605,6 +639,17 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 	assert(currentStateL);
 	assert(evalContext);
 	const auto L = currentStateL;
+	// From "cacheId"
+	if (evalContext->cacheId > 0) {
+		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable|nil
+		if (lua_type(L, -1) == LUA_TTABLE) {
+			lua_geti(L, -1, evalContext->cacheId);				// 1: cacheTable, 2: value
+			GetVariable(&evalContext->result, L, -1, evalContext->depth);
+			lua_pop(L, 2);
+			return true;
+		}
+		lua_pop(L, 1);
+	}
 	// LOAD AS "return expr"
 	std::string statement = "return ";
 	statement.append(evalContext->expr);

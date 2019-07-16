@@ -16,7 +16,7 @@
 #include "types.h"
 #include "emmy_core.h"
 
-Variable::Variable(): nameType(LUA_TSTRING){
+Variable::Variable(): nameType(LUA_TSTRING), valueType(0), cacheId(0){
 }
 
 Variable::~Variable() {

@@ -84,6 +84,8 @@ IMPL_LUA_API(lua_rawset);
 IMPL_LUA_API(lua_pushlightuserdata);
 IMPL_LUA_API(lua_touserdata);
 IMPL_LUA_API(lua_newuserdata);
+IMPL_LUA_API(lua_seti);
+IMPL_LUA_API(lua_geti);
 //51
 IMPL_LUA_API_E(lua_setfenv);
 IMPL_LUA_API_E(lua_tointeger);
@@ -221,6 +223,8 @@ extern "C" bool SetupLuaAPI() {
 	REQUIRE_LUA_API(lua_pushlightuserdata);
 	REQUIRE_LUA_API(lua_touserdata);
 	REQUIRE_LUA_API(lua_newuserdata);
+	REQUIRE_LUA_API(lua_seti);
+	REQUIRE_LUA_API(lua_geti);
 	//51
 	REQUIRE_LUA_API_E(lua_setfenv);
 	REQUIRE_LUA_API_E(lua_tointeger);
