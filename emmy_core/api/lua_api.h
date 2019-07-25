@@ -232,10 +232,10 @@ typedef void*(*dll_lua_touserdata)(lua_State *L, int idx);
 DEF_LUA_API(lua_touserdata);
 typedef void*(*dll_lua_newuserdata)(lua_State *L, int size);
 DEF_LUA_API(lua_newuserdata);
-typedef void*(*dll_lua_seti)(lua_State *L, int idx, lua_Integer n);
-DEF_LUA_API(lua_seti);
-typedef void*(*dll_lua_geti)(lua_State *L, int idx, lua_Integer n);
-DEF_LUA_API(lua_geti);
+typedef void*(*dll_lua_rawseti)(lua_State *L, int idx, lua_Integer n);
+DEF_LUA_API(lua_rawseti);
+typedef void*(*dll_lua_rawgeti)(lua_State *L, int idx, lua_Integer n);
+DEF_LUA_API(lua_rawgeti);
 
 //51
 typedef int (*dll_e_lua_setfenv)(lua_State* L, int idx);

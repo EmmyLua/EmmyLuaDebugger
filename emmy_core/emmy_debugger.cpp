@@ -321,7 +321,7 @@ void Debugger::CacheValue(lua_State* L, int valueIndex, Variable* variable) cons
 			lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable
 		}
 		lua_pushvalue(L, valueIndex);								// 1: cacheTable, 2: value
-		lua_seti(L, -2, id);										// 1: cacheTable
+		lua_rawseti(L, -2, id);										// 1: cacheTable
 		lua_settop(L, t1);
 	}
 }
@@ -644,7 +644,7 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 	if (evalContext->cacheId > 0) {
 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable|nil
 		if (lua_type(L, -1) == LUA_TTABLE) {
-			lua_geti(L, -1, evalContext->cacheId);				// 1: cacheTable, 2: value
+			lua_rawgeti(L, -1, evalContext->cacheId);			// 1: cacheTable, 2: value
 			GetVariable(&evalContext->result, L, -1, evalContext->depth);
 			lua_pop(L, 2);
 			return true;
