@@ -453,6 +453,11 @@ void ParsePathParts(const std::string& file, std::vector<std::string>& paths) {
 		if (c == '/' || c == '\\') {
 			const auto part = file.substr(idx, i - idx);
 			idx = i + 1;
+			// ../a/b/c
+			if (part == "..") {
+				if (!paths.empty()) paths.pop_back();
+				continue;
+			}
 			// ./a/b/c
 			if ((part == "." || part.empty()) && paths.empty()) {
 				continue;
