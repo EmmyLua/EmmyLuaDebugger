@@ -712,7 +712,7 @@ BreakPoint* Debugger::FindBreakPoint(const std::string& file, int line) {
 				return *it;
 			}
 			// fuzz match: bp(x/a/b/c), file(a/b/c)
-			if (bp->pathParts.size() >= pathParts.size() && MathFileName(pathParts.back(), bp->pathParts.back())) {
+			if (bp->pathParts.size() >= pathParts.size() && MatchFileName(pathParts.back(), bp->pathParts.back())) {
 				bool match = true;
 				for (size_t i = 1; i < pathParts.size(); i++) {
 					const auto p = *(bp->pathParts.end() - i - 1);
@@ -733,7 +733,7 @@ BreakPoint* Debugger::FindBreakPoint(const std::string& file, int line) {
 	return nullptr;
 }
 
-bool Debugger::MathFileName(const std::string& chunkName, const std::string& fileName) const {
+bool Debugger::MatchFileName(const std::string& chunkName, const std::string& fileName) const {
 	if (chunkName == fileName)
 		return true;
 	// abc == abc.lua
