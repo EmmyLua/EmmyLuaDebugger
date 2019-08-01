@@ -96,8 +96,8 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 			HandleBreak(L);
 			return;
 		}
+		hookState->ProcessHook(this, L, ar);
 	}
-	hookState->ProcessHook(this, L, ar);
 }
 
 void Debugger::Stop() {

@@ -33,30 +33,33 @@ void HookStateContinue::Start(Debugger* debugger, lua_State* L, lua_State* curre
 
 void StackLevelBasedState::Start(Debugger* debugger, lua_State* L, lua_State* current) {
 	HookState::Start(debugger, L, current);
-	oriStackLevel = newStackLevel = debugger->GetStackLevel(current, true);
-	reduceNextTime = false;
+	oriStackLevel = newStackLevel = debugger->GetStackLevel(current, false);
 }
 
 void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lua_Debug* ar) {
 	if (L != currentStateL) {
 		return;
 	}
-	lua_getinfo(L, "nl", ar);
+	// this is needed to check if the stack got shorter or longer.
+	// unfortunately counting call/return calls is not reliable.
+	// the discrepancy may happen when "pcall(load, '')" call is made
+	// or when "error()" is called in a function.
+	// in either case there are more "call" than "return" events reported.
+	// this validation is done for every "line" event, but should be "cheap"
+	// as it checks for the stack to get shorter (or longer by one call).
+	// start from one level higher just in case we need to grow the stack.
+	// this may happen after coroutine.resume call to a function that doesn't
+	// have any other instructions to execute. it triggers three returns:
+	// "return, tail return, return", which needs to be accounted for.
+	
+	//newStackLevel = debugger->GetStackLevel(L, true);
 
-	if (reduceNextTime)
-		newStackLevel--;
-	reduceNextTime = false;
-
-	if (luaVersion == LuaVersion::LUA_51 && ar->event == LUA_HOOKTAILRET) {
-		reduceNextTime = true;
-	}
-
-	if (ar->currentline > 0) {
-		if (ar->event == LUA_HOOKCALL) {
-			newStackLevel++;
-		}
-		else if (ar->event == LUA_HOOKRET) {
-			reduceNextTime = true;
+	// "cheap" version
+	lua_Debug ar2{};
+	for (int i = newStackLevel + 1; i >= 0; --i) {
+		if (lua_getstack(L, i, &ar2)) {
+			newStackLevel = i + 1;
+			break;
 		}
 	}
 }
