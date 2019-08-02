@@ -322,7 +322,7 @@ void Debugger::CacheValue(lua_State* L, int valueIndex, Variable* variable) cons
 		}
 		lua_pushvalue(L, valueIndex);								// 1: cacheTable, 2: value
 		char Key[10];
-		sprintf_s(Key, "%d", id);
+		sprintf(Key, "%d", id);
 		lua_setfield(L, -2, Key);									// 1: cacheTable
 		lua_settop(L, t1);
 	}
@@ -652,7 +652,7 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable|nil
 		if (lua_type(L, -1) == LUA_TTABLE) {
 			char Key[10];
-			sprintf_s(Key, "%d", evalContext->cacheId);
+			sprintf(Key, "%d", evalContext->cacheId);
 			lua_getfield(L, -1, Key);							// 1: cacheTable, 2: value
 			GetVariable(&evalContext->result, L, -1, evalContext->depth);
 			lua_pop(L, 2);

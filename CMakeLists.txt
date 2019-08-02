@@ -18,6 +18,7 @@ if (MSVC)
     add_definitions(-DUNICODE -D_UNICODE)
 else(MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+    set(CMAKE_OSX_ARCHITECTURES "i386;x86_64")
 endif(MSVC)
 
 macro(source_group_by_dir proj_dir source_files)
