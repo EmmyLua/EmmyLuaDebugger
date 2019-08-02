@@ -5,3 +5,9 @@ script:
   - cd build
   - cmake ../
   - make
+deploy:
+  provider: releases
+  api_key: $OAUTH_TOKEN
+  file: "emmy_core/emmy_core.so"
+  skip_cleanup: true
+  draft: true
