@@ -64,9 +64,9 @@ if(WIN32)
         RUNTIME DESTINATION bin
     )
 else(WIN32)
-    install(
-        TARGETS emmy_core ${EMMY_LUA_VERSION}_dll ${EMMY_LUA_VERSION}_exe
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-    )
+    # install(
+    #     TARGETS emmy_core ${EMMY_LUA_VERSION}_dll ${EMMY_LUA_VERSION}_exe
+    #     LIBRARY DESTINATION lib
+    #     RUNTIME DESTINATION bin
+    # )
 endif(WIN32)
