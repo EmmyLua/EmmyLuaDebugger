@@ -3,14 +3,23 @@ image: Visual Studio 2015
 build_script:
 - cmd: >-
     mkdir x86
+
     cd x86
+
     cmake ../
+
     msbuild INSTALL.vcxproj /p:Configuration=Release
+
     cd ../
+
     mkdir x64
+
     cd x64
+
     cmake ../ -G "Visual Studio 14 2015 Win64"
+
     msbuild INSTALL.vcxproj /p:Configuration=Release
+
 artifacts:
 - path: x64/install
   name: emmy_core@x64

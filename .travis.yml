@@ -10,6 +10,5 @@ deploy:
   api_key: $OAUTH_TOKEN
   file: "emmy_core/Debug/emmy_core.so"
   skip_cleanup: true
-  draft: true
   on:
     tags: true
