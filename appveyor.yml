@@ -1,0 +1,25 @@
+version: 1.0.{build}
+image: Visual Studio 2015
+build_script:
+- cmd: >-
+    mkdir x86
+    cd x86
+    cmake ../
+    msbuild INSTALL.vcxproj /p:Configuration=Release
+    cd ../
+    mkdir x64
+    cd x64
+    cmake ../ -G "Visual Studio 14 2015 Win64"
+    msbuild INSTALL.vcxproj /p:Configuration=Release
+artifacts:
+- path: x64/install
+  name: emmy_core@x64
+- path: x86/install
+  name: emmy_core@x86
+deploy:
+- provider: GitHub
+  auth_token:
+    secure: U8373EzCEIi+fvS6fuw52T7Uvwylslbz5OglnKfScYXUs7Acn7v4Kns+T0aqzOcK
+  on:
+    branch: master
+    APPVEYOR_REPO_TAG: true 
