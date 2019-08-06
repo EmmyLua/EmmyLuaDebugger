@@ -409,6 +409,8 @@ std::string Debugger::GetFile(lua_Debug* ar) const {
 
 void Debugger::HandleBreak(lua_State* L) {
 	currentStateL = L;
+	// to be on the safe side, hook it again
+	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 	EmmyFacade::Get()->OnBreak();
 	EnterDebugMode();
 }
