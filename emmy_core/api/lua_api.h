@@ -154,12 +154,18 @@ typedef struct luaL_Reg {
 ////////////////////////////////////////////////////////////////////////////////////////
 extern int LUA_REGISTRYINDEX;
 
-#define IMPL_LUA_API(FN) dll_##FN FN
+#if defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 302) && defined(__ELF__)
+#define FUNC __attribute__((visibility("hidden")))
+#else
+#define FUNC
+#endif
+
+#define IMPL_LUA_API(FN) FUNC dll_##FN FN
 #define LOAD_LUA_API(FN) FN = (dll_##FN) LoadAPI(""#FN"")
 #define REQUIRE_LUA_API(FN) FN = (dll_##FN) LoadAPI(""#FN""); if (FN == nullptr) return false
 #define DEF_LUA_API(FN) extern dll_##FN FN
 
-#define IMPL_LUA_API_E(FN) dll_e_##FN e_##FN
+#define IMPL_LUA_API_E(FN) FUNC dll_e_##FN e_##FN
 #define LOAD_LUA_API_E(FN) e_##FN = (dll_e_##FN) LoadAPI(""#FN"")
 #define REQUIRE_LUA_API_E(FN) e_##FN = (dll_e_##FN) LoadAPI(""#FN""); printf("[EMMY]%s = %d\n", ""#FN"", e_##FN != nullptr)
 #define DEF_LUA_API_E(FN) extern dll_e_##FN e_##FN
