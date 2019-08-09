@@ -17,6 +17,7 @@
 #include "emmy_core.h"
 #include "emmy_facade.h"
 #include "hook_state.h"
+#include <algorithm>
 
 bool query_variable(Variable* variable, lua_State* L, const char* typeName, int object, int depth);
 
