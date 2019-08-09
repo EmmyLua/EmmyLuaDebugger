@@ -10,7 +10,10 @@ script:
 deploy:
   provider: releases
   api_key: $OAUTH_TOKEN
-  file: "emmy_core/Debug/emmy_core.so"
+  file:
+    - "emmy_core/emmy_core.so"
+    - "emmy_core/emmy_core.dylib"
   skip_cleanup: true
+  draft: false
   on:
     tags: true
