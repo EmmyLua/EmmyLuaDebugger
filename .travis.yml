@@ -1,10 +1,12 @@
 language: cpp
-os: osx
+os:
+  - osx
+  - linux
 script:
   - mkdir build
   - cd build
-  - cmake -G Xcode ../
-  - xcodebuild
+  - cmake ../
+  - make
 deploy:
   provider: releases
   api_key: $OAUTH_TOKEN

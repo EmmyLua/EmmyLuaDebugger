@@ -45,7 +45,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/third-party/rapidjson-1.1.0/include
 )
 
-add_library(emmy_core MODULE ${SRC_LIST} ${HEADER_LIST})
+add_library(emmy_core SHARED ${SRC_LIST} ${HEADER_LIST})
 set_target_properties(emmy_core PROPERTIES PREFIX "")
 if(WIN32)
     add_dependencies(emmy_core easy_hook uv_a)
