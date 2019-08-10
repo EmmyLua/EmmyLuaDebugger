@@ -6,13 +6,13 @@ script:
   - mkdir build
   - cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ../
-  - make
+  - make install
 deploy:
   provider: releases
   api_key: $OAUTH_TOKEN
   file:
-    - "emmy_core/emmy_core.so"
-    - "emmy_core/emmy_core.dylib"
+    - "install/lib/emmy_core.so"
+    - "install/lib/emmy_core.dylib"
   skip_cleanup: true
   draft: false
   on:
