@@ -183,7 +183,6 @@ void Transporter::Run() {
 		uv_run(loop, UV_RUN_NOWAIT);
 		std::this_thread::sleep_for(std::chrono::milliseconds(20));
 	}
-	fprintf(stdout, "Run over\n");
 }
 
 int Transporter::Stop() {

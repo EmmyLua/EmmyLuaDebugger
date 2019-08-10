@@ -160,15 +160,13 @@ extern int LUA_REGISTRYINDEX;
 #define FUNC
 #endif
 
-#define IMPL_LUA_API(FN) FUNC dll_##FN FN
-#define LOAD_LUA_API(FN) FN = (dll_##FN) LoadAPI(""#FN"")
-#define REQUIRE_LUA_API(FN) FN = (dll_##FN) LoadAPI(""#FN""); if (FN == nullptr) return false
 #define DEF_LUA_API(FN) extern dll_##FN FN
+#define IMP_LUA_API(FN) FUNC dll_##FN FN
+#define LOAD_LUA_API(FN) FN = (dll_##FN) LoadAPI(""#FN""); if (FN == nullptr) return false
 
-#define IMPL_LUA_API_E(FN) FUNC dll_e_##FN e_##FN
-#define LOAD_LUA_API_E(FN) e_##FN = (dll_e_##FN) LoadAPI(""#FN"")
-#define REQUIRE_LUA_API_E(FN) e_##FN = (dll_e_##FN) LoadAPI(""#FN""); printf("[EMMY]%s = %d\n", ""#FN"", e_##FN != nullptr)
 #define DEF_LUA_API_E(FN) extern dll_e_##FN e_##FN
+#define IMP_LUA_API_E(FN) FUNC dll_e_##FN e_##FN
+#define LOAD_LUA_API_E(FN) e_##FN = (dll_e_##FN) LoadAPI(""#FN"")
 
 typedef int (*dll_lua_gettop)(lua_State* L);
 DEF_LUA_API(lua_gettop);
