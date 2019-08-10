@@ -21,14 +21,14 @@ build_script:
     msbuild INSTALL.vcxproj /p:Configuration=Release
 
 artifacts:
-- path: x64/install
+- path: x64/install/lib/emmy_core.dll
   name: emmy_core@x64
-- path: x86/install
+- path: x86/install/lib/emmy_core.dll
   name: emmy_core@x86
 deploy:
 - provider: GitHub
   auth_token:
     secure: U8373EzCEIi+fvS6fuw52T7Uvwylslbz5OglnKfScYXUs7Acn7v4Kns+T0aqzOcK
   on:
-    branch: master
+    # branch: master
     APPVEYOR_REPO_TAG: true 
