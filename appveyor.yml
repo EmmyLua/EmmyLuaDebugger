@@ -21,9 +21,9 @@ build_script:
     msbuild INSTALL.vcxproj /p:Configuration=Release
 
 artifacts:
-- path: x64/install/bin/emmy_core.dll
+- path: x64/install/bin
   name: emmy_core@x64
-- path: x86/install/bin/emmy_core.dll
+- path: x86/install/bin
   name: emmy_core@x86
 deploy:
 - provider: GitHub
