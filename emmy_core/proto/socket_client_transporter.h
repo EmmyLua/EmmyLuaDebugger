@@ -24,6 +24,7 @@ class SocketClientTransporter : public Transporter {
 	uv_connect_t connect_req;
 	std::mutex mutex;
 	std::condition_variable cv;
+	int connectionStatus;
 public:
 	SocketClientTransporter();
 	~SocketClientTransporter();

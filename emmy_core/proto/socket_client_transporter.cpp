@@ -38,7 +38,8 @@ static void after_read(uv_stream_t* handle,
 SocketClientTransporter::SocketClientTransporter():
 	Transporter(false),
 	uvClient({}),
-	connect_req({}) {
+	connect_req({}),
+	connectionStatus(0) {
 }
 
 SocketClientTransporter::~SocketClientTransporter() {
@@ -68,10 +69,14 @@ bool SocketClientTransporter::Connect(const std::string& host, int port, std::st
 	StartEventLoop();
 	std::unique_lock<std::mutex> lock(mutex);
 	cv.wait(lock);
+	if (this->connectionStatus < 0) {
+		err = uv_strerror(this->connectionStatus);
+	}
 	return IsConnected();
 }
 
 void SocketClientTransporter::OnConnection(uv_connect_t* req, int status) {
+	this->connectionStatus = status;
 	if (status >= 0) {
 		OnConnect(true);
 		uv_read_start((uv_stream_t*)&uvClient, echo_alloc, after_read);

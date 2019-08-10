@@ -37,6 +37,24 @@ EmmyFacade::~EmmyFacade() {
 	delete transporter;
 }
 
+int LuaError(lua_State* L) {
+	std::string msg = lua_tostring(L, 1);
+	msg = "[Emmy]" + msg;
+	lua_getglobal(L, "error");
+	lua_pushstring(L, msg.c_str());
+	lua_call(L, 1, 0);
+	return 0;
+}
+
+int LuaPrint(lua_State* L) {
+	std::string msg = lua_tostring(L, 1);
+	msg = "[Emmy]" + msg;
+	lua_getglobal(L, "print");
+	lua_pushstring(L, msg.c_str());
+	lua_call(L, 1, 0);
+	return 0;
+}
+
 bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std::string& err) {
 	Destroy();
 	this->L = L;
@@ -44,6 +62,11 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 	transporter = s;
 	s->SetHandler(this);
 	const auto suc = s->Listen(host, port, err);
+	if (!suc) {
+		lua_pushcfunction(L, LuaError);
+		lua_pushstring(L, err.c_str());
+		lua_call(L, 1, 0);
+	}
 	return suc;
 }
 
@@ -56,6 +79,10 @@ bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std
 	const auto suc = c->Connect(host, port, err);
 	if (suc) {
 		WaitIDE(true);
+	} else {
+		lua_pushcfunction(L, LuaError);
+		lua_pushstring(L, err.c_str());
+		lua_call(L, 1, 0);
 	}
 	return suc;
 }
