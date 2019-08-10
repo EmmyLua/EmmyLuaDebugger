@@ -59,16 +59,4 @@ add_subdirectory(third-party/libuv-1.29.0)
 add_subdirectory(emmy_core)
 if(WIN32)
     add_subdirectory(emmy_hook)
-
-    install(
-        TARGETS emmy_core ${EMMY_LUA_VERSION}_dll ${EMMY_LUA_VERSION}_exe
-        LIBRARY DESTINATION lib
-        RUNTIME DESTINATION bin
-    )
-else(WIN32)
-    # install(
-    #     TARGETS emmy_core ${EMMY_LUA_VERSION}_dll ${EMMY_LUA_VERSION}_exe
-    #     LIBRARY DESTINATION lib
-    #     RUNTIME DESTINATION bin
-    # )
 endif(WIN32)

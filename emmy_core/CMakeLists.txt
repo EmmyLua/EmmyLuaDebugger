@@ -54,3 +54,9 @@ else(WIN32)
     add_dependencies(emmy_core ${LINK_LIBRARIES})
     target_link_libraries(emmy_core ${LINK_LIBRARIES})
 endif(WIN32)
+
+install(
+    TARGETS emmy_core
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
