@@ -14,21 +14,40 @@
 * limitations under the License.
 */
 
+#if EMMY_BUILD_AS_HOOK
+
+#include "hook/emmy_hook.h"
+
 #if WIN32
 #include <Windows.h>
+#include "shme.h"
+static SharedFile file;
 
 HINSTANCE g_hInstance = NULL;
 
-BOOL WINAPI DllMain(HINSTANCE hInstance, DWORD reason, LPVOID reserved) {
-	g_hInstance = hInstance;
+BOOL WINAPI DllMain(HINSTANCE hModule, DWORD reason, LPVOID reserved) {
+	g_hInstance = hModule;
 
 	if (reason == DLL_PROCESS_ATTACH) {
-		// MessageBox(NULL, "Waiting to attach the debugger", NULL, MB_OK);
+		TSharedData data;
+		DisableThreadLibraryCalls(hModule);
+		if (!CreateMemFile(&file)) {
+			return FALSE;
+		}
+		// Set shared memory to hold what our remote process needs
+		memset(file.lpMemFile, 0, SHMEMSIZE);
+		data.hModule = hModule;
+		data.lpInit = LPDWORD(StartupHookMode);
+		data.dwOffset = DWORD(data.lpInit) - DWORD(data.hModule);
+		memcpy(file.lpMemFile, &data, sizeof(TSharedData));
 	}
 	else if (reason == DLL_PROCESS_DETACH) {
 		// Destroy();
+		CloseMemFile(&file);
 	}
 
 	return TRUE;
 }
+#endif
+
 #endif

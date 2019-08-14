@@ -152,6 +152,11 @@ void EmmyFacade::Destroy() {
 void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 	const auto cmd = static_cast<MessageCMD>(document["cmd"].GetInt());
 	switch (cmd) {
+#if EMMY_BUILD_AS_HOOK
+	case MessageCMD::StartHookReq:
+		StartHook();
+		break;
+#endif
 	case MessageCMD::InitReq:
 		OnInitReq(document);
 		break;
@@ -165,11 +170,11 @@ void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 		OnRemoveBreakPointReq(document);
 		break;
 	case MessageCMD::ActionReq:
-		assert(isIDEReady);
+		//assert(isIDEReady);
 		OnActionReq(document);
 		break;
 	case MessageCMD::EvalReq:
-		assert(isIDEReady);
+		//assert(isIDEReady);
 		OnEvalReq(document);
 		break;
 	default:
@@ -358,4 +363,33 @@ void EmmyFacade::OnEvalResult(EvalContext* context) {
 	if (transporter)
 		transporter->Send(int(MessageCMD::EvalRsp), rspDoc);
 	delete context;
+}
+
+void EmmyFacade::SendLog(LogType type, const char *fmt, ...) {
+	va_list args;
+	va_start(args, fmt);
+	char buff[1024] = { 0 };
+	vsnprintf_s(buff, 1024, fmt, args);
+	va_end(args);
+
+	const std::string msg = buff;
+
+	rapidjson::Document rspDoc;
+	rspDoc.SetObject();
+	auto& allocator = rspDoc.GetAllocator();
+	rspDoc.AddMember("type", (int)type, allocator);
+	rspDoc.AddMember("message", msg, allocator);
+	if (transporter)
+		transporter->Send(int(MessageCMD::LogNotify), rspDoc);
+}
+
+void EmmyFacade::OnLuaStateGC(lua_State* L) {
+#if EMMY_BUILD_AS_HOOK
+	Debugger::Get()->Stop();
+	this->attachedStates.clear();
+	this->isIDEReady = false;
+	this->L = nullptr;
+#else
+	Destroy();
+#endif
 }

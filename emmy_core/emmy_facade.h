@@ -18,9 +18,14 @@
 #include <rapidjson/document.h>
 #include <mutex>
 #include <condition_variable>
+#include <set>
 
 class Transporter;
 class EvalContext;
+
+enum class LogType {
+	Info, Warning, Error
+};
 
 class EmmyFacade {
 	Transporter* transporter;
@@ -45,6 +50,8 @@ public:
 	void OnBreak();
 	void Destroy();
 	void OnEvalResult(EvalContext* context);
+	void SendLog(LogType type, const char *fmt, ...);
+	void OnLuaStateGC(lua_State* L);
 private:
 	void OnInitReq(const rapidjson::Document& document);
 	void OnReadyReq(const rapidjson::Document& document);
@@ -52,4 +59,12 @@ private:
 	void OnRemoveBreakPointReq(const rapidjson::Document& document);
 	void OnActionReq(const rapidjson::Document& document);
 	void OnEvalReq(const rapidjson::Document& document);
+#ifdef EMMY_BUILD_AS_HOOK
+private:
+	std::set<lua_State*> attachedStates;
+public:
+	void StartupHookMode(int port);
+	void Attach(lua_State* L);
+	void StartHook();
+#endif
 };

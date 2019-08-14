@@ -40,7 +40,6 @@ macro(source_group_by_dir proj_dir source_files)
     endif(MSVC OR APPLE)
 endmacro(source_group_by_dir)
 
-option(EMMY_BUILD_AS_HOOK "build as hook mode" OFF)
 set(EMMY_LUA_VERSION "lua53")
 
 if(${EMMY_LUA_VERSION} STREQUAL "lua53")

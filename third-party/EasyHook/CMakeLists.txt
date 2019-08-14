@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(EasyHookDll)
+project(EasyHook)
 enable_language(ASM_MASM)
 
 #easy_hook
@@ -48,17 +48,23 @@ link_directories(
 source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} SRC_LIST)
 source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} HEADER_LIST)
 
-add_library (EasyHookDll SHARED
+add_library (EasyHook SHARED
     EasyHookDll/dllmain.c
     ${HEADER_LIST}
     ${SRC_LIST}
 )
 
-set_target_properties(EasyHookDll PROPERTIES LINK_FLAGS "/SAFESEH:NO")
-set_target_properties(EasyHookDll PROPERTIES COMPILE_FLAGS "/Gz")
+set_target_properties(EasyHook PROPERTIES LINK_FLAGS "/SAFESEH:NO")
+set_target_properties(EasyHook PROPERTIES COMPILE_FLAGS "/Gz")
 
 target_link_libraries(
-    EasyHookDll
+    EasyHook
     ${CMAKE_CURRENT_SOURCE_DIR}/EasyHookDll/${AUX_ULIB}.lib
     psapi
+)
+
+install(
+    TARGETS EasyHook
+    LIBRARY DESTINATION bin
+    RUNTIME DESTINATION bin
 )

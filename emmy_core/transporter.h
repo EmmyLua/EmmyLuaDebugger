@@ -41,8 +41,15 @@ enum class MessageCMD {
 	EvalReq,
 	EvalRsp,
 
-	// lua -> ide
+	// debugger -> ide
 	BreakNotify,
+	AttachedNotify,
+
+	StartHookReq,
+	StartHookRsp,
+
+	// debugger -> ide
+	LogNotify,
 };
 
 class Transporter {

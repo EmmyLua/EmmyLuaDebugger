@@ -4,6 +4,7 @@
 #include <string>
 #include <iostream>
 #include "utility.h"
+#include "shme.h"
 
 void SetBreakpoint(HANDLE hProcess, LPVOID entryPoint, bool set, BYTE* data);
 
@@ -153,11 +154,9 @@ void SetBreakpoint(HANDLE hProcess, LPVOID entryPoint, bool set, BYTE* data) {
 }
 
 enum MessageType {
-	MessageType_Normal = 0,
+	MessageType_Info = 0,
 	MessageType_Warning = 1,
-	MessageType_Error = 2,
-	MessageType_Stdout = 3,
-	MessageType_Stderr = 4,
+	MessageType_Error = 2
 };
 
 void* RemoteDup(HANDLE process, const void* source, size_t length) {
@@ -167,8 +166,11 @@ void* RemoteDup(HANDLE process, const void* source, size_t length) {
 	return remote;
 }
 
-void MessageEvent(const std::string& message, MessageType type = MessageType_Normal) {
-	std::cout << "[F]" << message << std::endl;
+void MessageEvent(const std::string& message, MessageType type = MessageType_Info) {
+	if (type == MessageType_Error)
+		std::cerr << "[F]" << message << std::endl;
+	else
+		std::cout << "[F]" << message << std::endl;
 }
 
 void OutputError(DWORD error) {
@@ -221,19 +223,48 @@ bool ExecuteRemoteKernelFuntion(HANDLE process, const char* functionName, LPVOID
 		CloseHandle(thread);
 		return true;
 	}
-	else {
+	return false;
+}
+
+bool IsBeingInjected(DWORD processId, LPCSTR moduleFileName) {
+	HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
+
+	if (process == nullptr) {
 		return false;
 	}
+
+	bool result = false;
+
+	DWORD exitCode;
+	void* remoteFileName = RemoteDup(process, moduleFileName, strlen(moduleFileName) + 1);
+
+	if (ExecuteRemoteKernelFuntion(process, "GetModuleHandleA", remoteFileName, exitCode)) {
+		result = exitCode != 0;
+	}
+
+	if (remoteFileName != nullptr) {
+		VirtualFreeEx(process, remoteFileName, 0, MEM_RELEASE);
+	}
+
+	if (process != nullptr) {
+		CloseHandle(process);
+	}
+	return result;
 }
 
 bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName) {
+	if (IsBeingInjected(processId, dllFileName)) {
+		MessageEvent("The process already attached.");
+		return true;
+	}
+
 	MessageEvent("Start inject dll ...");
 	bool success = true;
 
 	const HANDLE process = OpenProcess(PROCESS_ALL_ACCESS, FALSE, processId);
 
 	if (process == nullptr) {
-		MessageEvent("Failed to open process");
+		MessageEvent("Failed to open process", MessageType_Error);
 		OutputError(GetLastError());
 		return false;
 	}
@@ -246,15 +277,35 @@ bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName) {
 
 	// Load the DLL.
 	void* remoteFileName = RemoteDup(process, dllFileName, strlen(dllFileName) + 1);
-	if (!ExecuteRemoteKernelFuntion(process, "LoadLibraryA", remoteFileName, exitCode)) {
-		MessageEvent("Failed to load library");
-		success = false;
-	}
+	success &= ExecuteRemoteKernelFuntion(process, "LoadLibraryA", remoteFileName, exitCode);
 	VirtualFreeEx(process, remoteFileName, 0, MEM_RELEASE);
-	const HMODULE dllHandle = reinterpret_cast<HMODULE>(exitCode);
-	if (dllHandle == nullptr) {
-		success = false;
-		OutputError(GetLastError());
+	if (!success || exitCode == 0) {
+		MessageEvent("Failed to load library", MessageType_Error);
+		return false;
+	}
+
+	// Read shared data & call 'StartupHookMode()'
+	TSharedData data;
+	if (ReadSharedData(data)) {
+		DWORD threadId;
+		HANDLE thread = CreateRemoteThread(process,
+			nullptr,
+			0,
+			(LPTHREAD_START_ROUTINE)data.lpInit,
+			nullptr,
+			0,
+			&threadId);
+
+		if (thread != nullptr) {
+			WaitForSingleObject(thread, INFINITE);
+			GetExitCodeThread(thread, &exitCode);
+
+			CloseHandle(thread);
+			success = true;
+		}
+		else {
+			success = false;
+		}
 	}
 
 	// Reset dll directory
@@ -267,6 +318,5 @@ bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName) {
 	if (success) {
 		MessageEvent("Successfully inject dll!");
 	}
-
 	return success;
 }

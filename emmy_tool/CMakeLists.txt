@@ -10,8 +10,14 @@ file(GLOB SRC_LIST
 file(GLOB HEADER_LIST
     *.h
 )
+file(GLOB SHARED_LIST
+    ${CMAKE_SOURCE_DIR}/Shared/*.h
+    ${CMAKE_SOURCE_DIR}/Shared/*.cpp
+)
 
-add_executable(emmy_tool ${SRC_LIST} ${HEADER_LIST})
+include_directories(${CMAKE_SOURCE_DIR}/Shared)
+
+add_executable(emmy_tool ${SRC_LIST} ${HEADER_LIST} ${SHARED_LIST})
 
 target_link_libraries(
     emmy_tool

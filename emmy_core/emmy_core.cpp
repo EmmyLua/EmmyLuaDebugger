@@ -90,7 +90,7 @@ int stop(lua_State* L) {
 }
 
 int gc(lua_State* L) {
-	EmmyFacade::Get()->Destroy();
+	EmmyFacade::Get()->OnLuaStateGC(L);
 	return 0;
 }
 
@@ -132,18 +132,22 @@ LuaVersion luaVersion = LuaVersion::UNKNOWN;
 extern "C" {
 	bool SetupLuaAPI();
 
-EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
+	bool install_emmy_core(struct lua_State* L) {
 #ifndef EMMY_USE_LUA_SOURCE
-	if (!SetupLuaAPI()) {
-		return 0;
-	}
+		if (!SetupLuaAPI()) {
+			return false;
+		}
 #endif
+		// register helper lib
+		luaopen_emmy_helper(L);
+		handleStateClose(L);
+		return true;
+	}
 
-	// register helper lib
-	luaopen_emmy_helper(L);
-	handleStateClose(L);
-	luaL_newlib(L, lib);
-
-	return 1;
-}
+	EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
+		if (!install_emmy_core(L))
+			return false;
+		luaL_newlib(L, lib);
+		return 1;
+	}
 }

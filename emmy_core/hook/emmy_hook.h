@@ -1,6 +1,11 @@
 #pragma once
 #include "easyhook.h"
 
+struct lua_State;
+
+int StartupHookMode();
+void FindAndHook();
+
 typedef TRACED_HOOK_HANDLE HOOK_HANDLE;
 typedef NTSTATUS HOOK_STATUS;
 
