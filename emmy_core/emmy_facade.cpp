@@ -20,6 +20,7 @@
 #include "proto/socket_client_transporter.h"
 #include "proto/pipeline_server_transporter.h"
 #include "proto/pipeline_client_transporter.h"
+#include <stdarg.h>
 
 EmmyFacade* EmmyFacade::Get() {
 	static EmmyFacade instance;
