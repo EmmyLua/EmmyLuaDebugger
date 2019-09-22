@@ -66,13 +66,19 @@ if(WIN32)
     target_compile_definitions(emmy_hook PRIVATE EMMY_BUILD_AS_HOOK)
     add_dependencies(emmy_hook EasyHook uv_a)
     target_link_libraries(emmy_hook EasyHook uv_a)
+
+    install(
+        TARGETS emmy_core emmy_hook
+        LIBRARY DESTINATION bin
+        RUNTIME DESTINATION bin
+    )
 else(WIN32)
     add_dependencies(emmy_core ${LINK_LIBRARIES})
     target_link_libraries(emmy_core ${LINK_LIBRARIES})
-endif(WIN32)
 
-install(
-    TARGETS emmy_core emmy_hook
-    LIBRARY DESTINATION bin
-    RUNTIME DESTINATION bin
-)
+    install(
+        TARGETS emmy_core
+        LIBRARY DESTINATION bin
+        RUNTIME DESTINATION bin
+    )
+endif(WIN32)
