@@ -369,7 +369,7 @@ void EmmyFacade::SendLog(LogType type, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	char buff[1024] = { 0 };
-	vsnprintf_s(buff, 1024, fmt, args);
+	vsnprintf(buff, 1024, fmt, args);
 	va_end(args);
 
 	const std::string msg = buff;
