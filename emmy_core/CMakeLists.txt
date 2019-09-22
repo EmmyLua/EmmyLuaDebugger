@@ -54,15 +54,16 @@ include_directories(
 source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} SRC_LIST)
 source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} HEADER_LIST)
 source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} HOOK_LIST)
-source_group("SHME" FILES SHARED_LIST)
 
 add_library(emmy_core MODULE ${SRC_LIST} ${HEADER_LIST})
 set_target_properties(emmy_core PROPERTIES PREFIX "")
-add_library(emmy_hook MODULE ${SRC_LIST} ${HEADER_LIST} ${HOOK_LIST} ${SHARED_LIST})
-target_compile_definitions(emmy_hook PRIVATE EMMY_BUILD_AS_HOOK)
 if(WIN32)
     add_dependencies(emmy_core uv_a)
     target_link_libraries(emmy_core uv_a)
+
+    # emmy_hook
+    add_library(emmy_hook MODULE ${SRC_LIST} ${HEADER_LIST} ${HOOK_LIST} ${SHARED_LIST})
+    target_compile_definitions(emmy_hook PRIVATE EMMY_BUILD_AS_HOOK)
     add_dependencies(emmy_hook EasyHook uv_a)
     target_link_libraries(emmy_hook EasyHook uv_a)
 else(WIN32)
