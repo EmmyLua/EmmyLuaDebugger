@@ -137,6 +137,10 @@ int EmmyFacade::OnConnect(bool suc) {
 int EmmyFacade::OnDisconnect() {
 	isIDEReady = false;
 	isWaitingForIDE = false;
+	L = nullptr;
+#if EMMY_BUILD_AS_HOOK
+	attachedStates.clear();
+#endif
 	Debugger::Get()->Stop();
 	return 0;
 }
@@ -386,10 +390,7 @@ void EmmyFacade::SendLog(LogType type, const char *fmt, ...) {
 
 void EmmyFacade::OnLuaStateGC(lua_State* L) {
 #if EMMY_BUILD_AS_HOOK
-	Debugger::Get()->Stop();
-	this->attachedStates.clear();
-	this->isIDEReady = false;
-	this->L = nullptr;
+	OnDisconnect();
 #else
 	Destroy();
 #endif
