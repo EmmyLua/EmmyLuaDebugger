@@ -35,10 +35,9 @@ Debugger* Debugger::Get() {
 }
 
 Debugger::Debugger():
-	L(nullptr),
 	currentStateL(nullptr),
 	hookState(nullptr),
-	hooked(false),
+	running(false),
 	skipHook(false),
 	blocking(false) {
 	stateBreak = new HookStateBreak();
@@ -66,28 +65,37 @@ Debugger::~Debugger() {
 	stateStepIn = nullptr;
 	delete stateStepOut;
 	stateStepOut = nullptr;
-
-	L = nullptr;
-	currentStateL = nullptr;
 }
 
-void Debugger::Start(lua_State* L) {
-	this->L = L;
-	currentStateL = L;
+void Debugger::Start() {
 	skipHook = false;
 	blocking = false;
+	running = true;
 	doStringList.clear();
+	states.clear();
 	RemoveAllBreakpoints();
+}
+
+void Debugger::Attach(lua_State* L) {
+	if (!running)
+		return;
+	states.insert(L);
 	// todo: just set hook when break point added.
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 
-	SetHookState(stateContinue);
 	// todo: hook co
 	// auto root = G(L)->allgc;
 }
 
+void Debugger::Detach(lua_State* L) {
+	const auto it = states.find(L);
+	if (it != states.end()) {
+		states.erase(it);
+	}
+}
+
 void Debugger::Hook(lua_State* L, lua_Debug* ar) {
-	CheckDoString();
+	CheckDoString(L);
 	if (skipHook) {
 		return;
 	}
@@ -97,22 +105,28 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 			HandleBreak(L);
 			return;
 		}
-		hookState->ProcessHook(this, L, ar);
+		if (hookState)
+			hookState->ProcessHook(this, L, ar);
 	}
 }
 
 void Debugger::Stop() {
-	if (L) {
-		skipHook = true;
-		blocking = false;
+	running = false;
+	skipHook = true;
+	blocking = false;
+	for (auto L : states) {
 		UpdateHook(L, 0);
-		ExitDebugMode();
-		L = nullptr;
 	}
+	states.clear();
+	hookState = nullptr;
+	ExitDebugMode();
 }
 
-bool Debugger::GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc) {
-	lua_State* L = currentStateL;
+bool Debugger::IsRunning() const {
+	return running;
+}
+
+bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocatorCB alloc) {
 	int level = 0;
 	while (true) {
 		lua_Debug ar{};
@@ -123,7 +137,7 @@ bool Debugger::GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc) {
 			continue;
 		}
 		auto stack = alloc();
-		stack->file = GetFile(&ar);
+		stack->file = GetFile(L, &ar);
 		stack->functionName = ar.name == nullptr ? "" : ar.name;
 		stack->level = level;
 		stack->line = ar.currentline;
@@ -339,37 +353,35 @@ void Debugger::ClearCache(lua_State* L) const {
 }
 
 void Debugger::DoAction(DebugAction action) {
-	if (L == nullptr)
-		return;
+	const auto L = currentStateL;
 	switch (action) {
 	case DebugAction::Break:
-		SetHookState(stateBreak);
+		SetHookState(L, stateBreak);
 		break;
 	case DebugAction::Continue:
-		SetHookState(stateContinue);
+		SetHookState(L, stateContinue);
 		break;
 	case DebugAction::StepOver:
-		SetHookState(stateStepOver);
+		SetHookState(L, stateStepOver);
 		break;
 	case DebugAction::StepIn:
-		SetHookState(stateStepIn);
+		SetHookState(L, stateStepIn);
 		break;
 	case DebugAction::StepOut:
-		SetHookState(stateStepOut);
+		SetHookState(L, stateStepOut);
 		break;
 	case DebugAction::Stop:
-		SetHookState(stateStop);
+		SetHookState(L, stateStop);
 		break;
 	default: break;
 	}
 }
 
 void Debugger::UpdateHook(lua_State* L, int mask) {
-	hooked = mask != 0;
-	if (hooked)
-		lua_sethook(L, HookLua, mask, 0);
-	else
+	if (mask == 0)
 		lua_sethook(L, nullptr, mask, 0);
+	else
+		lua_sethook(L, HookLua, mask, 0);
 }
 
 // _G.emmy.fixPath = function(path) return (newPath) end
@@ -387,7 +399,7 @@ int FixPath(lua_State* L) {
 	return 0;
 }
 
-std::string Debugger::GetFile(lua_Debug* ar) const {
+std::string Debugger::GetFile(lua_State* L, lua_Debug* ar) const {
 	assert(L);
 	const char* file = ar->source;
 	if (ar->currentline < 0)
@@ -412,15 +424,14 @@ void Debugger::HandleBreak(lua_State* L) {
 	currentStateL = L;
 	// to be on the safe side, hook it again
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
-	EmmyFacade::Get()->OnBreak();
-	EnterDebugMode();
+	EmmyFacade::Get()->OnBreak(L);
+	EnterDebugMode(L);
 }
 
 // host thread
-void Debugger::EnterDebugMode() {
+void Debugger::EnterDebugMode(lua_State* L) {
 	std::unique_lock<std::mutex> lock(mutexRun);
 	blocking = true;
-	const auto L = this->currentStateL;
 	while (true) {
 		std::unique_lock<std::mutex> lockEval(mutexEval);
 		if (evalQueue.empty() && blocking) {
@@ -593,9 +604,11 @@ bool Debugger::CreateEnv(int stackLevel) {
 	return true;
 }
 
-void Debugger::SetHookState(HookState* newState) {
-	hookState = newState;
-	hookState->Start(this, L, currentStateL);
+void Debugger::SetHookState(lua_State* L, HookState* newState) {
+	hookState = nullptr;
+	if (newState->Start(this, L)) {
+		hookState = newState;
+	}
 }
 
 int Debugger::GetStackLevel(lua_State* L, bool skipC) const {
@@ -614,7 +627,7 @@ void Debugger::AsyncDoString(const char* code) {
 	doStringList.emplace_back(code);
 }
 
-void Debugger::CheckDoString() {
+void Debugger::CheckDoString(lua_State* L) {
 	if (!doStringList.empty()) {
 		const auto skip = skipHook;
 		skipHook = true;
@@ -703,7 +716,7 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 BreakPoint* Debugger::FindBreakPoint(lua_State* L, lua_Debug* ar) {
 	if (ar->currentline >= 0 && lineSet.find(ar->currentline) != lineSet.end()) {
 		lua_getinfo(L, "S", ar);
-		const auto file = GetFile(ar);
+		const auto file = GetFile(L, ar);
 		return FindBreakPoint(file, ar->currentline);
 	}
 	return nullptr;
