@@ -143,7 +143,8 @@ void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 	HookLuaFunctions(symbols);
 
 	// imports
-	st = peParseImportTable(&pe);
+	if (st == PE_SUCCESS)
+		st = peParseImportTable(&pe);
 	if (st == PE_SUCCESS && PE_HAS_TABLE(&pe, ImportTable))
 	{
 		PE_FOREACH_IMPORTED_MODULE(&pe, pModule)
