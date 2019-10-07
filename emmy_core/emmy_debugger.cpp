@@ -67,7 +67,8 @@ Debugger::~Debugger() {
 	stateStepOut = nullptr;
 }
 
-void Debugger::Start() {
+void Debugger::Start(std::string & code) {
+	helperCode = code;
 	skipHook = false;
 	blocking = false;
 	running = true;
@@ -80,6 +81,15 @@ void Debugger::Attach(lua_State* L) {
 	if (!running)
 		return;
 	states.insert(L);
+	// execute helper code
+	if (!helperCode.empty()) {
+		const int t = lua_gettop(L);
+		const int r = luaL_loadstring(L, helperCode.c_str());
+		if (r == LUA_OK) {
+			lua_pcall(L, 0, 0, 0);
+		}
+		lua_settop(L, t);
+	}
 	// todo: just set hook when break point added.
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 
@@ -95,7 +105,7 @@ void Debugger::Detach(lua_State* L) {
 }
 
 void Debugger::Hook(lua_State* L, lua_Debug* ar) {
-	CheckDoString(L);
+	//CheckDoString(L);
 	if (skipHook) {
 		return;
 	}

@@ -32,6 +32,7 @@ class EmmyFacade {
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
 	std::set<lua_State*> states;
+	std::string helperCode;
 	bool isIDEReady;
 	bool isWaitingForIDE;
 public:
