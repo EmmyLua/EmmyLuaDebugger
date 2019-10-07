@@ -20,20 +20,25 @@ HookState::HookState():
 	currentStateL(nullptr) {
 }
 
-void HookState::Start(Debugger* debugger, lua_State* L, lua_State* current) {
+bool HookState::Start(Debugger* debugger, lua_State* current) {
 	currentStateL = current;
+	return true;
 }
 
 void HookState::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
 }
 
-void HookStateContinue::Start(Debugger* debugger, lua_State* L, lua_State* current) {
+bool HookStateContinue::Start(Debugger* debugger, lua_State* current) {
 	debugger->ExitDebugMode();
+	return true;
 }
 
-void StackLevelBasedState::Start(Debugger* debugger, lua_State* L, lua_State* current) {
-	HookState::Start(debugger, L, current);
+bool StackLevelBasedState::Start(Debugger* debugger, lua_State* current) {
+	if (current == nullptr)
+		return false;
+	currentStateL = current;
 	oriStackLevel = newStackLevel = debugger->GetStackLevel(current, false);
+	return true;
 }
 
 void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lua_Debug* ar) {
@@ -64,14 +69,16 @@ void StackLevelBasedState::UpdateStackLevel(Debugger* debugger, lua_State* L, lu
 	}
 }
 
-void HookStateStepIn::Start(Debugger* debugger, lua_State* L, lua_State* current) {
-	StackLevelBasedState::Start(debugger, L, current);
+bool HookStateStepIn::Start(Debugger* debugger, lua_State* current) {
+	if (!StackLevelBasedState::Start(debugger, current))
+		return false;
 	lua_Debug ar{};
 	lua_getstack(current, 0, &ar);
 	lua_getinfo(current, "nSl", &ar);
 	file = ar.source;
 	line = ar.currentline;
 	debugger->ExitDebugMode();
+	return true;
 }
 
 void HookStateStepIn::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
@@ -83,9 +90,11 @@ void HookStateStepIn::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* a
 	else StackLevelBasedState::ProcessHook(debugger, L, ar);
 }
 
-void HookStateStepOut::Start(Debugger* debugger, lua_State* L, lua_State* current) {
-	StackLevelBasedState::Start(debugger, L, current);
+bool HookStateStepOut::Start(Debugger* debugger, lua_State* current) {
+	if (!StackLevelBasedState::Start(debugger, current))
+		return false;
 	debugger->ExitDebugMode();
+	return true;
 }
 
 void HookStateStepOut::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
@@ -97,14 +106,16 @@ void HookStateStepOut::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* 
 	StackLevelBasedState::ProcessHook(debugger, L, ar);
 }
 
-void HookStateStepOver::Start(Debugger* debugger, lua_State* L, lua_State* current) {
-	StackLevelBasedState::Start(debugger, L, current);
+bool HookStateStepOver::Start(Debugger* debugger, lua_State* current) {
+	if (!StackLevelBasedState::Start(debugger, current))
+		return false;
 	lua_Debug ar{};
 	lua_getstack(current, 0, &ar);
 	lua_getinfo(current, "nSl", &ar);
 	file = ar.source;
 	line = ar.currentline;
 	debugger->ExitDebugMode();
+	return true;
 }
 
 void HookStateStepOver::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
@@ -135,7 +146,10 @@ void HookStateBreak::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar
 	}
 }
 
-void HookStateStop::Start(Debugger* debugger, lua_State* L, lua_State* current) {
-	debugger->UpdateHook(L, 0);
+bool HookStateStop::Start(Debugger* debugger, lua_State* current) {
+	if (current == nullptr)
+		return false;
+	debugger->UpdateHook(current, 0);
 	debugger->DoAction(DebugAction::Continue);
+	return true;
 }

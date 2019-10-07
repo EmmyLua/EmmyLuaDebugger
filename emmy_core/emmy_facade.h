@@ -29,9 +29,9 @@ enum class LogType {
 
 class EmmyFacade {
 	Transporter* transporter;
-	lua_State* L;
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
+	std::set<lua_State*> states;
 	bool isIDEReady;
 	bool isWaitingForIDE;
 public:
@@ -47,7 +47,7 @@ public:
 	int OnDisconnect();
 	void WaitIDE(bool force = false);
 	void OnReceiveMessage(const rapidjson::Document& document);
-	void OnBreak();
+	void OnBreak(lua_State* L);
 	void Destroy();
 	void OnEvalResult(EvalContext* context);
 	void SendLog(LogType type, const char *fmt, ...);
@@ -60,8 +60,6 @@ private:
 	void OnActionReq(const rapidjson::Document& document);
 	void OnEvalReq(const rapidjson::Document& document);
 #ifdef EMMY_BUILD_AS_HOOK
-private:
-	std::set<lua_State*> attachedStates;
 public:
 	void StartupHookMode(int port);
 	void Attach(lua_State* L);

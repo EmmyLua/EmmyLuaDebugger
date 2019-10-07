@@ -28,20 +28,20 @@ public:
 	virtual ~HookState() {
 	}
 
-	virtual void Start(Debugger* debugger, lua_State* L, lua_State* current);
+	virtual bool Start(Debugger* debugger, lua_State* current);
 	virtual void ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar);
 };
 
 // continue
 class HookStateContinue : public HookState {
-	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
+	bool Start(Debugger* debugger, lua_State* current) override;
 };
 
 class StackLevelBasedState : public HookState {
 protected:
 	int oriStackLevel;
 	int newStackLevel;
-	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
+	bool Start(Debugger* debugger, lua_State* current) override;
 	void UpdateStackLevel(Debugger* debugger, lua_State* L, lua_Debug* ar);
 };
 
@@ -49,13 +49,13 @@ protected:
 class HookStateStepIn : public StackLevelBasedState {
 	std::string file;
 	int line = 0;
-	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
+	bool Start(Debugger* debugger, lua_State* current) override;
 	void ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) override;
 };
 
 // step out
 class HookStateStepOut : public StackLevelBasedState {
-	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
+	bool Start(Debugger* debugger, lua_State* current) override;
 	void ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) override;
 };
 
@@ -64,7 +64,7 @@ class HookStateStepOver : public StackLevelBasedState {
 	std::string file;
 	int line = 0;
 
-	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
+	bool Start(Debugger* debugger, lua_State* current) override;
 	void ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) override;
 };
 
@@ -75,5 +75,5 @@ class HookStateBreak : public HookState {
 
 // stop
 class HookStateStop : public HookState {
-	void Start(Debugger* debugger, lua_State* L, lua_State* current) override;
+	bool Start(Debugger* debugger, lua_State* current) override;
 };

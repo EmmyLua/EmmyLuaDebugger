@@ -42,12 +42,9 @@ void EmmyFacade::StartupHookMode(int port) {
 void EmmyFacade::Attach(lua_State* L) {
 	if (this->isIDEReady || !this->transporter->IsConnected())
 		return;
-	if (this->attachedStates.find(L) == this->attachedStates.end()) {
-		this->attachedStates.insert(L);
+	if (this->states.find(L) == this->states.end()) {
 		install_emmy_core(L);
-
-		this->L = L;
-
+		this->states.insert(L);
 		rapidjson::Document rspDoc;
 		rspDoc.SetObject();
 		rspDoc.AddMember("state", (size_t)L, rspDoc.GetAllocator());

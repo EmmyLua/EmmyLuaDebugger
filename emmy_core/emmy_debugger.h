@@ -32,12 +32,12 @@ class HookState;
 class EvalContext;
 
 class Debugger {
-	lua_State* L;
 	lua_State* currentStateL;
 	HookState* hookState;
-	bool hooked;
+	bool running;
 	bool skipHook;
 	bool blocking;
+	std::set<lua_State*> states;
 	std::vector<std::string> doStringList;
 	std::vector<BreakPoint*> breakPoints;
 	std::set<int> lineSet;
@@ -68,31 +68,34 @@ public:
 	Debugger();
 	~Debugger();
 
-	void Start(lua_State* L);
+	void Start();
+	void Attach(lua_State* L);
+	void Detach(lua_State* L);
 	void Hook(lua_State* L, lua_Debug* ar);
 	void Stop();
+	bool IsRunning() const;
 	void AddBreakPoint(const BreakPoint& breakPoint);
 	void RemoveBreakPoint(const std::string& file, int line);
 	void RemoveAllBreakpoints();
 	void AsyncDoString(const char* code);
 	bool Eval(EvalContext* evalContext, bool force = false);
-	bool GetStacks(std::vector<Stack*>& stacks, StackAllocatorCB alloc);
+	bool GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocatorCB alloc);
 	void GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper = true);
 	void DoAction(DebugAction action);
-	void EnterDebugMode();
+	void EnterDebugMode(lua_State* L);
 	void ExitDebugMode();
 	void ExecuteWithSkipHook(Executor exec);
 	void SetExtNames(const std::vector <std::string>& names);
 private:
 	BreakPoint* FindBreakPoint(lua_State* L, lua_Debug* ar);
 	BreakPoint* FindBreakPoint(const std::string& file, int line);
-	std::string GetFile(lua_Debug* ar) const;
+	std::string GetFile(lua_State* L, lua_Debug* ar) const;
 	int GetStackLevel(lua_State* L, bool skipC) const;
 	void RefreshLineSet();
 	void UpdateHook(lua_State* L, int mask);
 	void HandleBreak(lua_State* L);
-	void SetHookState(HookState* newState);
-	void CheckDoString();
+	void SetHookState(lua_State* L, HookState* newState);
+	void CheckDoString(lua_State* L);
 	bool CreateEnv(int stackLevel);
 	bool DoEval(EvalContext* evalContext);
 	bool MatchFileName(const std::string& chunkName, const std::string& fileName) const;

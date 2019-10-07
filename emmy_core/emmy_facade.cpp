@@ -20,7 +20,7 @@
 #include "proto/socket_client_transporter.h"
 #include "proto/pipeline_server_transporter.h"
 #include "proto/pipeline_client_transporter.h"
-#include <stdarg.h>
+#include <cstdarg>
 
 EmmyFacade* EmmyFacade::Get() {
 	static EmmyFacade instance;
@@ -29,7 +29,6 @@ EmmyFacade* EmmyFacade::Get() {
 
 EmmyFacade::EmmyFacade():
 	transporter(nullptr),
-	L(nullptr),
 	isIDEReady(false),
 	isWaitingForIDE(false) {
 }
@@ -58,7 +57,7 @@ int LuaPrint(lua_State* L) {
 
 bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std::string& err) {
 	Destroy();
-	this->L = L;
+	states.insert(L);
 	const auto s = new SocketServerTransporter();
 	transporter = s;
 	s->SetHandler(this);
@@ -73,7 +72,7 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 
 bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std::string& err) {
 	Destroy();
-	this->L = L;
+	states.insert(L);
 	const auto c = new SocketClientTransporter();
 	transporter = c;
 	c->SetHandler(this);
@@ -90,7 +89,7 @@ bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std
 
 bool EmmyFacade::PipeListen(lua_State* L, const std::string& name, std::string& err) {
 	Destroy();
-	this->L = L;
+	states.insert(L);
 	const auto p = new PipelineServerTransporter();
 	transporter = p;
 	p->SetHandler(this);
@@ -100,7 +99,7 @@ bool EmmyFacade::PipeListen(lua_State* L, const std::string& name, std::string& 
 
 bool EmmyFacade::PipeConnect(lua_State* L, const std::string& name, std::string& err) {
 	Destroy();
-	this->L = L;
+	states.insert(L);
 	const auto p = new PipelineClientTransporter();
 	transporter = p;
 	p->SetHandler(this);
@@ -137,9 +136,7 @@ int EmmyFacade::OnConnect(bool suc) {
 int EmmyFacade::OnDisconnect() {
 	isIDEReady = false;
 	isWaitingForIDE = false;
-#if EMMY_BUILD_AS_HOOK
-	attachedStates.clear();
-#endif
+	states.clear();
 	Debugger::Get()->Stop();
 	return 0;
 }
@@ -187,7 +184,9 @@ void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 }
 
 void EmmyFacade::OnInitReq(const rapidjson::Document& document) {
-	Debugger::Get()->Start(L);
+	Debugger::Get()->Start();
+	for (auto L : states)
+		Debugger::Get()->Attach(L);
 	if (document.HasMember("emmyHelper")) {
 		const auto code = document["emmyHelper"].GetString();
 		Debugger::Get()->AsyncDoString(code);
@@ -259,9 +258,9 @@ void FillStacks(rapidjson::Value& container, std::vector<Stack*>& stacks, rapidj
 	}
 }
 
-void EmmyFacade::OnBreak() {
+void EmmyFacade::OnBreak(lua_State* L) {
 	std::vector<Stack*> stacks;
-	Debugger::Get()->GetStacks(stacks, []() {
+	Debugger::Get()->GetStacks(L, stacks, []() {
 		return new Stack();
 	});
 
@@ -388,7 +387,11 @@ void EmmyFacade::SendLog(LogType type, const char *fmt, ...) {
 }
 
 void EmmyFacade::OnLuaStateGC(lua_State* L) {
-	if (L != this->L)
+	const auto it = states.find(L);
+	if (it != states.end())
+		states.erase(it);
+	Debugger::Get()->Detach(L);
+	if (!states.empty())
 		return;
 #if EMMY_BUILD_AS_HOOK
 	OnDisconnect();
