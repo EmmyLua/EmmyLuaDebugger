@@ -89,15 +89,19 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols) {
 
 void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 	char moduleName[_MAX_PATH];
-	GetModuleBaseName(hProcess, hModule, moduleName, _MAX_PATH);
-	if (loadedModules.find(moduleName) != loadedModules.end())
+	ZeroMemory(moduleName, _MAX_PATH);
+	DWORD nameLen = GetModuleBaseName(hProcess, hModule, moduleName, _MAX_PATH);
+	if (nameLen == 0 || loadedModules.find(moduleName) != loadedModules.end())
 		return;
 
 	loadedModules.insert(moduleName);
 	char modulePath[_MAX_PATH];
 	// skip modules in c://WINDOWS
 	{
-		GetModuleFileNameEx(hProcess, hModule, modulePath, _MAX_PATH);
+		ZeroMemory(modulePath, _MAX_PATH);
+		DWORD fileNameLen = GetModuleFileNameEx(hProcess, hModule, modulePath, _MAX_PATH);
+		if (fileNameLen == 0)
+			return;
 
 		char windowsPath[MAX_PATH];
 		if (SHGetFolderPath(nullptr, CSIDL_WINDOWS, nullptr, SHGFP_TYPE_CURRENT, windowsPath) == 0) {
@@ -124,7 +128,7 @@ void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 	std::unordered_map<std::string, DWORD64> symbols;
 
 	if (st == PE_SUCCESS)
-		st = peParseExportTable(&pe, 1000);
+		st = peParseExportTable(&pe, INT32_MAX);
 	if (st == PE_SUCCESS && PE_HAS_TABLE(&pe, ExportTable)) {
 		PE_FOREACH_EXPORTED_SYMBOL(&pe, pSymbol) {
 			if (PE_SYMBOL_HAS_NAME(pSymbol)) {
