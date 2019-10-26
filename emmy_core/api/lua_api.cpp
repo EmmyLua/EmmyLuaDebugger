@@ -37,9 +37,11 @@ HMODULE FindLuaModule() {
 	return hModule;
 }
 
-HMODULE hModule = FindLuaModule();
+HMODULE hModule = nullptr;
 
 FARPROC LoadAPI(const char* name) {
+	if (!hModule)
+		hModule = FindLuaModule();
 	return GetProcAddress(hModule, name);
 }
 #else

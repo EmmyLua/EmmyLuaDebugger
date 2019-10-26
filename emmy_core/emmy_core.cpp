@@ -130,11 +130,9 @@ LuaVersion luaVersion = LuaVersion::UNKNOWN;
 #endif
 
 extern "C" {
-	bool SetupLuaAPI();
-
 	bool install_emmy_core(struct lua_State* L) {
 #ifndef EMMY_USE_LUA_SOURCE
-		if (!SetupLuaAPI()) {
+		if (!EmmyFacade::Get()->SetupLuaAPI()) {
 			return false;
 		}
 #endif

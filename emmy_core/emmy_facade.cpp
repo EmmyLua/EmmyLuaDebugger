@@ -30,11 +30,18 @@ EmmyFacade* EmmyFacade::Get() {
 EmmyFacade::EmmyFacade():
 	transporter(nullptr),
 	isIDEReady(false),
+	isAPIReady(false),
 	isWaitingForIDE(false) {
 }
 
 EmmyFacade::~EmmyFacade() {
 	delete transporter;
+}
+
+extern "C" bool SetupLuaAPI();
+bool EmmyFacade::SetupLuaAPI() {
+	isAPIReady = ::SetupLuaAPI();
+	return isAPIReady;
 }
 
 int LuaError(lua_State* L) {
