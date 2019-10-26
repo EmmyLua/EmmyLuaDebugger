@@ -761,6 +761,9 @@ BreakPoint* Debugger::FindBreakPoint(const std::string& file, int line) {
 bool Debugger::MatchFileName(const std::string& chunkName, const std::string& fileName) const {
 	if (chunkName == fileName)
 		return true;
+	std::string pureFileName = fileName.substr(0, fileName.find('.'));
+	if (chunkName == pureFileName)
+		return true;
 	// abc == abc.lua
 	for (const auto& ext : extNames) {
 		if (chunkName + ext == fileName) {

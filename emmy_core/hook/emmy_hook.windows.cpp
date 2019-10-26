@@ -16,6 +16,12 @@ LoadLibraryExW_t LoadLibraryExW_dll = nullptr;
 std::mutex mutexPostLoadModule;
 std::set<std::string> loadedModules;
 
+extern "C" {
+	bool SetupLuaAPI();
+}
+extern void SetLuaModule(HMODULE h);
+extern HMODULE GetLuaModule();
+
 HOOK_STATUS Hook(void* InEntryPoint,
                  void* InHookProc,
                  void* InCallback,
@@ -88,6 +94,11 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols) {
 }
 
 void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
+	if (GetLuaModule() != nullptr) return;
+	if (GetProcAddress(hModule, "lua_gettop") == nullptr) {
+		return;
+	}
+
 	char moduleName[_MAX_PATH];
 	ZeroMemory(moduleName, _MAX_PATH);
 	DWORD nameLen = GetModuleBaseName(hProcess, hModule, moduleName, _MAX_PATH);
@@ -144,7 +155,10 @@ void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 		}
 	}
 
-	HookLuaFunctions(symbols);
+	if (symbols.size() > 0) {
+		HookLuaFunctions(symbols);
+		SetLuaModule(hModule);
+	}
 
 	// imports
 	if (st == PE_SUCCESS)

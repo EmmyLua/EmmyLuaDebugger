@@ -64,8 +64,8 @@ if(WIN32)
     # emmy_hook
     add_library(emmy_hook SHARED ${SRC_LIST} ${HEADER_LIST} ${HOOK_LIST} ${SHARED_LIST})
     target_compile_definitions(emmy_hook PRIVATE EMMY_BUILD_AS_HOOK)
-    add_dependencies(emmy_hook EasyHook uv_a)
-    target_link_libraries(emmy_hook EasyHook uv_a)
+    add_dependencies(emmy_hook EasyHook uv_a emmy_core)
+    target_link_libraries(emmy_hook EasyHook uv_a emmy_core)
 
     install(
         TARGETS emmy_core emmy_hook
