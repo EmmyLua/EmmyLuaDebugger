@@ -20,9 +20,6 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
-int LUA_REGISTRYINDEX = 0;
-int LUA_GLOBALSINDEX = 0;
-
 HMODULE hModule = nullptr;
 
 void SetLuaModule(HMODULE h) {
@@ -43,6 +40,8 @@ void* LoadAPI(const char* name) {
     return handler;
 }
 #endif
+int LUA_REGISTRYINDEX = 0;
+int LUA_GLOBALSINDEX = 0;
 
 IMP_LUA_API(lua_gettop);
 IMP_LUA_API(lua_settop);
