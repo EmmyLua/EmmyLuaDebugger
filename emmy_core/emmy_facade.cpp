@@ -160,11 +160,6 @@ void EmmyFacade::Destroy() {
 void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 	const auto cmd = static_cast<MessageCMD>(document["cmd"].GetInt());
 	switch (cmd) {
-#if EMMY_BUILD_AS_HOOK
-	case MessageCMD::StartHookReq:
-		StartHook();
-		break;
-#endif
 	case MessageCMD::InitReq:
 		OnInitReq(document);
 		break;
@@ -191,15 +186,19 @@ void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document) {
 }
 
 void EmmyFacade::OnInitReq(const rapidjson::Document& document) {
+#if EMMY_BUILD_AS_HOOK
+	StartHook();
+#endif
 	if (document.HasMember("emmyHelper")) {
 		helperCode = document["emmyHelper"].GetString();
-		//Debugger::Get()->AsyncDoString(helperCode.c_str());
 	}
 	Debugger::Get()->Start(helperCode);
 	for (auto L : states)
 		Debugger::Get()->Attach(L);
+
+	//file extension names: .lua, .txt, .lua.txt ...
+	std::vector<std::string> extNames;
 	if (document.HasMember("ext")) {
-		std::vector<std::string> extNames;
 		const auto ext = document["ext"].GetArray();
 		auto it = ext.begin();
 		while (it != ext.end()) {
@@ -207,8 +206,8 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document) {
 			extNames.emplace_back(extName);
 			++it;
 		}
-		Debugger::Get()->SetExtNames(extNames);
 	}
+	Debugger::Get()->SetExtNames(extNames);
 }
 
 void EmmyFacade::OnReadyReq(const rapidjson::Document& document) {
@@ -398,11 +397,8 @@ void EmmyFacade::OnLuaStateGC(lua_State* L) {
 	if (it != states.end())
 		states.erase(it);
 	Debugger::Get()->Detach(L);
-	if (!states.empty())
-		return;
-#if EMMY_BUILD_AS_HOOK
-	OnDisconnect();
-#else
-	Destroy();
+#if !EMMY_BUILD_AS_HOOK
+	if (states.empty())
+		Destroy();
 #endif
 }

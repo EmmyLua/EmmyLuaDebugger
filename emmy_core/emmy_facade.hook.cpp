@@ -41,7 +41,7 @@ void EmmyFacade::StartupHookMode(int port) {
 }
 
 void EmmyFacade::Attach(lua_State* L) {
-	if (this->isIDEReady || !this->transporter->IsConnected())
+	if (!this->transporter->IsConnected())
 		return;
 	if (this->states.find(L) == this->states.end()) {
 		this->states.insert(L);

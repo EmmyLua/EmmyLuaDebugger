@@ -105,7 +105,6 @@ void Debugger::Detach(lua_State* L) {
 }
 
 void Debugger::Hook(lua_State* L, lua_Debug* ar) {
-	//CheckDoString(L);
 	if (skipHook) {
 		return;
 	}
