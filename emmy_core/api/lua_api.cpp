@@ -51,6 +51,8 @@ void* LoadAPI(const char* name) {
     return handler;
 }
 #endif
+int LUA_REGISTRYINDEX = 0;
+int LUA_GLOBALSINDEX = 0;
 
 IMP_LUA_API(lua_gettop);
 IMP_LUA_API(lua_settop);
@@ -99,6 +101,7 @@ IMP_LUA_API_E(lua_remove);
 IMP_LUA_API_E(lua_tointegerx);
 IMP_LUA_API_E(lua_tonumberx);
 IMP_LUA_API_E(lua_getglobal);
+IMP_LUA_API_E(lua_setglobal);
 IMP_LUA_API_E(lua_callk);
 IMP_LUA_API_E(lua_pcallk);
 IMP_LUA_API_E(luaL_setfuncs);
@@ -129,9 +132,20 @@ lua_Number lua_tonumber(lua_State* L, int idx) {
 
 int lua_getglobal(lua_State* L, const char* name) {
 	if (luaVersion == LuaVersion::LUA_51) {
-		return lua_getfield(L, -10002, name);
+		return lua_getfield(L, LUA_GLOBALSINDEX, name);
 	}
-	return e_lua_getglobal(L, name);
+	else {
+		return e_lua_getglobal(L, name);
+	}
+}
+
+void lua_setglobal(lua_State* L, const char* name) {
+	if (luaVersion == LuaVersion::LUA_51) {
+		return lua_setfield(L, LUA_GLOBALSINDEX, name);
+	}
+	else {
+		return e_lua_setglobal(L, name);
+	}
 }
 
 void lua_call(lua_State* L, int nargs, int nresults) {
@@ -188,8 +202,6 @@ void lua_remove(lua_State *L, int idx) {
 	}
 }
 
-int LUA_REGISTRYINDEX = 0;
-
 extern "C" bool SetupLuaAPI() {
 	LOAD_LUA_API(lua_gettop);
 	LOAD_LUA_API(lua_settop);
@@ -239,6 +251,7 @@ extern "C" bool SetupLuaAPI() {
 	LOAD_LUA_API_E(lua_tointegerx);
 	LOAD_LUA_API_E(lua_tonumberx);
 	LOAD_LUA_API_E(lua_getglobal);
+	LOAD_LUA_API_E(lua_setglobal);
 	LOAD_LUA_API_E(lua_callk);
 	LOAD_LUA_API_E(lua_pcallk);
 	LOAD_LUA_API_E(luaL_setfuncs);
@@ -249,15 +262,18 @@ extern "C" bool SetupLuaAPI() {
 	if (e_lua_rotate) {
 		luaVersion = LuaVersion::LUA_53;
 		LUA_REGISTRYINDEX = -1001000;
+		LUA_GLOBALSINDEX = 2;
 	}
 	else if (e_lua_callk) {
 		luaVersion = LuaVersion::LUA_52;
 		//todo
 		LUA_REGISTRYINDEX = -1001000;
+		LUA_GLOBALSINDEX = 2;
 	}
 	else {
 		luaVersion = LuaVersion::LUA_51;
 		LUA_REGISTRYINDEX = -10000;
+		LUA_GLOBALSINDEX = -10002;
 	}
 	printf("[EMMY]lua version: %d\n", luaVersion);
 	return true;
