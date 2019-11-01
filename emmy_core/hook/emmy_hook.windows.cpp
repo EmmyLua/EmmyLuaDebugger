@@ -68,7 +68,7 @@ int lua_error_worker(lua_State *L) {
 	LhBarrierGetCallback(&lp);
 	const auto error = (dll_lua_error)lp;
 	EmmyFacade::Get()->BreakHere(L);
-	return error(L);
+	return 0;
 }
 
 #define HOOK(FN, WORKER, REQUIRED) {\
