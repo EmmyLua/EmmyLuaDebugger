@@ -37,6 +37,7 @@ class Debugger {
 	bool running;
 	bool skipHook;
 	bool blocking;
+	std::string helperCode;
 	std::set<lua_State*> states;
 	std::vector<std::string> doStringList;
 	std::vector<BreakPoint*> breakPoints;
@@ -68,7 +69,7 @@ public:
 	Debugger();
 	~Debugger();
 
-	void Start();
+	void Start(std::string & helperCode);
 	void Attach(lua_State* L);
 	void Detach(lua_State* L);
 	void Hook(lua_State* L, lua_Debug* ar);

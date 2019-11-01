@@ -32,12 +32,15 @@ class EmmyFacade {
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
 	std::set<lua_State*> states;
+	std::string helperCode;
 	bool isIDEReady;
+	bool isAPIReady;
 	bool isWaitingForIDE;
 public:
 	static EmmyFacade* Get();
 	EmmyFacade();
 	~EmmyFacade();
+	bool SetupLuaAPI();
 	bool TcpListen(lua_State* L, const std::string& host, int port, std::string& err);
 	bool TcpConnect(lua_State* L, const std::string& host, int port, std::string& err);
 	bool PipeListen(lua_State* L, const std::string& name, std::string& err);

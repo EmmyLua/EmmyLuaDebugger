@@ -15,6 +15,7 @@
 */
 #ifdef EMMY_BUILD_AS_HOOK
 #include "emmy_facade.h"
+#include "emmy_debugger.h"
 #include "proto/socket_server_transporter.h"
 #include "hook/emmy_hook.h"
 #include <set>
@@ -40,11 +41,16 @@ void EmmyFacade::StartupHookMode(int port) {
 }
 
 void EmmyFacade::Attach(lua_State* L) {
-	if (this->isIDEReady || !this->transporter->IsConnected())
+	if (!this->transporter->IsConnected())
 		return;
 	if (this->states.find(L) == this->states.end()) {
-		install_emmy_core(L);
 		this->states.insert(L);
+		install_emmy_core(L);
+		if (Debugger::Get()->IsRunning()) {
+			Debugger::Get()->Attach(L);
+		}
+
+		// send attached notify
 		rapidjson::Document rspDoc;
 		rspDoc.SetObject();
 		rspDoc.AddMember("state", (size_t)L, rspDoc.GetAllocator());

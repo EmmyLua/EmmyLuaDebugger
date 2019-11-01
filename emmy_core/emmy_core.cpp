@@ -129,18 +129,11 @@ LuaVersion luaVersion = LuaVersion::LUA_53;
 LuaVersion luaVersion = LuaVersion::UNKNOWN;
 #endif
 
-bool hasSetupLuaAPI = false;
-
 extern "C" {
-	bool SetupLuaAPI();
-
 	bool install_emmy_core(struct lua_State* L) {
 #ifndef EMMY_USE_LUA_SOURCE
-		if (!hasSetupLuaAPI) {
-			if (!SetupLuaAPI()) {
-				return false;
-			}
-			hasSetupLuaAPI = true;
+		if (!EmmyFacade::Get()->SetupLuaAPI()) {
+			return false;
 		}
 #endif
 		// register helper lib
