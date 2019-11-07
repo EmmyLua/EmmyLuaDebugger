@@ -22,10 +22,6 @@
 
 HMODULE hModule = nullptr;
 
-void SetLuaModule(HMODULE h) {
-	hModule = h;
-}
-
 HMODULE GetLuaModule() {
 	return hModule;
 }
@@ -121,7 +117,8 @@ lua_Number lua_tonumber(lua_State* L, int idx) {
 
 int lua_getglobal(lua_State* L, const char* name) {
 	if (luaVersion == LuaVersion::LUA_51) {
-		return lua_getfield(L, LUA_GLOBALSINDEX, name);
+		lua_pushstring(L, name);
+		return lua_rawget(L, LUA_GLOBALSINDEX);
 	}
 	else {
 		return e_lua_getglobal(L, name);
@@ -130,7 +127,8 @@ int lua_getglobal(lua_State* L, const char* name) {
 
 void lua_setglobal(lua_State* L, const char* name) {
 	if (luaVersion == LuaVersion::LUA_51) {
-		return lua_setfield(L, LUA_GLOBALSINDEX, name);
+		lua_pushstring(L, name);
+		return lua_rawset(L, LUA_GLOBALSINDEX);
 	}
 	else {
 		return e_lua_setglobal(L, name);
@@ -266,4 +264,9 @@ extern "C" bool SetupLuaAPI() {
 	}
 	printf("[EMMY]lua version: %d\n", luaVersion);
 	return true;
+}
+
+
+void SetLuaModule(HMODULE h) {
+	hModule = h;
 }

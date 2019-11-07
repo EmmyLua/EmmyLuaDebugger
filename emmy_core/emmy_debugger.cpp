@@ -24,6 +24,8 @@ bool query_variable(Variable* variable, lua_State* L, const char* typeName, int 
 #define CACHE_TABLE_NAME "_emmy_cache_table_"
 
 int cacheId = 1;
+int cacheLine = -1;
+const char* cacheSource = nullptr;
 
 void HookLua(lua_State* L, lua_Debug* ar) {
 	Debugger::Get()->Hook(L, ar);
@@ -108,7 +110,10 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 	if (skipHook) {
 		return;
 	}
-	if (ar->event == LUA_HOOKLINE) {
+	if (ar->event == LUA_HOOKLINE 
+		&& (cacheLine != ar->currentline || cacheSource != ar->source)) {
+		cacheSource = ar->source;
+		cacheLine = ar->currentline;
 		const auto bp = FindBreakPoint(L, ar);
 		if (bp) {
 			HandleBreak(L);
@@ -408,25 +413,52 @@ int FixPath(lua_State* L) {
 	return 0;
 }
 
+std::string& replace_str(std::string& str, const std::string& to_replaced, const std::string& newchars)
+{
+	for (std::string::size_type pos(0); pos != std::string::npos; pos += newchars.length())
+	{
+		pos = str.find(to_replaced, pos);
+		if (pos != std::string::npos)
+			str.replace(pos, to_replaced.length(), newchars);
+		else
+			break;
+	}
+	return str;
+}
+
 std::string Debugger::GetFile(lua_State* L, lua_Debug* ar) const {
 	assert(L);
 	const char* file = ar->source;
-	if (ar->currentline < 0)
-		return file;
-	if (strlen(file) > 0 && file[0] == '@')
-		file++;
-	lua_pushcclosure(L, FixPath, 0);
-	lua_pushstring(L, file);
-	const int result = lua_pcall(L, 1, 1, 0);
-	if (result == LUA_OK) {
-		const auto p = lua_tostring(L, -1);
-		lua_pop(L, 1);
-		if (p) {
-			return p;
+	do {
+		if (ar->currentline < 0)
+			break;
+		if (strlen(file) > 0 && file[0] == '@')
+			file++;
+
+		lua_pushcclosure(L, FixPath, 0);
+		lua_pushstring(L, file);
+		const int result = lua_pcall(L, 1, 1, 0);
+		if (result == LUA_OK) {
+			const auto p = lua_tostring(L, -1);
+			lua_pop(L, 1);
+			if (p) {
+				file = p;
+				break;
+			}
+		}
+	} while (false);
+
+	std::string str = std::string(file);
+
+	for (const auto& ext : extNames) {
+		if (str.find(ext) > 0) {
+			replace_str(str, ext, "");
 		}
 	}
+	replace_str(str, ".", "/");
+
 	// todo: handle error
-	return file;
+	return str;
 }
 
 void Debugger::HandleBreak(lua_State* L) {
@@ -469,8 +501,9 @@ void Debugger::ExitDebugMode() {
 	cvRun.notify_all();
 }
 
-void ParsePathParts(const std::string& file, std::vector<std::string>& paths) {
+void Debugger::ParsePathParts(const std::string& file, std::vector<std::string>& paths) {
 	size_t idx = 0;
+
 	for (size_t i = 0; i < file.length(); i++) {
 		const char c = file.at(i);
 		if (c == '/' || c == '\\') {

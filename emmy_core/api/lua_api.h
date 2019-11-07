@@ -242,6 +242,7 @@ typedef void*(*dll_lua_rawgeti)(lua_State *L, int idx, lua_Integer n);
 DEF_LUA_API(lua_rawgeti);
 
 //51
+typedef int (*dll_e_lua_error)(lua_State*);
 typedef int (*dll_e_lua_setfenv)(lua_State* L, int idx);
 DEF_LUA_API_E(lua_setfenv);
 typedef lua_Integer (*dll_e_lua_tointeger)(lua_State* L, int idx);

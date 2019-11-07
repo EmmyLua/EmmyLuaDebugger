@@ -62,13 +62,16 @@ int lua_pcallk_worker(lua_State* L, int nargs, int nresults, int errfunc, lua_KC
 }
 
 int lua_error_worker(lua_State *L) {
-	typedef int (*dll_lua_error)(lua_State *);
-	EmmyFacade::Get()->Attach(L);
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
-	const auto error = (dll_lua_error)lp;
+	const auto error = (dll_e_lua_error)lp;
+
+	int top = lua_gettop(L);
+	EmmyFacade::Get()->Attach(L);
 	EmmyFacade::Get()->BreakHere(L);
-	return 0;
+	lua_settop(L, top);
+
+	return error(L);
 }
 
 #define HOOK(FN, WORKER, REQUIRED) {\
@@ -90,7 +93,7 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols) {
 	HOOK(lua_pcall, lua_pcall_worker, false);
 	// lua 5.2
 	HOOK(lua_pcallk, lua_pcallk_worker, false);
-	HOOK(lua_error, lua_error_worker, true);
+	//HOOK(lua_error, lua_error_worker, true);
 }
 
 void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
