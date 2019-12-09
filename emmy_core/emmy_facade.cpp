@@ -143,7 +143,6 @@ int EmmyFacade::OnConnect(bool suc) {
 int EmmyFacade::OnDisconnect() {
 	isIDEReady = false;
 	isWaitingForIDE = false;
-	states.clear();
 	Debugger::Get()->Stop();
 	return 0;
 }
