@@ -8,7 +8,7 @@ build_script:
 
     cmake ../
 
-    msbuild INSTALL.vcxproj /p:Configuration=Release
+    cmake --build . --config RelWithDebInfo --target install
 
     cd ../
 
@@ -18,7 +18,7 @@ build_script:
 
     cmake ../ -G "Visual Studio 15 2017 Win64"
 
-    msbuild INSTALL.vcxproj /p:Configuration=Release
+    cmake --build . --config RelWithDebInfo --target install
 
 artifacts:
 - path: x64/install/bin
