@@ -252,9 +252,14 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		break;
 	}
 	case LUA_TFUNCTION: {
+        int oldTop = lua_gettop(L);
+        lua_pushvalue(L, index);
+        lua_Debug ar;
+        lua_getinfo(L, ">S", &ar);
+        lua_settop(L, oldTop);
 		void* fAddr = lua_topointer(L, index);
-		char buff[100];
-		snprintf(buff, sizeof(buff), "%p", fAddr);
+		char buff[256];
+		snprintf(buff, sizeof(buff), "%s:%d %p", ar.source, ar.linedefined, fAddr);
 		variable->value = buff;
 		break;
 	}
@@ -317,6 +322,17 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 					v->name = lua_tostring(L, -1);
 					lua_pop(L, 1);
 				}
+                else if (t == LUA_TFUNCTION) {
+                    int oldTop = lua_gettop(L);
+                    lua_pushvalue(L, -2);
+                    lua_Debug ar;
+                    lua_getinfo(L, ">S", &ar);
+                    lua_settop(L, oldTop);
+                    void* fAddr = lua_topointer(L, -2);
+                    char buff[256];
+                    snprintf(buff, sizeof(buff), "%s:%d %p", ar.source, ar.linedefined, fAddr);
+                    v->name = buff;
+                }
 				else {
 					v->name = lua_typename(L, t);
 				}

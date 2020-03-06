@@ -27,6 +27,20 @@ HMODULE GetLuaModule() {
 }
 
 FARPROC LoadAPI(const char* name) {
+    if (hModule == nullptr) {
+        MODULEENTRY32 module;
+        module.dwSize = sizeof(MODULEENTRY32);
+        HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+        BOOL moreModules = Module32First(hSnapshot, &module);
+
+        while (moreModules) {
+            if (GetProcAddress(module.hModule, "lua_gettop")) {
+                hModule = module.hModule;
+                break;
+            }
+            moreModules = Module32Next(hSnapshot, &module);
+        }
+    }
 	return GetProcAddress(hModule, name);
 }
 #else
