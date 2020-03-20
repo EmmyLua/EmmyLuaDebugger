@@ -259,7 +259,14 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
         lua_settop(L, oldTop);
 		void* fAddr = lua_topointer(L, index);
 		char buff[256];
-		snprintf(buff, sizeof(buff), "%s:%d %p", ar.source, ar.linedefined, fAddr);
+        int linedefine = 0;
+        if (luaVersion == LuaVersion::LUA_51) {
+            linedefine = ar.lastlinedefined;
+        }
+        else {
+            linedefine = ar.linedefined;
+        }
+		snprintf(buff, sizeof(buff), "%s:%d %p", ar.source, linedefine, fAddr);
 		variable->value = buff;
 		break;
 	}
@@ -330,7 +337,14 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
                     lua_settop(L, oldTop);
                     void* fAddr = lua_topointer(L, -2);
                     char buff[256];
-                    snprintf(buff, sizeof(buff), "%s:%d %p", ar.source, ar.linedefined, fAddr);
+                    int linedefine = 0;
+                    if (luaVersion == LuaVersion::LUA_51) {
+                        linedefine = ar.lastlinedefined;
+                    }
+                    else {
+                        linedefine = ar.linedefined;
+                    }
+                    snprintf(buff, sizeof(buff), "%s:%d %p", ar.source, linedefine, fAddr);
                     v->name = buff;
                 }
 				else {
