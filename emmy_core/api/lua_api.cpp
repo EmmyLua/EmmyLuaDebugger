@@ -20,28 +20,27 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
-HMODULE FindLuaModule() {
-	HMODULE hModule = nullptr;
-	MODULEENTRY32 module;
-	module.dwSize = sizeof(MODULEENTRY32);
-	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
-	BOOL moreModules = Module32First(hSnapshot, &module);
+HMODULE hModule = nullptr;
 
-	while (moreModules) {
-		if (GetProcAddress(module.hModule, "lua_gettop")) {
-			hModule = module.hModule;
-			break;
-		}
-		moreModules = Module32Next(hSnapshot, &module);
-	}
+HMODULE GetLuaModule() {
 	return hModule;
 }
 
-HMODULE hModule = nullptr;
-
 FARPROC LoadAPI(const char* name) {
-	if (!hModule)
-		hModule = FindLuaModule();
+    if (hModule == nullptr) {
+        MODULEENTRY32 module;
+        module.dwSize = sizeof(MODULEENTRY32);
+        HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
+        BOOL moreModules = Module32First(hSnapshot, &module);
+
+        while (moreModules) {
+            if (GetProcAddress(module.hModule, "lua_gettop")) {
+                hModule = module.hModule;
+                break;
+            }
+            moreModules = Module32Next(hSnapshot, &module);
+        }
+    }
 	return GetProcAddress(hModule, name);
 }
 #else
@@ -132,7 +131,8 @@ lua_Number lua_tonumber(lua_State* L, int idx) {
 
 int lua_getglobal(lua_State* L, const char* name) {
 	if (luaVersion == LuaVersion::LUA_51) {
-		return lua_getfield(L, LUA_GLOBALSINDEX, name);
+		lua_pushstring(L, name);
+		return lua_rawget(L, LUA_GLOBALSINDEX);
 	}
 	else {
 		return e_lua_getglobal(L, name);
@@ -141,7 +141,8 @@ int lua_getglobal(lua_State* L, const char* name) {
 
 void lua_setglobal(lua_State* L, const char* name) {
 	if (luaVersion == LuaVersion::LUA_51) {
-		return lua_setfield(L, LUA_GLOBALSINDEX, name);
+		lua_pushstring(L, name);
+		return lua_rawset(L, LUA_GLOBALSINDEX);
 	}
 	else {
 		return e_lua_setglobal(L, name);
@@ -277,4 +278,9 @@ extern "C" bool SetupLuaAPI() {
 	}
 	printf("[EMMY]lua version: %d\n", luaVersion);
 	return true;
+}
+
+
+void SetLuaModule(HMODULE h) {
+	hModule = h;
 }

@@ -85,6 +85,7 @@ public:
 	void DoAction(DebugAction action);
 	void EnterDebugMode(lua_State* L);
 	void ExitDebugMode();
+	void ParsePathParts(const std::string& file, std::vector<std::string>& paths);
 	void ExecuteWithSkipHook(Executor exec);
 	void SetExtNames(const std::vector <std::string>& names);
 private:
