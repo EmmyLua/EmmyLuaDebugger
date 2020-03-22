@@ -75,15 +75,15 @@ bool HookStateStepIn::Start(Debugger* debugger, lua_State* current) {
 	lua_Debug ar{};
 	lua_getstack(current, 0, &ar);
 	lua_getinfo(current, "nSl", &ar);
-	file = ar.source;
-	line = ar.currentline;
+	file = getDebugSource(&ar);
+	line = getDebugCurrentLine(&ar);
 	debugger->ExitDebugMode();
 	return true;
 }
 
 void HookStateStepIn::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
 	UpdateStackLevel(debugger, L, ar);
-	if (ar->event == LUA_HOOKLINE && ar->currentline != line) {
+	if (getDebugEvent(ar) == LUA_HOOKLINE && getDebugCurrentLine(ar) != line) {
 		// todo : && file != ar->source
 		debugger->HandleBreak(L);
 	}
@@ -112,8 +112,8 @@ bool HookStateStepOver::Start(Debugger* debugger, lua_State* current) {
 	lua_Debug ar{};
 	lua_getstack(current, 0, &ar);
 	lua_getinfo(current, "nSl", &ar);
-	file = ar.source;
-	line = ar.currentline;
+	file = getDebugSource(&ar);
+	line = getDebugCurrentLine(&ar);
 	debugger->ExitDebugMode();
 	return true;
 }
@@ -125,11 +125,11 @@ void HookStateStepOver::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug*
 		debugger->HandleBreak(L);
 		return;
 	}
-	if (ar->event == LUA_HOOKLINE &&
-		ar->currentline != line &&
+	if (getDebugEvent(ar) == LUA_HOOKLINE &&
+		getDebugCurrentLine(ar) != line &&
 		newStackLevel == oriStackLevel) {
 		lua_getinfo(L, "Sl", ar);
-		if (ar->source == file || line == -1) {
+		if (getDebugSource(ar) == file || line == -1) {
 			debugger->HandleBreak(L);
 			return;
 		}
@@ -138,7 +138,7 @@ void HookStateStepOver::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug*
 }
 
 void HookStateBreak::ProcessHook(Debugger* debugger, lua_State* L, lua_Debug* ar) {
-	if (ar->event == LUA_HOOKLINE) {
+	if (getDebugEvent(ar) == LUA_HOOKLINE) {
 		debugger->HandleBreak(L);
 	}
 	else {

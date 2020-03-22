@@ -108,7 +108,7 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 	if (skipHook) {
 		return;
 	}
-	if (ar->event == LUA_HOOKLINE) {
+	if (getDebugEvent(ar) == LUA_HOOKLINE) {
 		const auto bp = FindBreakPoint(L, ar);
 		if (bp) {
 			HandleBreak(L);
@@ -147,9 +147,9 @@ bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocat
 		}
 		auto stack = alloc();
 		stack->file = GetFile(L, &ar);
-		stack->functionName = ar.name == nullptr ? "" : ar.name;
+		stack->functionName = getDebugName(&ar) == nullptr ? "" : getDebugName(&ar);
 		stack->level = level;
-		stack->line = ar.currentline;
+		stack->line = getDebugCurrentLine(&ar);
 		stacks.push_back(stack);
 		// get variables
 		{
@@ -410,8 +410,8 @@ int FixPath(lua_State* L) {
 
 std::string Debugger::GetFile(lua_State* L, lua_Debug* ar) const {
 	assert(L);
-	const char* file = ar->source;
-	if (ar->currentline < 0)
+	const char* file = getDebugSource(ar);
+	if (getDebugCurrentLine(ar) < 0)
 		return file;
 	if (strlen(file) > 0 && file[0] == '@')
 		file++;
@@ -625,7 +625,7 @@ int Debugger::GetStackLevel(lua_State* L, bool skipC) const {
 	lua_Debug ar{};
 	while (lua_getstack(L, i, &ar)) {
 		lua_getinfo(L, "l", &ar);
-		if (ar.currentline >= 0 || !skipC)
+		if (getDebugCurrentLine(&ar) >= 0 || !skipC)
 			level++;
 		i++;
 	}
@@ -723,10 +723,11 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 }
 
 BreakPoint* Debugger::FindBreakPoint(lua_State* L, lua_Debug* ar) {
-	if (ar->currentline >= 0 && lineSet.find(ar->currentline) != lineSet.end()) {
+	const int cl = getDebugCurrentLine(ar);
+	if (cl >= 0 && lineSet.find(cl) != lineSet.end()) {
 		lua_getinfo(L, "S", ar);
 		const auto file = GetFile(L, ar);
-		return FindBreakPoint(file, ar->currentline);
+		return FindBreakPoint(file, cl);
 	}
 	return nullptr;
 }

@@ -103,7 +103,22 @@ typedef void * (*lua_Alloc) (void *ud, void *ptr, size_t osize, size_t nsize);
 #define LUA_MASKLINE	(1 << LUA_HOOKLINE)
 #define LUA_MASKCOUNT	(1 << LUA_HOOKCOUNT)
 
-struct lua_Debug {
+struct lua_Debug_51 {
+	int event;
+	const char *name;	/* (n) */
+	const char *namewhat;	/* (n) `global', `local', `field', `method' */
+	const char *what;	/* (S) `Lua', `C', `main', `tail' */
+	const char *source;	/* (S) */
+	int currentline;	/* (l) */
+	int nups;		/* (u) number of upvalues */
+	int linedefined;	/* (S) */
+	int lastlinedefined;	/* (S) */
+	char short_src[LUA_IDSIZE]; /* (S) */
+	/* private part */
+	int i_ci;  /* active function */
+};
+
+struct lua_Debug_52 {
 	int event;
 	const char *name;	/* (n) */
 	const char *namewhat;	/* (n) 'global', 'local', 'field', 'method' */
@@ -117,9 +132,41 @@ struct lua_Debug {
 	char isvararg;        /* (u) */
 	char istailcall;	/* (t) */
 	char short_src[LUA_IDSIZE]; /* (S) */
-								/* private part */
+	/* private part */
 	struct CallInfo *i_ci;  /* active function */
 };
+
+struct lua_Debug_53 {
+	int event;
+	const char *name;	/* (n) */
+	const char *namewhat;	/* (n) 'global', 'local', 'field', 'method' */
+	const char *what;	/* (S) 'Lua', 'C', 'main', 'tail' */
+	const char *source;	/* (S) */
+	int currentline;	/* (l) */
+	int linedefined;	/* (S) */
+	int lastlinedefined;	/* (S) */
+	unsigned char nups;	/* (u) number of upvalues */
+	unsigned char nparams;/* (u) number of parameters */
+	char isvararg;        /* (u) */
+	char istailcall;	/* (t) */
+	char short_src[LUA_IDSIZE]; /* (S) */
+	/* private part */
+	struct CallInfo *i_ci;  /* active function */
+};
+
+struct lua_Debug {
+	union {
+		lua_Debug_51 ar51;
+		lua_Debug_52 ar52;
+		lua_Debug_53 ar53;
+	} u;
+};
+
+int getDebugEvent(lua_Debug* ar);
+int getDebugCurrentLine(lua_Debug* ar);
+int getDebugLineDefined(lua_Debug* ar);
+const char* getDebugSource(lua_Debug* ar);
+const char* getDebugName(lua_Debug* ar);
 
 /* Functions to be called by the debugger in specific events */
 typedef void(*lua_Hook) (lua_State *L, lua_Debug *ar);

@@ -15,6 +15,7 @@
 */
 #include "../emmy_core.h"
 #include <cstdio>
+#include <cassert>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -116,6 +117,76 @@ int lua_setfenv(lua_State* L, int idx) {
 	return lua_setupvalue(L, idx, 1) != nullptr;
 }
 
+int getDebugEvent(lua_Debug* ar) {
+	switch (luaVersion) {
+	case LuaVersion::LUA_51:
+		return ar->u.ar51.event;
+	case LuaVersion::LUA_52:
+		return ar->u.ar52.event;
+	case LuaVersion::LUA_53:
+		return ar->u.ar53.event;
+	default:
+		assert(false);
+		return 0;
+	}
+}
+
+int getDebugCurrentLine(lua_Debug* ar) {
+	switch (luaVersion) {
+	case LuaVersion::LUA_51:
+		return ar->u.ar51.currentline;
+	case LuaVersion::LUA_52:
+		return ar->u.ar52.currentline;
+	case LuaVersion::LUA_53:
+		return ar->u.ar53.currentline;
+	default:
+		assert(false);
+		return 0;
+	}
+}
+
+int getDebugLineDefined(lua_Debug* ar) {
+	switch (luaVersion) {
+	case LuaVersion::LUA_51:
+		return ar->u.ar51.linedefined;
+	case LuaVersion::LUA_52:
+		return ar->u.ar52.linedefined;
+	case LuaVersion::LUA_53:
+		return ar->u.ar53.linedefined;
+	default:
+		assert(false);
+		return 0;
+	}
+}
+
+const char* getDebugSource(lua_Debug* ar) {
+	switch (luaVersion) {
+	case LuaVersion::LUA_51:
+		return ar->u.ar51.source;
+	case LuaVersion::LUA_52:
+		return ar->u.ar52.source;
+	case LuaVersion::LUA_53:
+		return ar->u.ar53.source;
+	default:
+		assert(false);
+		return nullptr;
+	}
+}
+
+const char* getDebugName(lua_Debug* ar) {
+	switch (luaVersion) {
+	case LuaVersion::LUA_51:
+		return ar->u.ar51.name;
+	case LuaVersion::LUA_52:
+		return ar->u.ar52.name;
+	case LuaVersion::LUA_53:
+		return ar->u.ar53.name;
+	default:
+		assert(false);
+		return nullptr;
+	}
+}
+
 lua_Integer lua_tointeger(lua_State* L, int idx) {
 	if (luaVersion > LuaVersion::LUA_51) {
 		return e_lua_tointegerx(L, idx, nullptr);
@@ -164,8 +235,7 @@ int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc) {
 void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
 	if (luaVersion == LuaVersion::LUA_51) {
 		for (; l->name != nullptr; l++) {
-			int i;
-			for (i = 0; i < nup; i++)
+			for (int i = 0; i < nup; i++)
 				lua_pushvalue(L, -nup);
 			lua_pushcclosure(L, l->func, nup);
 			lua_setfield(L, -(nup + 2), l->name);
