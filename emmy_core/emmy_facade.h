@@ -40,7 +40,9 @@ public:
 	static EmmyFacade* Get();
 	EmmyFacade();
 	~EmmyFacade();
+#ifndef EMMY_USE_LUA_SOURCE
 	bool SetupLuaAPI();
+#endif
 	bool TcpListen(lua_State* L, const std::string& host, int port, std::string& err);
 	bool TcpConnect(lua_State* L, const std::string& host, int port, std::string& err);
 	bool PipeListen(lua_State* L, const std::string& name, std::string& err);

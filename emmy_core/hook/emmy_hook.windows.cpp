@@ -7,8 +7,10 @@
 #include <TlHelp32.h>
 #include <Psapi.h>
 #include "libpe/libpe.h"
-#include "../api/lua_api.h"
 #include "../emmy_facade.h"
+
+typedef int(*_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
+typedef int(*_lua_pcallk)(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k);
 
 typedef HMODULE (WINAPI *LoadLibraryExW_t)(LPCWSTR lpFileName, HANDLE hFile, DWORD dwFlags);
 LoadLibraryExW_t LoadLibraryExW_dll = nullptr;
@@ -42,7 +44,7 @@ HOOK_STATUS UnHook(HOOK_HANDLE InHandle) {
 int lua_pcall_worker(lua_State* L, int nargs, int nresults, int errfunc) {
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
-	const auto pcall = (dll_e_lua_pcall)lp;
+	const auto pcall = (_lua_pcall)lp;
 	EmmyFacade::Get()->Attach(L);
 	return pcall(L, nargs, nresults, errfunc);
 }
@@ -50,7 +52,7 @@ int lua_pcall_worker(lua_State* L, int nargs, int nresults, int errfunc) {
 int lua_pcallk_worker(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k) {
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
-	const auto pcallk = (dll_e_lua_pcallk)lp;
+	const auto pcallk = (_lua_pcallk)lp;
 	EmmyFacade::Get()->Attach(L);
 	return pcallk(L, nargs, nresults, errfunc, ctx, k);
 }

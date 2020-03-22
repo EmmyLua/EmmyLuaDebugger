@@ -34,7 +34,7 @@ if(EMMY_USE_LUA_SOURCE)
     include_directories(
         ${CMAKE_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
     )
-    list(APPEND LINK_LIBRARIES ${EMMY_LUA_VERSION}_dll)
+    list(APPEND LINK_LIBRARIES lua${EMMY_LUA_VERSION}_dll)
 else(EMMY_USE_LUA_SOURCE)
     file(GLOB SRC_LIST
         *.cpp *.c api/*.cpp proto/*.cpp
@@ -58,14 +58,15 @@ source_group_by_dir(${CMAKE_CURRENT_SOURCE_DIR} HOOK_LIST)
 add_library(emmy_core SHARED ${SRC_LIST} ${HEADER_LIST})
 set_target_properties(emmy_core PROPERTIES PREFIX "")
 if(WIN32)
-    add_dependencies(emmy_core uv_a)
-    target_link_libraries(emmy_core uv_a)
+    add_dependencies(emmy_core ${LINK_LIBRARIES})
+    target_link_libraries(emmy_core ${LINK_LIBRARIES})
 
     # emmy_hook
+    list(APPEND LINK_LIBRARIES EasyHook)
     add_library(emmy_hook SHARED ${SRC_LIST} ${HEADER_LIST} ${HOOK_LIST} ${SHARED_LIST})
     target_compile_definitions(emmy_hook PRIVATE EMMY_BUILD_AS_HOOK)
-    add_dependencies(emmy_hook EasyHook uv_a)
-    target_link_libraries(emmy_hook EasyHook uv_a)
+    add_dependencies(emmy_hook ${LINK_LIBRARIES})
+    target_link_libraries(emmy_hook ${LINK_LIBRARIES})
 
     install(
         TARGETS emmy_core emmy_hook

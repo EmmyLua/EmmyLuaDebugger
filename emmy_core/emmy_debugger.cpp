@@ -247,7 +247,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		break;
 	}
 	case LUA_TFUNCTION: {
-		void* fAddr = lua_topointer(L, index);
+		const void* fAddr = lua_topointer(L, index);
 		char buff[100];
 		snprintf(buff, sizeof(buff), "%p", fAddr);
 		variable->value = buff;
@@ -266,7 +266,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			variable->value = string;
 		}
 		else {
-			void* fAddr = lua_topointer(L, index);
+			const void* fAddr = lua_topointer(L, index);
 			char buff[100];
 			snprintf(buff, sizeof(buff), "%p", fAddr);
 			variable->value = buff;
@@ -280,14 +280,14 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		break;
 	}
 	case LUA_TLIGHTUSERDATA: {
-		void* fAddr = lua_topointer(L, index);
+		const void* fAddr = lua_topointer(L, index);
 		char buff[100];
 		snprintf(buff, sizeof(buff), "%p", fAddr);
 		variable->value = buff;
 		break;
 	}
 	case LUA_TTHREAD: {
-		void* fAddr = lua_topointer(L, index);
+		const void* fAddr = lua_topointer(L, index);
 		char buff[100];
 		snprintf(buff, sizeof(buff), "%p", fAddr);
 		variable->value = buff;
@@ -295,7 +295,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 	}
 	case LUA_TTABLE: {
 		int tableSize = 0;
-		void* tableAddr = lua_topointer(L, index);
+		const void* tableAddr = lua_topointer(L, index);
 		lua_pushnil(L);
 		while (lua_next(L, index)) {
 			// k: -2, v: -1

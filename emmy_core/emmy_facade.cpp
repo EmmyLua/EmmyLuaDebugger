@@ -38,11 +38,13 @@ EmmyFacade::~EmmyFacade() {
 	delete transporter;
 }
 
+#ifndef EMMY_USE_LUA_SOURCE
 extern "C" bool SetupLuaAPI();
 bool EmmyFacade::SetupLuaAPI() {
 	isAPIReady = ::SetupLuaAPI();
 	return isAPIReady;
 }
+#endif
 
 int LuaError(lua_State* L) {
 	std::string msg = lua_tostring(L, 1);
