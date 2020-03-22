@@ -23,24 +23,6 @@
 #include <condition_variable>
 #include <queue>
 
-#ifdef EMMY_USE_LUA_SOURCE
-inline int getDebugEvent(lua_Debug* ar) {
-	return  ar->event;
-}
-
-inline int getDebugCurrentLine(lua_Debug* ar) {
-	return  ar->currentline;
-}
-
-inline const char* getDebugName(lua_Debug* ar) {
-	return ar->name;
-}
-
-inline const char* getDebugSource(lua_Debug* ar) {
-	return ar->source;
-}
-#endif
-
 typedef Stack* (*StackAllocatorCB)();
 typedef void (*OnBreakCB)();
 typedef void (*Executor)();

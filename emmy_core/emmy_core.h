@@ -23,19 +23,7 @@
 #define EMMY_CORE_EXPORT    extern
 #endif
 
-#ifndef EMMY_USE_LUA_SOURCE
 #include "api/lua_api.h"
-#else//EMMY_USE_LUA_SOURCE
-    extern "C" {
-    #include "lua.h"
-    #include "lualib.h"
-    #include "lauxlib.h"
-    }
-
-#ifdef EMMY_LUA_51
-        #define LUA_OK 0
-#endif
-#endif//EMMY_USE_LUA_SOURCE
 
 // lua version
 enum class LuaVersion {
