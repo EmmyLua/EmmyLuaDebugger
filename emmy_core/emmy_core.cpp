@@ -145,7 +145,9 @@ extern "C" {
 	EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
 		if (!install_emmy_core(L))
 			return false;
-		luaL_newlib(L, lib);
+		//luaL_newlib(L, lib);
+		luaL_newlibtable(L, lib);
+		luaL_setfuncs(L, lib, 0);
 		return 1;
 	}
 }
