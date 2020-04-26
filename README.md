@@ -1,4 +1,4 @@
 # EmmyLuaDebugger
 OS         | CI status
 ---------- | ----------
-Windows|[![Build status](https://ci.appveyor.com/api/projects/status/0np6exylkr8lajs0?svg=true)](https://ci.appveyor.com/project/ElPsyCongree/emmyluadebugger)
+Windows|[![Build status](https://ci.appveyor.com/api/projects/status/kclex82pw6fi4nig?svg=true)](https://ci.appveyor.com/project/leinlin/emmyluadebugger)
