@@ -204,6 +204,8 @@ typedef void (*dll_lua_setfield)(lua_State* L, int idx, const char* k);
 DEF_LUA_API(lua_setfield);
 typedef int (*dll_lua_setmetatable)(lua_State* L, int objindex);
 DEF_LUA_API(lua_setmetatable);
+typedef lua_State* (*dll_lua_newthread)(lua_State* L);
+DEF_LUA_API(lua_newthread);
 typedef int (*dll_lua_getstack)(lua_State* L, int level, lua_Debug* ar);
 DEF_LUA_API(lua_getstack);
 typedef int (*dll_lua_getinfo)(lua_State* L, const char* what, lua_Debug* ar);

@@ -58,6 +58,10 @@ void EmmyFacade::Attach(lua_State* L) {
 	}
 }
 
+void EmmyFacade::AttachThread(lua_State* L, int mask) {
+	Debugger::Get()->UpdateHook(L, mask);
+}
+
 void EmmyFacade::StartHook() {
 	FindAndHook();
 }

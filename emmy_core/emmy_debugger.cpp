@@ -24,8 +24,6 @@ bool query_variable(Variable* variable, lua_State* L, const char* typeName, int 
 #define CACHE_TABLE_NAME "_emmy_cache_table_"
 
 int cacheId = 1;
-int cacheLine = -1;
-const char* cacheSource = nullptr;
 
 void HookLua(lua_State* L, lua_Debug* ar) {
 	Debugger::Get()->Hook(L, ar);
@@ -110,10 +108,7 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 	if (skipHook) {
 		return;
 	}
-	if (ar->event == LUA_HOOKLINE 
-		&& (cacheLine != ar->currentline || cacheSource != ar->source)) {
-		cacheSource = ar->source;
-		cacheLine = ar->currentline;
+	if (ar->event == LUA_HOOKLINE) {
 		const auto bp = FindBreakPoint(L, ar);
 		if (bp) {
 			HandleBreak(L);

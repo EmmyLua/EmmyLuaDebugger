@@ -66,6 +66,7 @@ private:
 public:
 	void StartupHookMode(int port);
 	void Attach(lua_State* L);
+	void AttachThread(lua_State* L, int mask);
 	void StartHook();
 #endif
 };

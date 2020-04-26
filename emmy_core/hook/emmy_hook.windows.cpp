@@ -61,6 +61,16 @@ int lua_pcallk_worker(lua_State* L, int nargs, int nresults, int errfunc, lua_KC
 	return pcallk(L, nargs, nresults, errfunc, ctx, k);
 }
 
+lua_State* lua_newthread_worker(lua_State * L) {
+	LPVOID lp;
+	LhBarrierGetCallback(&lp);
+	const auto newthread = (dll_lua_newthread)lp;
+	lua_State* thread = newthread(L);
+	// todo: just set hook when break point added.
+	EmmyFacade::Get()->AttachThread(thread, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
+	return thread;
+}
+
 int lua_error_worker(lua_State *L) {
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
@@ -93,6 +103,8 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols) {
 	HOOK(lua_pcall, lua_pcall_worker, false);
 	// lua 5.2
 	HOOK(lua_pcallk, lua_pcallk_worker, false);
+
+	HOOK(lua_newthread, lua_newthread_worker, false);
 	//HOOK(lua_error, lua_error_worker, true);
 }
 
