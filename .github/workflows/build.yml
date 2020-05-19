@@ -18,22 +18,16 @@ jobs:
     
     - name: Build x86.51
       run: |
-        mkdir x86
-        cd x86
         cmake ../ -DEMMY_LUA_VERSION=51 -DEMMY_USE_LUA_SOURCE=true
         cmake --build . --config RelWithDebInfo --target install
     
     - name: Build x86.52
       run: |
-        mkdir x86
-        cd x86
         cmake ../ -DEMMY_LUA_VERSION=52 -DEMMY_USE_LUA_SOURCE=true
         cmake --build . --config RelWithDebInfo --target install
     
     - name: Build x86.53
       run: |
-        mkdir x86
-        cd x86
         cmake ../ -DEMMY_LUA_VERSION=53 -DEMMY_USE_LUA_SOURCE=true
         cmake --build . --config RelWithDebInfo --target install
     
@@ -52,22 +46,16 @@ jobs:
 
     - name: Build x64.51
       run: |
-        mkdir x64
-        cd x64
         cmake ../ -G "Visual Studio 15 2017 Win64" -DEMMY_LUA_VERSION=51 -DEMMY_USE_LUA_SOURCE=true
         cmake --build . --config RelWithDebInfo --target install
 
     - name: Build x64.52
       run: |
-        mkdir x64
-        cd x64
         cmake ../ -G "Visual Studio 15 2017 Win64" -DEMMY_LUA_VERSION=52 -DEMMY_USE_LUA_SOURCE=true
         cmake --build . --config RelWithDebInfo --target install
 
     - name: Build x64.53
       run: |
-        mkdir x64
-        cd x64
         cmake ../ -G "Visual Studio 15 2017 Win64" -DEMMY_LUA_VERSION=53 -DEMMY_USE_LUA_SOURCE=true
         cmake --build . --config RelWithDebInfo --target install
     
