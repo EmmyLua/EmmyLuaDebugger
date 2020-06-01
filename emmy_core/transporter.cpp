@@ -152,7 +152,7 @@ typedef struct {
 static void after_write(uv_write_t* req, int status) {
 	const auto writeReq = reinterpret_cast<write_req_t*>(req);
 	free(writeReq->buf.base);
-	free(writeReq);
+	delete writeReq;
 }
 
 void Transporter::Send(uv_stream_t* handler, int cmd, const char* data, size_t len) {
