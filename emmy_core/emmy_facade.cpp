@@ -375,6 +375,16 @@ void EmmyFacade::OnEvalResult(EvalContext* context) {
 	delete context;
 }
 
+void EmmyFacade::SendLog(LogType type, const std::string &msg) {
+	rapidjson::Document rspDoc;
+	rspDoc.SetObject();
+	auto& allocator = rspDoc.GetAllocator();
+	rspDoc.AddMember("type", (int)type, allocator);
+	rspDoc.AddMember("message", msg, allocator);
+	if (transporter)
+		transporter->Send(int(MessageCMD::LogNotify), rspDoc);
+}
+
 void EmmyFacade::SendLog(LogType type, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
@@ -384,13 +394,7 @@ void EmmyFacade::SendLog(LogType type, const char *fmt, ...) {
 
 	const std::string msg = buff;
 
-	rapidjson::Document rspDoc;
-	rspDoc.SetObject();
-	auto& allocator = rspDoc.GetAllocator();
-	rspDoc.AddMember("type", (int)type, allocator);
-	rspDoc.AddMember("message", msg, allocator);
-	if (transporter)
-		transporter->Send(int(MessageCMD::LogNotify), rspDoc);
+	SendLog(type, msg);
 }
 
 void EmmyFacade::OnLuaStateGC(lua_State* L) {

@@ -15,8 +15,21 @@
 */
 #include "emmy_core.h"
 #include "emmy_facade.h"
+#include <functional>
+
+using std::function;
 
 int luaopen_emmy_helper(lua_State* L);
+
+int logMsg(lua_State* L) {
+	LogType logType;
+	logType = (LogType)luaL_checknumber(L, 1);
+	std::string logMsg;
+	logMsg = luaL_checkstring(L, 2);
+	
+	EmmyFacade::Get()->SendLog(logType, logMsg);
+	return 1;
+}
 
 // emmy.tcpListen(host: string, port: int): bool
 int tcpListen(struct lua_State* L) {
@@ -116,6 +129,7 @@ static const luaL_Reg lib[] = {
 	{"waitIDE", waitIDE},
 	{"breakHere", breakHere},
 	{"stop", stop},
+	{"log", logMsg},
 	{nullptr, nullptr}
 };
 
