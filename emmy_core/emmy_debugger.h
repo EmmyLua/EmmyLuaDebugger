@@ -22,6 +22,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <functional>
 
 typedef Stack* (*StackAllocatorCB)();
 typedef void (*OnBreakCB)();
