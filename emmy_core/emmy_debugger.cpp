@@ -83,12 +83,14 @@ void Debugger::Attach(lua_State* L) {
 	states.insert(L);
 	// execute helper code
 	if (!helperCode.empty()) {
-		const int t = lua_gettop(L);
-		const int r = luaL_loadstring(L, helperCode.c_str());
-		if (r == LUA_OK) {
-			lua_pcall(L, 0, 0, 0);
-		}
-		lua_settop(L, t);
+		ExecuteOnLuaThread([this](lua_State* L) {
+			const int t = lua_gettop(L);
+			const int r = luaL_loadstring(L, helperCode.c_str());
+			if (r == LUA_OK) {
+				lua_pcall(L, 0, 0, 0);
+			}
+			lua_settop(L, t);
+		});
 	}
 	// todo: just set hook when break point added.
 	UpdateHook(L, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
@@ -109,7 +111,14 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 		return;
 	}
 	if (getDebugEvent(ar) == LUA_HOOKLINE) {
-		const auto bp = FindBreakPoint(L, ar);
+		if (luaThreadExecutors.empty() == false) {
+			std::unique_lock<std::mutex> lock(mutexLuaThread);
+			for (auto& executor : luaThreadExecutors) {
+				ExecuteWithSkipHook(L, executor);
+			}
+			luaThreadExecutors.clear();
+		}
+		const auto* bp = FindBreakPoint(L, ar);
 		if (bp) {
 			HandleBreak(L);
 			return;
@@ -123,11 +132,16 @@ void Debugger::Stop() {
 	running = false;
 	skipHook = true;
 	blocking = false;
-	for (auto L : states) {
+	for (auto* L : states) {
 		UpdateHook(L, 0);
 	}
 	states.clear();
 	hookState = nullptr;
+
+	// clear lua thread executors
+	std::unique_lock<std::mutex> luaThreadLock(mutexLuaThread);
+	luaThreadExecutors.clear();
+	
 	ExitDebugMode();
 }
 
@@ -783,16 +797,21 @@ bool Debugger::MatchFileName(const std::string& chunkName, const std::string& fi
 
 void Debugger::RefreshLineSet() {
 	lineSet.clear();
-	for (auto bp : breakPoints) {
+	for (auto* bp : breakPoints) {
 		lineSet.insert(bp->line);
 	}
 }
 
-void Debugger::ExecuteWithSkipHook(Executor exec) {
+void Debugger::ExecuteWithSkipHook(lua_State* L, const Executor& exec) {
 	const bool skip = skipHook;
 	skipHook = true;
-	exec();
+	exec(L);
 	skipHook = skip;
+}
+
+void Debugger::ExecuteOnLuaThread(const Executor& exec) {
+	std::unique_lock<std::mutex> lock(mutexLuaThread);
+	luaThreadExecutors.push_back(exec);
 }
 
 void Debugger::SetExtNames(const std::vector<std::string>& names) {

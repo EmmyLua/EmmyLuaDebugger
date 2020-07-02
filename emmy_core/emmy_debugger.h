@@ -25,7 +25,7 @@
 
 typedef Stack* (*StackAllocatorCB)();
 typedef void (*OnBreakCB)();
-typedef void (*Executor)();
+typedef std::function<void(lua_State* L)> Executor;
 
 class HookState;
 
@@ -48,6 +48,8 @@ class Debugger {
 	std::queue<EvalContext*> evalQueue;
 	std::mutex mutexBP;
 	std::vector <std::string> extNames;
+	std::mutex mutexLuaThread;
+	std::vector<Executor> luaThreadExecutors;
 
 	HookState* stateBreak;
 	HookState* stateStepOver;
@@ -85,7 +87,8 @@ public:
 	void DoAction(DebugAction action);
 	void EnterDebugMode(lua_State* L);
 	void ExitDebugMode();
-	void ExecuteWithSkipHook(Executor exec);
+	void ExecuteWithSkipHook(lua_State* L, const Executor& exec);
+	void ExecuteOnLuaThread(const Executor& exec);
 	void SetExtNames(const std::vector <std::string>& names);
 private:
 	BreakPoint* FindBreakPoint(lua_State* L, lua_Debug* ar);
