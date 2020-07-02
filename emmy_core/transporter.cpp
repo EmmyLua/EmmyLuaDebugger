@@ -147,19 +147,30 @@ bool Transporter::IsServerMode() const {
 typedef struct {
 	uv_write_t req;
 	uv_buf_t buf;
+	uv_stream_t* handler;
 } write_req_t;
 
 static void after_write(uv_write_t* req, int status) {
-	const auto writeReq = reinterpret_cast<write_req_t*>(req);
+	const auto* writeReq = reinterpret_cast<write_req_t*>(req);
 	free(writeReq->buf.base);
 	delete writeReq;
+}
+
+static void after_async(uv_handle_t* h) {
+	delete h;
+}
+
+static void async_write(uv_async_t* h) {
+	auto* writeReq = (write_req_t*)h->data;
+	uv_write(&writeReq->req, writeReq->handler, &writeReq->buf, 1, after_write);
+	uv_close((uv_handle_t*)h, after_async);
 }
 
 void Transporter::Send(uv_stream_t* handler, int cmd, const char* data, size_t len) {
 	if (!IsConnected()) {
 		return;
 	}
-	auto writeReq = new write_req_t();
+	auto* writeReq = new write_req_t();
 	char cmdValue[100];
 	const int l1 = sprintf(cmdValue, "%d\n", cmd);
 	const size_t newLen = len + l1 + 1;
@@ -170,7 +181,13 @@ void Transporter::Send(uv_stream_t* handler, int cmd, const char* data, size_t l
 	memcpy(newData + l1, data, len);
 	newData[newLen - 1] = '\n';
 	writeReq->buf = uv_buf_init(newData, newLen);
-	uv_write(&writeReq->req, handler, &writeReq->buf, 1, after_write);
+	writeReq->handler = handler;
+
+	// thread safe:
+	auto* async = new uv_async_t;
+	async->data = writeReq;
+	uv_async_init(loop, async, async_write);
+	uv_async_send(async);
 }
 
 void Transporter::StartEventLoop() {
