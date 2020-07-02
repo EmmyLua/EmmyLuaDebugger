@@ -77,9 +77,12 @@ int breakHere(lua_State* L) {
 	return 1;
 }
 
-// emmy.waitIDE(): void
+// emmy.waitIDE(timeout: number): void
 int waitIDE(lua_State* L) {
-	EmmyFacade::Get()->WaitIDE();
+	int top = lua_gettop(L);
+	int timeout = 0;
+	if (top >= 1) timeout = luaL_checknumber(L, 1);
+	EmmyFacade::Get()->WaitIDE(false, timeout);
 	return 0;
 }
 
