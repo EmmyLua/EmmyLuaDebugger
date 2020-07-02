@@ -50,7 +50,7 @@ public:
 	int BreakHere(lua_State* L);
 	int OnConnect(bool suc);
 	int OnDisconnect();
-	void WaitIDE(bool force = false);
+	void WaitIDE(bool force = false, int timeout = 0);
 	void OnReceiveMessage(const rapidjson::Document& document);
 	void OnBreak(lua_State* L);
 	void Destroy();

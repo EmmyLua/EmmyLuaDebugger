@@ -119,14 +119,17 @@ bool EmmyFacade::PipeConnect(lua_State* L, const std::string& name, std::string&
 	return suc;
 }
 
-void EmmyFacade::WaitIDE(bool force) {
+void EmmyFacade::WaitIDE(bool force, int timeout) {
 	if (transporter != nullptr
 		&& (transporter->IsServerMode() || force)
 		&& !isWaitingForIDE
 		&& !isIDEReady) {
 		isWaitingForIDE = true;
 		std::unique_lock<std::mutex> lock(waitIDEMutex);
-		waitIDECV.wait(lock);
+		if (timeout > 0)
+			waitIDECV.wait_for(lock, std::chrono::milliseconds(timeout));
+		else
+			waitIDECV.wait(lock);
 		isWaitingForIDE = false;
 	}
 }
