@@ -5,9 +5,15 @@ option(EMMY_USE_LUA_SOURCE "Build with lua source" OFF)
 
 set(EMMY_CORE_NAME "emmy_core")
 set(EMMY_HOOK_NAME "emmy_hook")
+
 if (EMMY_USE_LUA_SOURCE)
-    set(EMMY_CORE_NAME "emmy_core.${EMMY_LUA_VERSION}")
-    set(EMMY_HOOK_NAME "emmy_hook.${EMMY_LUA_VERSION}")
+    if(CMAKE_SYSTEM_NAME MATCHES "Android")
+        message("use android lib name")
+        set(EMMY_CORE_NAME "libemmy_core")
+    else(CMAKE_SYSTEM_NAME)
+        set(EMMY_CORE_NAME "emmy_core.${EMMY_LUA_VERSION}")
+        set(EMMY_HOOK_NAME "emmy_hook.${EMMY_LUA_VERSION}")
+    endif()
 endif()
 
 project (${EMMY_CORE_NAME})
