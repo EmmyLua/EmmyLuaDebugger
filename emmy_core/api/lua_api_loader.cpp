@@ -88,7 +88,7 @@ IMP_LUA_API(lua_rawget);
 IMP_LUA_API(lua_rawset);
 IMP_LUA_API(lua_pushlightuserdata);
 IMP_LUA_API(lua_touserdata);
-IMP_LUA_API(lua_newuserdata);
+
 IMP_LUA_API(lua_rawseti);
 IMP_LUA_API(lua_rawgeti);
 //51
@@ -108,7 +108,10 @@ IMP_LUA_API_E(lua_pcallk);
 IMP_LUA_API_E(luaL_setfuncs);
 IMP_LUA_API_E(lua_absindex);
 IMP_LUA_API_E(lua_rotate);
-
+//51 & 52 & 53
+IMP_LUA_API_E(lua_newuserdata);
+//54
+IMP_LUA_API_E(lua_newuserdatauv);
 
 int lua_setfenv(lua_State* L, int idx) {
 	if (luaVersion == LuaVersion::LUA_51) {
@@ -125,6 +128,8 @@ int getDebugEvent(lua_Debug* ar) {
 		return ar->u.ar52.event;
 	case LuaVersion::LUA_53:
 		return ar->u.ar53.event;
+	case LuaVersion::LUA_54:
+		return ar->u.ar54.event;
 	default:
 		assert(false);
 		return 0;
@@ -139,6 +144,8 @@ int getDebugCurrentLine(lua_Debug* ar) {
 		return ar->u.ar52.currentline;
 	case LuaVersion::LUA_53:
 		return ar->u.ar53.currentline;
+	case LuaVersion::LUA_54:
+		return ar->u.ar54.currentline;
 	default:
 		assert(false);
 		return 0;
@@ -153,6 +160,8 @@ int getDebugLineDefined(lua_Debug* ar) {
 		return ar->u.ar52.linedefined;
 	case LuaVersion::LUA_53:
 		return ar->u.ar53.linedefined;
+	case LuaVersion::LUA_54:
+		return ar->u.ar54.linedefined;
 	default:
 		assert(false);
 		return 0;
@@ -167,6 +176,8 @@ const char* getDebugSource(lua_Debug* ar) {
 		return ar->u.ar52.source;
 	case LuaVersion::LUA_53:
 		return ar->u.ar53.source;
+	case LuaVersion::LUA_54:
+		return ar->u.ar54.source;
 	default:
 		assert(false);
 		return nullptr;
@@ -181,6 +192,8 @@ const char* getDebugName(lua_Debug* ar) {
 		return ar->u.ar52.name;
 	case LuaVersion::LUA_53:
 		return ar->u.ar53.name;
+	case LuaVersion::LUA_54:
+		return ar->u.ar54.name;
 	default:
 		assert(false);
 		return nullptr;
@@ -245,6 +258,8 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
 }
 
 int lua_upvalueindex(int i) {
+	if (luaVersion == LuaVersion::LUA_54)
+		return -1001000 - i;
 	if (luaVersion == LuaVersion::LUA_53)
 		return -1001000 - i;
 	if (luaVersion == LuaVersion::LUA_52)
@@ -269,6 +284,18 @@ void lua_remove(lua_State *L, int idx) {
 	else {
 		e_lua_rotate(L, (idx), -1);
 		lua_pop(L, 1);
+	}
+}
+
+void lua_newuserdata(lua_State* L, int size)
+{
+	if(luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_53)
+	{
+		e_lua_newuserdata(L, size);
+	}
+	else
+	{
+		e_lua_newuserdatauv(L, size, 1);
 	}
 }
 
@@ -306,7 +333,7 @@ extern "C" bool SetupLuaAPI() {
 	LOAD_LUA_API(lua_rawset);
 	LOAD_LUA_API(lua_pushlightuserdata);
 	LOAD_LUA_API(lua_touserdata);
-	LOAD_LUA_API(lua_newuserdata);
+	
 	LOAD_LUA_API(lua_rawseti);
 	LOAD_LUA_API(lua_rawgeti);
 	//51
@@ -326,10 +353,20 @@ extern "C" bool SetupLuaAPI() {
 	LOAD_LUA_API_E(lua_pcallk);
 	LOAD_LUA_API_E(luaL_setfuncs);
 	LOAD_LUA_API_E(lua_absindex);
+	// 51 & 52 & 53
+	LOAD_LUA_API_E(lua_newuserdata);
 	//53
 	LOAD_LUA_API_E(lua_rotate);
-
-	if (e_lua_rotate) {
+	//54
+	LOAD_LUA_API_E(lua_newuserdatauv);
+	
+	if(e_lua_newuserdatauv)
+	{
+		luaVersion = LuaVersion::LUA_54;
+		LUA_REGISTRYINDEX = -1001000;
+		LUA_GLOBALSINDEX = 2;
+	}
+	else if (e_lua_rotate) {
 		luaVersion = LuaVersion::LUA_53;
 		LUA_REGISTRYINDEX = -1001000;
 		LUA_GLOBALSINDEX = 2;
