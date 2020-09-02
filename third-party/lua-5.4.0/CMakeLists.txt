@@ -1,0 +1,34 @@
+cmake_minimum_required(VERSION 3.7)
+
+project (lua54)
+set(LUA_NAME "lua54")
+set(LINK_LIBRARIES ${LUA_NAME}_dll)
+
+
+if(WIN32)
+    add_definitions( -D_CRT_SECURE_NO_WARNINGS )
+elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
+    add_definitions( -DLUA_USE_LINUX )
+    list(APPEND LINK_LIBRARIES readline dl m)
+else()
+    add_definitions( -DLUA_USE_MACOSX )
+    list(APPEND LINK_LIBRARIES readline)
+endif()
+
+file(GLOB HEADER_LIST "src/*.h" "src/lua.hpp")
+aux_source_directory(src SRC_LIST)
+list(REMOVE_ITEM SRC_LIST "src/lua.c" "src/luac.c")
+
+# 2. lua static library
+if(WIN32)
+    add_definitions(-DLUA_BUILD_AS_DLL)
+endif(WIN32)
+
+add_library (${LUA_NAME}_a STATIC ${SRC_LIST} ${HEADER_LIST})
+
+# add_library (${LUA_NAME}_dll SHARED ${SRC_LIST} ${HEADER_LIST})
+# set_target_properties(${LUA_NAME}_dll PROPERTIES OUTPUT_NAME "lua")
+
+# add_executable(${LUA_NAME} "src/lua.c")
+# target_link_libraries(${LUA_NAME} ${LUA_NAME}_dll)
+# set_target_properties(${LUA_NAME} PROPERTIES OUTPUT_NAME "lua")

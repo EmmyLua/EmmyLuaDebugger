@@ -154,11 +154,33 @@ struct lua_Debug_53 {
 	struct CallInfo *i_ci;  /* active function */
 };
 
+struct lua_Debug_54 {
+	int event;
+	const char* name;	/* (n) */
+	const char* namewhat;	/* (n) 'global', 'local', 'field', 'method' */
+	const char* what;	/* (S) 'Lua', 'C', 'main', 'tail' */
+	const char* source;	/* (S) */
+	size_t srclen;	/* (S) */
+	int currentline;	/* (l) */
+	int linedefined;	/* (S) */
+	int lastlinedefined;	/* (S) */
+	unsigned char nups;	/* (u) number of upvalues */
+	unsigned char nparams;/* (u) number of parameters */
+	char isvararg;        /* (u) */
+	char istailcall;	/* (t) */
+	unsigned short ftransfer;   /* (r) index of first value transferred */
+	unsigned short ntransfer;   /* (r) number of transferred values */
+	char short_src[LUA_IDSIZE]; /* (S) */
+	/* private part */
+	struct CallInfo* i_ci;  /* active function */
+};
+
 struct lua_Debug {
 	union {
 		lua_Debug_51 ar51;
 		lua_Debug_52 ar52;
 		lua_Debug_53 ar53;
+		lua_Debug_54 ar54;
 	} u;
 };
 
@@ -281,8 +303,6 @@ typedef void(*dll_lua_pushlightuserdata)(lua_State *L, void *p);
 DEF_LUA_API(lua_pushlightuserdata);
 typedef void*(*dll_lua_touserdata)(lua_State *L, int idx);
 DEF_LUA_API(lua_touserdata);
-typedef void*(*dll_lua_newuserdata)(lua_State *L, int size);
-DEF_LUA_API(lua_newuserdata);
 typedef void*(*dll_lua_rawseti)(lua_State *L, int idx, lua_Integer n);
 DEF_LUA_API(lua_rawseti);
 typedef void*(*dll_lua_rawgeti)(lua_State *L, int idx, lua_Integer n);
@@ -319,9 +339,16 @@ typedef void (*dll_e_luaL_setfuncs)(lua_State* L, const luaL_Reg* l, int nup);
 DEF_LUA_API_E(luaL_setfuncs);
 typedef int(*dll_e_lua_absindex)(lua_State *L, int idx);
 DEF_LUA_API_E(lua_absindex);
+// 51 & 52 & 53
+typedef void* (*dll_e_lua_newuserdata)(lua_State* L, int size);
+DEF_LUA_API_E(lua_newuserdata);
 //53
 typedef void (*dll_e_lua_rotate)(lua_State *L, int idx, int n);
 DEF_LUA_API_E(lua_rotate);
+
+//54
+typedef void* (*dll_e_lua_newuserdatauv)(lua_State* L, int size, int nuvalue);
+DEF_LUA_API_E(lua_newuserdatauv);
 
 lua_Integer lua_tointeger(lua_State* L, int idx);
 lua_Number lua_tonumber(lua_State* L, int idx);
@@ -334,3 +361,4 @@ int lua_absindex(lua_State *L, int idx);
 void lua_call(lua_State* L, int nargs, int nresults);
 void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 void lua_remove(lua_State *L, int idx);
+void lua_newuserdata(lua_State* L, int size);
