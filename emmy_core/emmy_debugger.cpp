@@ -550,6 +550,16 @@ int EnvIndexFunction(lua_State* L) {
 		return 1;
 	}
 	lua_pop(L, 1);
+	// _ENV
+	lua_getfield(L, upvalues, "_ENV");
+	if (lua_istable(L, -1)) {
+		lua_getfield(L, -1, name); // _ENV[name]
+		if (lua_isnil(L, -1) == 0) {
+			return 1;
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
 	// local value
 	lua_getfield(L, locals, name);
 	if (lua_isnil(L, -1) == 0) {
