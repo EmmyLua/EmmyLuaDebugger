@@ -18,6 +18,7 @@
 #include "emmy_facade.h"
 #include "hook_state.h"
 #include <algorithm>
+#include <sstream>
 
 bool query_variable(Variable* variable, lua_State* L, const char* typeName, int object, int depth);
 
@@ -231,6 +232,13 @@ bool CallMetaFunction(lua_State* L, int valueIndex, const char* method, int numR
 	return false;
 }
 
+std::string ToPointer(lua_State* L, int index) {
+	const void* pointer = lua_topointer(L, index);
+	std::stringstream ss;
+	ss << lua_typename(L, lua_type(L, index)) << "(0x" << std::hex << pointer << ")";
+	return ss.str();
+}
+
 void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper) {
 	const int t1 = lua_gettop(L);
 	index = lua_absindex(L, index);
@@ -262,15 +270,8 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		variable->value = lua_tostring(L, index);
 		break;
 	}
-	case LUA_TFUNCTION: {
-		const void* fAddr = lua_topointer(L, index);
-		char buff[100];
-		snprintf(buff, sizeof(buff), "%p", fAddr);
-		variable->value = buff;
-		break;
-	}
 	case LUA_TUSERDATA: {
-		auto string = lua_tostring(L, index);
+		auto* string = lua_tostring(L, index);
 		if (string == nullptr) {
 			int result;
 			if (CallMetaFunction(L, t1, "__tostring", 1, result) && result == 0) {
@@ -282,10 +283,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			variable->value = string;
 		}
 		else {
-			const void* fAddr = lua_topointer(L, index);
-			char buff[100];
-			snprintf(buff, sizeof(buff), "%p", fAddr);
-			variable->value = buff;
+			variable->value = ToPointer(L, index);
 		}
 		if (depth > 1) {
 			if (lua_getmetatable(L, index)) {
@@ -295,18 +293,10 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		}
 		break;
 	}
-	case LUA_TLIGHTUSERDATA: {
-		const void* fAddr = lua_topointer(L, index);
-		char buff[100];
-		snprintf(buff, sizeof(buff), "%p", fAddr);
-		variable->value = buff;
-		break;
-	}
+	case LUA_TFUNCTION:
+	case LUA_TLIGHTUSERDATA:
 	case LUA_TTHREAD: {
-		const void* fAddr = lua_topointer(L, index);
-		char buff[100];
-		snprintf(buff, sizeof(buff), "%p", fAddr);
-		variable->value = buff;
+		variable->value = ToPointer(L, index);
 		break;
 	}
 	case LUA_TTABLE: {
@@ -317,7 +307,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			// k: -2, v: -1
 			if (depth > 1) {
 				//todo: use allocator
-				const auto v = new Variable();
+				auto* const v = new Variable();
 				const auto t = lua_type(L, -2);
 				v->nameType = t;
 				if (t == LUA_TSTRING) {
@@ -338,7 +328,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			tableSize++;
 		}
 		char buff[100];
-		snprintf(buff, sizeof(buff), "table(%p)", tableAddr);
+		snprintf(buff, sizeof(buff), "table(0x%p)", tableAddr);
 		variable->value = buff;
 		break;
 	}
