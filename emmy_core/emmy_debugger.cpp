@@ -737,6 +737,7 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 	if (r == LUA_OK) {
 		evalContext->result.name = evalContext->expr;
 		GetVariable(&evalContext->result, L, -1, evalContext->depth);
+		lua_pop(L, 1);
 		return true;
 	}
 	if (r == LUA_ERRRUN) {
