@@ -697,14 +697,12 @@ bool Debugger::Eval(EvalContext* evalContext, bool force) {
 bool Debugger::DoEval(EvalContext* evalContext) {
 	assert(currentStateL);
 	assert(evalContext);
-	const auto L = currentStateL;
+	auto* const L = currentStateL;
 	// From "cacheId"
 	if (evalContext->cacheId > 0) {
 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable|nil
 		if (lua_type(L, -1) == LUA_TTABLE) {
-			char Key[10];
-			sprintf(Key, "%d", evalContext->cacheId);
-			lua_getfield(L, -1, Key);							// 1: cacheTable, 2: value
+			lua_getfield(L, -1, std::to_string(evalContext->cacheId).c_str()); // 1: cacheTable, 2: value
 			GetVariable(&evalContext->result, L, -1, evalContext->depth);
 			lua_pop(L, 2);
 			return true;
