@@ -178,9 +178,10 @@ bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocat
 				}
 
 				// add local variable
-				auto var = stack->CreateVariable();
+				auto* var = stack->CreateVariable();
 				var->name = name;
 				GetVariable(var, L, -1, 1);
+				lua_pop(L, 1);
 				stack->localVariables.push_back(var);
 			}
 
@@ -193,9 +194,10 @@ bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocat
 					}
 
 					// add up variable
-					auto var = stack->CreateVariable();
+					auto* var = stack->CreateVariable();
 					var->name = name;
 					GetVariable(var, L, -1, 1);
+					lua_pop(L, 1);
 					stack->upvalueVariables.push_back(var);
 				}
 				// pop function
