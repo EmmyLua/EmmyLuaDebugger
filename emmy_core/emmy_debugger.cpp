@@ -310,16 +310,13 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 				auto* const v = new Variable();
 				const auto t = lua_type(L, -2);
 				v->nameType = t;
-				if (t == LUA_TSTRING) {
-					v->name = lua_tostring(L, -2);
-				}
-				else if (t == LUA_TNUMBER) {
+				if (t == LUA_TSTRING || t == LUA_TNUMBER || t == LUA_TBOOLEAN) {
 					lua_pushvalue(L, -2); // avoid error: "invalid key to 'next'" ???
 					v->name = lua_tostring(L, -1);
 					lua_pop(L, 1);
 				}
 				else {
-					v->name = lua_typename(L, t);
+					v->name = ToPointer(L, -2);
 				}
 				GetVariable(v, L, -1, depth - 1);
 				variable->children.push_back(v);
