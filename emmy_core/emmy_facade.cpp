@@ -297,6 +297,15 @@ void ReadBreakPoint(const rapidjson::Value& value, BreakPoint* bp) {
 	if (value.HasMember("line")) {
 		bp->line = value["line"].GetInt();
 	}
+	if (value.HasMember("condition")) {
+		bp->condition = value["condition"].GetString();
+	}
+	if (value.HasMember("hitCondition")) {
+		bp->hitCondition = value["hitCondition"].GetString();
+	}
+	if (value.HasMember("logMessage")) {
+		bp->hitCondition = value["logMessage"].GetString();
+	}
 }
 
 void EmmyFacade::OnAddBreakPointReq(const rapidjson::Document& document) {

@@ -118,8 +118,8 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 			}
 			luaThreadExecutors.clear();
 		}
-		const auto* bp = FindBreakPoint(L, ar);
-		if (bp) {
+		auto* bp = FindBreakPoint(L, ar);
+		if (bp && ProcessBreakPoint(bp)) {
 			HandleBreak(L);
 			return;
 		}
@@ -159,7 +159,7 @@ bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocat
 		if (!lua_getinfo(L, "nSlu", &ar)) {
 			continue;
 		}
-		auto stack = alloc();
+		auto* stack = alloc();
 		stack->file = GetFile(L, &ar);
 		stack->functionName = getDebugName(&ar) == nullptr ? "" : getDebugName(&ar);
 		stack->level = level;
@@ -510,11 +510,14 @@ void ParsePathParts(const std::string& file, std::vector<std::string>& paths) {
 
 void Debugger::AddBreakPoint(const BreakPoint& breakPoint) {
 	std::lock_guard <std::mutex> lock(mutexBP);
-	const auto bp = new BreakPoint();
+	auto* const bp = new BreakPoint();
 	bp->file = breakPoint.file;
 	std::transform(bp->file.begin(), bp->file.end(), bp->file.begin(), tolower);
 	bp->condition = breakPoint.condition;
+	bp->hitCondition = breakPoint.hitCondition;
+	bp->logMessage = breakPoint.logMessage;
 	bp->line = breakPoint.line;
+	bp->hitCount = 0;
 	ParsePathParts(bp->file, bp->pathParts);
 	breakPoints.push_back(bp);
 	RefreshLineSet();
@@ -636,6 +639,25 @@ bool Debugger::CreateEnv(int stackLevel) {
 
 	top = lua_gettop(L);
 	assert(top == env);
+	return true;
+}
+
+bool Debugger::ProcessBreakPoint(BreakPoint* bp) {
+	if (!bp->condition.empty()) {
+		EvalContext ctx{};
+		ctx.expr = bp->condition;
+		bool suc = DoEval(&ctx);
+		return suc && ctx.result.valueType == LUA_TBOOLEAN && ctx.result.value == "true";
+	}
+	if (!bp->logMessage.empty()) {
+		EmmyFacade::Get()->SendLog(LogType::Info, bp->logMessage.c_str());
+		return false;
+	}
+	if (!bp->hitCondition.empty()) {
+		bp->hitCount++;
+		//TODO check hit condition
+		return false;
+	}
 	return true;
 }
 
@@ -765,7 +787,7 @@ BreakPoint* Debugger::FindBreakPoint(const std::string& file, int line) {
 	ParsePathParts(lowerCaseFile, pathParts);
 	auto it = breakPoints.begin();
 	while (it != breakPoints.end()) {
-		const auto bp = *it;
+		auto* const bp = *it;
 		if (bp->line == line) {
 			// full match: bp(a/b/c), file(a/b/c)
 			if (bp->file == lowerCaseFile) {

@@ -102,6 +102,7 @@ private:
 	void SetHookState(lua_State* L, HookState* newState);
 	void CheckDoString(lua_State* L);
 	bool CreateEnv(int stackLevel);
+	bool ProcessBreakPoint(BreakPoint* bp);
 	bool DoEval(EvalContext* evalContext);
 	bool MatchFileName(const std::string& chunkName, const std::string& fileName) const;
 	void CacheValue(lua_State* L, int valueIndex, Variable* variable) const;
