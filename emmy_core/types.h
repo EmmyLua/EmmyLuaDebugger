@@ -49,6 +49,7 @@ public:
 	int cacheId;
 	Variable();
 	~Variable();
+	Variable* Clone();
 };
 
 class Stack {

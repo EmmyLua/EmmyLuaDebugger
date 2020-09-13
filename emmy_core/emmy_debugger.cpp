@@ -327,9 +327,37 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			lua_pop(L, 1);
 			tableSize++;
 		}
-		char buff[100];
-		snprintf(buff, sizeof(buff), "table(0x%p)", tableAddr);
-		variable->value = buff;
+
+		if (lua_getmetatable(L, index)) {
+			// metatable
+			auto* metatable = new Variable;
+			metatable->name = "metatable";
+			metatable->nameType = LUA_TSTRING;
+			GetVariable(metatable, L, -1, 2);
+			variable->children.push_back(metatable);
+
+			// __index
+			{
+				if (lua_getfield(L, -1, "__index")) {
+					Variable v;
+					GetVariable(&v, L, -1, 2);
+					if (depth > 1) {
+						for (auto* child : v.children) {
+							variable->children.push_back(child->Clone());
+						}
+					}
+					tableSize += v.children.size();
+				}
+				lua_pop(L, 1);
+			}
+
+			// metatable
+			lua_pop(L, 1);
+		}
+		
+		std::stringstream ss;
+		ss << "table(0x" << std::hex << tableAddr << std::dec << ", size = " << tableSize << ")";
+		variable->value = ss.str();
 		break;
 	}
 	}

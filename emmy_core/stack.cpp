@@ -20,24 +20,38 @@ Variable::Variable(): nameType(LUA_TSTRING), valueType(0), cacheId(0){
 }
 
 Variable::~Variable() {
-	for (auto child : children) {
+	for (auto* child : children) {
 		delete child;
 	}
+}
+
+Variable* Variable::Clone() {
+	auto* to = new Variable;
+	to->name = name;
+	to->nameType = nameType;
+	to->value = value;
+	to->valueType = valueType;
+	to->valueTypeName = valueTypeName;
+	for (auto* child : children) {
+		auto* c = new Variable;
+		to->children.push_back(child->Clone());
+	}
+	return to;
 }
 
 Stack::Stack(): level(0), line(0) {
 }
 
 Stack::~Stack() {
-	for (auto var : localVariables) {
+	for (auto* var : localVariables) {
 		delete var;
 	}
-	for (auto var : upvalueVariables) {
+	for (auto* var : upvalueVariables) {
 		delete var;
 	}
 }
 
 Variable* Stack::CreateVariable() {
-	auto variable = new Variable();
+	auto* variable = new Variable();
 	return variable;
 }
