@@ -120,7 +120,7 @@ void Debugger::Hook(lua_State* L, lua_Debug* ar) {
 			luaThreadExecutors.clear();
 		}
 		auto* bp = FindBreakPoint(L, ar);
-		if (bp && ProcessBreakPoint(bp)) {
+		if (bp && ProcessBreakPoint(L, bp)) {
 			HandleBreak(L);
 			return;
 		}
@@ -485,7 +485,7 @@ void Debugger::EnterDebugMode(lua_State* L) {
 			lockEval.unlock();
 			const bool skip = skipHook;
 			skipHook = true;
-			evalContext->success = DoEval(evalContext);
+			evalContext->success = DoEval(currentStateL, evalContext);
 			skipHook = skip;
 			EmmyFacade::Get()->OnEvalResult(evalContext);
 			continue;
@@ -595,9 +595,9 @@ int EnvIndexFunction(lua_State* L) {
 	return 0;
 }
 
-bool Debugger::CreateEnv(int stackLevel) {
-	assert(currentStateL);
-	const auto L = currentStateL;
+bool Debugger::CreateEnv(lua_State* L, int stackLevel) {
+	//assert(currentStateL);
+	//const auto L = currentStateL;
 
 	lua_Debug ar{};
 	if (!lua_getstack(L, stackLevel, &ar)) {
@@ -657,11 +657,11 @@ bool Debugger::CreateEnv(int stackLevel) {
 	return true;
 }
 
-bool Debugger::ProcessBreakPoint(BreakPoint* bp) {
+bool Debugger::ProcessBreakPoint(lua_State* L, BreakPoint* bp) {
 	if (!bp->condition.empty()) {
 		EvalContext ctx{};
 		ctx.expr = bp->condition;
-		bool suc = DoEval(&ctx);
+		bool suc = DoEval(L, &ctx);
 		return suc && ctx.result.valueType == LUA_TBOOLEAN && ctx.result.value == "true";
 	}
 	if (!bp->logMessage.empty()) {
@@ -720,7 +720,7 @@ void Debugger::CheckDoString(lua_State* L) {
 // message thread
 bool Debugger::Eval(EvalContext* evalContext, bool force) {
 	if (force)
-		return DoEval(evalContext);
+		return DoEval(currentStateL, evalContext);
 	if (!blocking)
 		return false;
 	std::unique_lock<std::mutex> lock(mutexEval);
@@ -731,10 +731,10 @@ bool Debugger::Eval(EvalContext* evalContext, bool force) {
 }
 
 // host thread
-bool Debugger::DoEval(EvalContext* evalContext) {
-	assert(currentStateL);
+bool Debugger::DoEval(lua_State* L, EvalContext* evalContext) {
+	assert(L);
 	assert(evalContext);
-	auto* const L = currentStateL;
+	//auto* const L = currentStateL;
 	// From "cacheId"
 	if (evalContext->cacheId > 0) {
 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable|nil
@@ -758,7 +758,7 @@ bool Debugger::DoEval(EvalContext* evalContext) {
 	// call
 	const int fIdx = lua_gettop(L);
 	// create env
-	if (!CreateEnv(evalContext->stackLevel))
+	if (!CreateEnv(L, evalContext->stackLevel))
 		return false;
 	// setup env
 #ifndef EMMY_USE_LUA_SOURCE

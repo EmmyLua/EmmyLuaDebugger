@@ -101,9 +101,9 @@ private:
 	void HandleBreak(lua_State* L);
 	void SetHookState(lua_State* L, HookState* newState);
 	void CheckDoString(lua_State* L);
-	bool CreateEnv(int stackLevel);
-	bool ProcessBreakPoint(BreakPoint* bp);
-	bool DoEval(EvalContext* evalContext);
+	bool CreateEnv(lua_State* L, int stackLevel);
+	bool ProcessBreakPoint(lua_State* L, BreakPoint* bp);
+	bool DoEval(lua_State* L,EvalContext* evalContex);
 	bool MatchFileName(const std::string& chunkName, const std::string& fileName) const;
 	void CacheValue(lua_State* L, int valueIndex, Variable* variable) const;
 	void ClearCache(lua_State* L) const;
