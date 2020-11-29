@@ -16,6 +16,7 @@
 #include "emmy_core.h"
 #include "types.h"
 #include "emmy_debugger.h"
+#include "lua_guard.h"
 
 #define HELPER_NAME "emmyHelper"
 
@@ -162,6 +163,7 @@ int emmyHelperInit(lua_State* L) {
 int luaopen_emmy_helper(lua_State* L) {
 	initialized = false;
 
+	LuaGlobalIgnoreMetatable guard(L);
 	lua_pushcfunction(L, emmyHelperInit);
     lua_setglobal(L, "emmyHelperInit");
 

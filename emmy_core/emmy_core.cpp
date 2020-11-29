@@ -15,6 +15,7 @@
 */
 #include "emmy_core.h"
 #include "emmy_facade.h"
+#include "lua_guard.h"
 
 int luaopen_emmy_helper(lua_State* L);
 
@@ -155,6 +156,7 @@ extern "C" {
 
 		// _G.emmy_core
 		lua_pushvalue(L, -1);
+		LuaGlobalIgnoreMetatable guard(L);
 		lua_setglobal(L, "emmy_core");
 		
 		return 1;

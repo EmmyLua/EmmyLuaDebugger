@@ -17,6 +17,7 @@
 #include "emmy_core.h"
 #include "emmy_facade.h"
 #include "hook_state.h"
+#include "lua_guard.h"
 #include <algorithm>
 #include <sstream>
 
@@ -85,6 +86,7 @@ void Debugger::Attach(lua_State* L) {
 	// execute helper code
 	if (!helperCode.empty()) {
 		ExecuteOnLuaThread([this](lua_State* L) {
+			LuaGlobalIgnoreMetatable guard(L);
 			const int t = lua_gettop(L);
 			const int r = luaL_loadstring(L, helperCode.c_str());
 			if (r == LUA_OK) {
