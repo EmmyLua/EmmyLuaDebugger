@@ -4,28 +4,31 @@ LuaGlobalIgnoreMetatable::LuaGlobalIgnoreMetatable(lua_State* L)
 	: _L(L), _idx(-1), _metaIdx(-1), _top(0)
 {
 	_top = lua_gettop(L);
-	// È«¾Ö±äÁ¿Ñ¹Õ»
-	lua_getglobal(L, "_G");
+	// å…¨å±€å˜é‡å‹æ ˆ
+	if(lua_getglobal(L, "_G") != LUA_TTABLE)
+	{
+		return;
+	}
 	_idx = lua_gettop(L);
 	int ret = lua_getmetatable(L, _idx);
-	// ÈôÓĞÔª±í
+	// è‹¥æœ‰å…ƒè¡¨
 	if (ret == 1) {
-		_metaIdx = lua_gettop(L);// ´ËÊ±_GµÄÔª±íÊÇÕ»¶¥ÔªËØ
+		_metaIdx = lua_gettop(L);// æ­¤æ—¶_Gçš„å…ƒè¡¨æ˜¯æ ˆé¡¶å…ƒç´ 
 		lua_pushnil(L);
 		lua_setmetatable(L, _idx);
-		// ´ËÊ±Õ»¶¥¾ÍÊÇ Ö®Ç°µÄÔª±í
+		// æ­¤æ—¶æ ˆé¡¶å°±æ˜¯ ä¹‹å‰çš„å…ƒè¡¨
 	}
 	
 }
 
 LuaGlobalIgnoreMetatable ::~LuaGlobalIgnoreMetatable() {
 	if (_metaIdx != -1) {
-		// Ö®ÉÏÎŞÂÛ¸ÉÁËÉ¶,È«Çåµô
+		// ä¹‹ä¸Šæ— è®ºå¹²äº†å•¥,å…¨æ¸…æ‰
 		lua_settop(_L, _metaIdx);
-		// set metatable »áµ¯³öÕ»¶¥ÔªËØ
+		// set metatable ä¼šå¼¹å‡ºæ ˆé¡¶å…ƒç´ 
 		lua_setmetatable(_L, _idx);
 		
 	}
-	//´ËÊ±Õ»¶¥±£³ÖºÍguard Ö®Ç°Ò»Ñù
+	//æ­¤æ—¶æ ˆé¡¶ä¿æŒå’Œguard ä¹‹å‰ä¸€æ ·
 	lua_settop(_L, _top);
 }
