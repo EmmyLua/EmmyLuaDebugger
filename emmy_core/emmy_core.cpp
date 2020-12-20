@@ -154,8 +154,11 @@ extern "C" {
 		luaL_setfuncs(L, lib, 0);
 
 		// _G.emmy_core
-		lua_pushvalue(L, -1);
-		lua_setglobal(L, "emmy_core");
+		lua_getglobal(L, "_G");
+		lua_pushstring(L, "emmy_core");
+		lua_pushvalue(L, -3);
+		lua_rawset(L, -3);
+		lua_pop(L, 1);
 		
 		return 1;
 	}

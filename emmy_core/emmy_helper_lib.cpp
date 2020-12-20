@@ -162,8 +162,11 @@ int emmyHelperInit(lua_State* L) {
 int luaopen_emmy_helper(lua_State* L) {
 	initialized = false;
 
+	lua_getglobal(L, "_G");
+	lua_pushstring(L, "emmyHelperInit");
 	lua_pushcfunction(L, emmyHelperInit);
-    lua_setglobal(L, "emmyHelperInit");
+	lua_rawset(L, -3);
+	lua_pop(L, 1);
 
 	return 0;
 }
