@@ -335,7 +335,8 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 
 			// __index
 			{
-				if (lua_getfield(L, -1, "__index")) {
+				lua_getfield(L, -1, "__index");
+				if (!lua_isnil(L, -1)) {
 					Variable v;
 					GetVariable(&v, L, -1, 2);
 					if (depth > 1) {
