@@ -59,6 +59,8 @@ elseif(${EMMY_LUA_VERSION} STREQUAL "51")
     add_definitions(-DEMMY_LUA_51)
 endif()
 
+add_definitions(-DEMMY_CORE_VERSION="1.0.16")
+
 add_subdirectory(third-party/${EMMY_LUA_DIR})
 add_subdirectory(third-party/libuv-1.29.0)
 add_subdirectory(emmy_core)

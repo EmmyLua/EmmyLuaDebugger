@@ -15,7 +15,7 @@
 */
 #pragma once
 
-#define EMMY_CORE_VERSION "1.0.0"
+//#define EMMY_CORE_VERSION "1.0.0"
 
 #ifdef _MSC_VER
 #define EMMY_CORE_EXPORT    __declspec(dllexport)

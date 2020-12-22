@@ -382,6 +382,6 @@ extern "C" bool SetupLuaAPI() {
 		LUA_REGISTRYINDEX = -10000;
 		LUA_GLOBALSINDEX = -10002;
 	}
-	printf("[EMMY]lua version: %d\n", luaVersion);
+	printf("[EMMY] version: %s, lua version: %d\n", EMMY_CORE_VERSION, luaVersion);
 	return true;
 }
