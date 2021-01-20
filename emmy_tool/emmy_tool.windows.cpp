@@ -89,7 +89,7 @@ bool StartProcessAndRunToEntry(LPCSTR exeFileName,
 						// Suspend the thread before we continue the debug event so that the program
 						// doesn't continue to run.
 						SuspendThread(processInfo.hThread);
-
+						
 					}
 
 					continueStatus = DBG_CONTINUE;
