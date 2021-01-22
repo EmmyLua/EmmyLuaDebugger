@@ -11,10 +11,10 @@ void SetBreakpoint(HANDLE hProcess, LPVOID entryPoint, bool set, BYTE* data);
 bool InjectDllForProcess(HANDLE hProcess, const char* dllDir, const char* dllFileName);
 
 bool StartProcessAndInjectDll(LPCSTR exeFileName,
-                               LPSTR command,
-                               LPCSTR directory,
-                               PROCESS_INFORMATION& processInfo,
-                               CommandLine& commandLine)
+                              LPSTR command,
+                              LPCSTR directory,
+                              PROCESS_INFORMATION& processInfo,
+                              CommandLine& commandLine)
 {
 	STARTUPINFO startUpInfo{};
 	startUpInfo.cb = sizeof(startUpInfo);
@@ -56,7 +56,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 		BYTE breakPointData;
 		bool done = false;
-
+		bool hasInject = false;
 		while (!done)
 		{
 			DEBUG_EVENT debugEvent;
@@ -66,39 +66,57 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 			if (debugEvent.dwDebugEventCode == EXCEPTION_DEBUG_EVENT)
 			{
-				if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP ||
-					debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
+				if (!hasInject)
 				{
-					CONTEXT context;
-					context.ContextFlags = CONTEXT_FULL;
-
-					GetThreadContext(processInfo.hThread, &context);
-#if _WIN64
-					if (context.Rip == entryPoint + 1)
-#else
-					if (context.Eip == entryPoint + 1)
-#endif
+					if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP ||
+						debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
 					{
-						// Restore the original code bytes.
-						SetBreakpoint(processInfo.hProcess, (LPVOID)entryPoint, false, &breakPointData);
-						done = true;
+						CONTEXT context;
+						context.ContextFlags = CONTEXT_FULL;
 
-						// Backup the instruction pointer so that we execute the original instruction.
+						GetThreadContext(processInfo.hThread, &context);
 #if _WIN64
-						--context.Rip;
+						if (context.Rip == entryPoint + 1)
 #else
-						--context.Eip;
+						if (context.Eip == entryPoint + 1)
 #endif
-						SetThreadContext(processInfo.hThread, &context);
-												
-						// Suspend the thread before we continue the debug event so that the program
-						// doesn't continue to run.
-						SuspendThread(processInfo.hThread);
-						
-					}
+						{
+							// Restore the original code bytes.
+							SetBreakpoint(processInfo.hProcess, (LPVOID)entryPoint, false, &breakPointData);
+							// done = true;
 
-					continueStatus = DBG_CONTINUE;
+							// Backup the instruction pointer so that we execute the original instruction.
+#if _WIN64
+							--context.Rip;
+#else
+							--context.Eip;
+#endif
+							SetThreadContext(processInfo.hThread, &context);
+
+							// Suspend the thread before we continue the debug event so that the program
+							// doesn't continue to run.
+							SuspendThread(processInfo.hThread);
+
+							// 鐭殏鐨勫仠姝ebug
+							DebugActiveProcessStop(processInfo.dwProcessId);
+
+							InjectDllForProcess(processInfo.hProcess, commandLine.GetArg("dir").c_str(),
+							                    commandLine.GetArg("dll").c_str());
+							// InjectDll(processInfo.dwProcessId, commandLine.GetArg("dir").c_str(), commandLine.GetArg("dll").c_str());
+							std::cout << "[PID]" << processInfo.dwProcessId << std::endl;
+							std::string connected;
+							std::cin >> connected;
+
+							// 鎭㈠debug
+							DebugActiveProcess(processInfo.dwProcessId);
+							// std::cout << "[EMMY]" + connected << std::endl;
+							ResumeThread(processInfo.hThread);
+							// done = true;
+							hasInject = true;
+						}
+					}
 				}
+				continueStatus = DBG_CONTINUE;
 			}
 			else if (debugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
 			{
@@ -106,13 +124,15 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 			}
 			else if (debugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT)
 			{
-				// Offset the entry point by the load address of the process.
-				entryPoint += reinterpret_cast<size_t>(debugEvent.u.CreateProcessInfo.lpBaseOfImage);
+				if (!hasInject)
+				{
+					// Offset the entry point by the load address of the process.
+					entryPoint += reinterpret_cast<size_t>(debugEvent.u.CreateProcessInfo.lpBaseOfImage);
 
-				// Write a break point at the entry point of the application so that we
-				// will stop when we reach that point.
-				SetBreakpoint(processInfo.hProcess, reinterpret_cast<void*>(entryPoint), true, &breakPointData);
-
+					// Write a break point at the entry point of the application so that we
+					// will stop when we reach that point.
+					SetBreakpoint(processInfo.hProcess, reinterpret_cast<void*>(entryPoint), true, &breakPointData);
+				}
 				CloseHandle(debugEvent.u.CreateProcessInfo.hFile);
 			}
 			else if (debugEvent.dwDebugEventCode == LOAD_DLL_DEBUG_EVENT)
@@ -123,17 +143,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 			ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
 		}
 	}
-	
 	DebugActiveProcessStop(processInfo.dwProcessId);
-
-	InjectDllForProcess(processInfo.hProcess, commandLine.GetArg("dir").c_str(), commandLine.GetArg("dll").c_str());
-	// InjectDll(processInfo.dwProcessId, commandLine.GetArg("dir").c_str(), commandLine.GetArg("dll").c_str());
-	std::cout << "[PID]" << processInfo.dwProcessId << std::endl;
-	std::string connected;
-	std::cin >> connected;
-	std::cout << "[EMMY]" + connected << std::endl;
-	ResumeThread(processInfo.hThread);
-	
 	return true;
 }
 
@@ -364,17 +374,17 @@ bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName)
 	return success;
 }
 
-// 和InjectDll 实现不同的是，不会closeHandle
+// 鍜孖njectDll 瀹炵幇涓嶅悓鐨勬槸锛屼笉浼歝loseHandle
 bool InjectDllForProcess(HANDLE hProcess, const char* dllDir, const char* dllFileName)
 {
 	bool success = true;
 	DWORD exitCode = 0;
-	
+
 	// Set dll directory
 	void* dllDirRemote = RemoteDup(hProcess, dllDir, strlen(dllDir) + 1);
 	ExecuteRemoteKernelFuntion(hProcess, "SetDllDirectoryA", dllDirRemote, exitCode);
 	VirtualFreeEx(hProcess, dllDirRemote, 0, MEM_RELEASE);
-	
+
 	// Load the DLL.
 	void* remoteFileName = RemoteDup(hProcess, dllFileName, strlen(dllFileName) + 1);
 	success &= ExecuteRemoteKernelFuntion(hProcess, "LoadLibraryA", remoteFileName, exitCode);
