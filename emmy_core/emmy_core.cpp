@@ -153,8 +153,9 @@ extern "C" {
 		luaL_newlibtable(L, lib);
 		luaL_setfuncs(L, lib, 0);
 
+		// 对lua解释器来讲他先pcall，再执行openlib,所以lua_getglobal _G并不靠谱
 		// _G.emmy_core
-		lua_getglobal(L, "_G");
+		lua_pushglobaltable(L);
 		lua_pushstring(L, "emmy_core");
 		lua_pushvalue(L, -3);
 		lua_rawset(L, -3);

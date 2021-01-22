@@ -287,15 +287,27 @@ void lua_remove(lua_State *L, int idx) {
 	}
 }
 
-void lua_newuserdata(lua_State* L, int size)
+void* lua_newuserdata(lua_State* L, int size)
 {
 	if(luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_53)
 	{
-		e_lua_newuserdata(L, size);
+		return e_lua_newuserdata(L, size);
 	}
 	else
 	{
-		e_lua_newuserdatauv(L, size, 1);
+		return e_lua_newuserdatauv(L, size, 1);
+	}
+}
+
+void lua_pushglobaltable(lua_State* L)
+{
+	if(luaVersion == LuaVersion::LUA_51)
+	{
+		lua_rawgeti(L, LUA_GLOBALSINDEX, LUA_GLOBALSINDEX);
+	}
+	else
+	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_GLOBALSINDEX);
 	}
 }
 

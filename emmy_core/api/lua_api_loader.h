@@ -223,6 +223,7 @@ typedef struct luaL_Reg {
 ////////////////////////////////////////////////////////////////////////////////////////
 extern int LUA_REGISTRYINDEX;
 
+
 #if defined(__GNUC__) && ((__GNUC__*100 + __GNUC_MINOR__) >= 302) && defined(__ELF__)
 #define FUNC __attribute__((visibility("hidden")))
 #else
@@ -361,4 +362,5 @@ int lua_absindex(lua_State *L, int idx);
 void lua_call(lua_State* L, int nargs, int nresults);
 void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 void lua_remove(lua_State *L, int idx);
-void lua_newuserdata(lua_State* L, int size);
+void* lua_newuserdata(lua_State* L, int size);
+void lua_pushglobaltable(lua_State* L);
