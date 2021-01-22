@@ -85,7 +85,7 @@ bool CommandLine::Parse(int argc, char** argv)
 
 			// 该选项之后没有接参数
 			// 目前没有支持bool选项的必要
-			if (argc <= (index + 1))
+			if (argc <= (index + 1) && !option.RestOfAll)
 			{
 				return false;
 			}

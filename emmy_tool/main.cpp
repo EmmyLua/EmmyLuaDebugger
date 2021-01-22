@@ -130,7 +130,6 @@ int main(int argc, char** argv)
 	}
 	if (target == "run_and_attach")
 	{
-		std::cout << "hello run debug" << std::endl;
 		//emmy_tool.exe run_and_attach -dir c:/xx -dll emmy_hook.dll -work d:fff/ -exe c:/lua/lua.exe -args test.lua
 		return doRunAndAttach(commandLine);
 	}
