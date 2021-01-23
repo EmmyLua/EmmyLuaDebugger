@@ -26,7 +26,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 		return false;
 	}
 
-	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS;
+	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS ;
 	if (true)
 		flags |= CREATE_NEW_CONSOLE;
 	else
@@ -102,14 +102,15 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 							InjectDllForProcess(processInfo.hProcess, commandLine.GetArg("dir").c_str(),
 							                    commandLine.GetArg("dll").c_str());
-							// InjectDll(processInfo.dwProcessId, commandLine.GetArg("dir").c_str(), commandLine.GetArg("dll").c_str());
+
+							// output PID for connect
 							std::cout << "[PID]" << processInfo.dwProcessId << std::endl;
 							std::string connected;
+							// block thread
 							std::cin >> connected;
 
 							// 恢复debug
 							DebugActiveProcess(processInfo.dwProcessId);
-							// std::cout << "[EMMY]" + connected << std::endl;
 							ResumeThread(processInfo.hThread);
 							// done = true;
 							hasInject = true;
@@ -120,6 +121,10 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 			}
 			else if (debugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
 			{
+				SuspendThread(processInfo.hThread);
+				std::string breakQuit;
+				// block thread
+				std::cin >> breakQuit;
 				done = true;
 			}
 			else if (debugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT)
@@ -133,17 +138,21 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 					// will stop when we reach that point.
 					SetBreakpoint(processInfo.hProcess, reinterpret_cast<void*>(entryPoint), true, &breakPointData);
 				}
+
 				CloseHandle(debugEvent.u.CreateProcessInfo.hFile);
 			}
 			else if (debugEvent.dwDebugEventCode == LOAD_DLL_DEBUG_EVENT)
 			{
 				CloseHandle(debugEvent.u.LoadDll.hFile);
 			}
-
 			ContinueDebugEvent(debugEvent.dwProcessId, debugEvent.dwThreadId, continueStatus);
 		}
 	}
 	DebugActiveProcessStop(processInfo.dwProcessId);
+
+	CloseHandle(processInfo.hProcess);
+	CloseHandle(processInfo.hThread);
+	
 	return true;
 }
 
