@@ -26,7 +26,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 		return false;
 	}
 
-	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS ;
+	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS;
 	if (true)
 		flags |= CREATE_NEW_CONSOLE;
 	else
@@ -66,10 +66,10 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 			if (debugEvent.dwDebugEventCode == EXCEPTION_DEBUG_EVENT)
 			{
-				if (!hasInject)
+				if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP ||
+					debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
 				{
-					if (debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_SINGLE_STEP ||
-						debugEvent.u.Exception.ExceptionRecord.ExceptionCode == EXCEPTION_BREAKPOINT)
+					if (!hasInject)
 					{
 						CONTEXT context;
 						context.ContextFlags = CONTEXT_FULL;
@@ -91,7 +91,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 #else
 							--context.Eip;
 #endif
-							SetThreadContext(processInfo.hThread, &context);
+							// SetThreadContext(processInfo.hThread, &context);
 
 							// Suspend the thread before we continue the debug event so that the program
 							// doesn't continue to run.
@@ -116,8 +116,9 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 							hasInject = true;
 						}
 					}
+
+					continueStatus = DBG_CONTINUE;
 				}
-				continueStatus = DBG_CONTINUE;
 			}
 			else if (debugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
 			{
@@ -152,7 +153,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 	CloseHandle(processInfo.hProcess);
 	CloseHandle(processInfo.hThread);
-	
+
 	return true;
 }
 
