@@ -22,9 +22,10 @@ public:
 	 * \param restOfAll 为true 表示此参数之后的所有参数共同构成该参数的内容
 	 */
 	void AddArg(const std::string& name, bool restOfAll = false);
-
+	
 	/**
 	 * \brief 添加解析目标例如 attach
+	 * \param isParse 是否解析后续参数
 	 */
 	void AddTarget(const std::string& name, bool isParse = true);
 

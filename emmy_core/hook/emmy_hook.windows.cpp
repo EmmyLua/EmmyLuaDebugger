@@ -9,10 +9,12 @@
 #include "libpe/libpe.h"
 #include "../emmy_facade.h"
 
-typedef int(*_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
-typedef int(*_lua_pcallk)(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k);
+typedef int (*_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
+
+typedef int (*_lua_pcallk)(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k);
 
 typedef HMODULE (WINAPI *LoadLibraryExW_t)(LPCWSTR lpFileName, HANDLE hFile, DWORD dwFlags);
+
 LoadLibraryExW_t LoadLibraryExW_dll = nullptr;
 
 std::mutex mutexPostLoadModule;
@@ -21,9 +23,10 @@ std::set<std::string> loadedModules;
 HOOK_STATUS Hook(void* InEntryPoint,
                  void* InHookProc,
                  void* InCallback,
-                 HOOK_HANDLE OutHandle) {
+                 HOOK_HANDLE OutHandle)
+{
 	const auto hHook = new HOOK_TRACE_INFO();
-	ULONG ACLEntries[1] = { 0 };
+	ULONG ACLEntries[1] = {0};
 	HOOK_STATUS status = LhInstallHook(
 		InEntryPoint,
 		InHookProc,
@@ -35,13 +38,15 @@ HOOK_STATUS Hook(void* InEntryPoint,
 	return status;
 }
 
-HOOK_STATUS UnHook(HOOK_HANDLE InHandle) {
+HOOK_STATUS UnHook(HOOK_HANDLE InHandle)
+{
 	ULONG ACLEntries[1] = {0};
 	const HOOK_STATUS status = LhSetExclusiveACL(ACLEntries, 0, InHandle);
 	return status;
 }
 
-int lua_pcall_worker(lua_State* L, int nargs, int nresults, int errfunc) {
+int lua_pcall_worker(lua_State* L, int nargs, int nresults, int errfunc)
+{
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
 	const auto pcall = (_lua_pcall)lp;
@@ -49,7 +54,8 @@ int lua_pcall_worker(lua_State* L, int nargs, int nresults, int errfunc) {
 	return pcall(L, nargs, nresults, errfunc);
 }
 
-int lua_pcallk_worker(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k) {
+int lua_pcallk_worker(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k)
+{
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
 	const auto pcallk = (_lua_pcallk)lp;
@@ -57,8 +63,9 @@ int lua_pcallk_worker(lua_State* L, int nargs, int nresults, int errfunc, lua_KC
 	return pcallk(L, nargs, nresults, errfunc, ctx, k);
 }
 
-int lua_error_worker(lua_State *L) {
-	typedef int (*dll_lua_error)(lua_State *);
+int lua_error_worker(lua_State* L)
+{
+	typedef int (*dll_lua_error)(lua_State*);
 	EmmyFacade::Get()->Attach(L);
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
@@ -79,7 +86,8 @@ int lua_error_worker(lua_State *L) {
 	}\
 }
 
-void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols) {
+void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols)
+{
 	if (symbols.empty())
 		return;
 	// lua 5.1
@@ -89,7 +97,8 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols) {
 	HOOK(lua_error, lua_error_worker, true);
 }
 
-void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
+void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule)
+{
 	char moduleName[_MAX_PATH];
 	ZeroMemory(moduleName, _MAX_PATH);
 	DWORD nameLen = GetModuleBaseName(hProcess, hModule, moduleName, _MAX_PATH);
@@ -106,9 +115,11 @@ void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 			return;
 
 		char windowsPath[MAX_PATH];
-		if (SHGetFolderPath(nullptr, CSIDL_WINDOWS, nullptr, SHGFP_TYPE_CURRENT, windowsPath) == 0) {
+		if (SHGetFolderPath(nullptr, CSIDL_WINDOWS, nullptr, SHGFP_TYPE_CURRENT, windowsPath) == 0)
+		{
 			std::string module_path = modulePath;
-			if (module_path.find(windowsPath) != std::string::npos) {
+			if (module_path.find(windowsPath) != std::string::npos)
+			{
 				return;
 			}
 		}
@@ -117,7 +128,8 @@ void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 	{
 		static const char* emmyModules[] = {"emmy_hook.dll", "EasyHook.dll"};
 		std::string module_path = modulePath;
-		for (const char* emmyModuleName : emmyModules) {
+		for (const char* emmyModuleName : emmyModules)
+		{
 			if (strcmp(moduleName, emmyModuleName) == 0)
 				return;
 		}
@@ -131,11 +143,15 @@ void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 
 	if (st == PE_SUCCESS)
 		st = peParseExportTable(&pe, INT32_MAX);
-	if (st == PE_SUCCESS && PE_HAS_TABLE(&pe, ExportTable)) {
-		PE_FOREACH_EXPORTED_SYMBOL(&pe, pSymbol) {
-			if (PE_SYMBOL_HAS_NAME(pSymbol)) {
+	if (st == PE_SUCCESS && PE_HAS_TABLE(&pe, ExportTable))
+	{
+		PE_FOREACH_EXPORTED_SYMBOL(&pe, pSymbol)
+		{
+			if (PE_SYMBOL_HAS_NAME(pSymbol))
+			{
 				const char* name = pSymbol->Name;
-				if (name[0] == 'l' && name[1] == 'u' && name[2] == 'a') {
+				if (name[0] == 'l' && name[1] == 'u' && name[2] == 'a')
+				{
 					auto addr = (uint64_t)hModule;
 					addr += pSymbol->Address.VA - pe.qwBaseAddress;
 					symbols[pSymbol->Name] = addr;
@@ -161,9 +177,11 @@ void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule) {
 	}
 }
 
-void PostLoadLibrary(HMODULE hModule) {
+void PostLoadLibrary(HMODULE hModule)
+{
 	extern HINSTANCE g_hInstance;
-	if (hModule == g_hInstance) {
+	if (hModule == g_hInstance)
+	{
 		return;
 	}
 
@@ -176,23 +194,27 @@ void PostLoadLibrary(HMODULE hModule) {
 	LoadSymbolsRecursively(hProcess, hModule);
 }
 
-HMODULE WINAPI LoadLibraryExW_intercept(LPCWSTR fileName, HANDLE hFile, DWORD dwFlags) {
+HMODULE WINAPI LoadLibraryExW_intercept(LPCWSTR fileName, HANDLE hFile, DWORD dwFlags)
+{
 	// We have to call the loader lock (if it is available) so that we don't get deadlocks
 	// in the case where Dll initialization acquires the loader lock and calls LoadLibrary
 	// while another thread is inside PostLoadLibrary.
 	HMODULE hModule = LoadLibraryExW_dll(fileName, hFile, dwFlags);
 
-	if (hModule != nullptr) {
+	if (hModule != nullptr)
+	{
 		PostLoadLibrary(hModule);
 	}
 	return hModule;
 }
 
-void HookLoadLibrary() {
+void HookLoadLibrary()
+{
 	HMODULE hModuleKernel = GetModuleHandle("KernelBase.dll");
 	if (hModuleKernel == nullptr)
 		hModuleKernel = GetModuleHandle("kernel32.dll");
-	if (hModuleKernel != nullptr) {
+	if (hModuleKernel != nullptr)
+	{
 		// LoadLibraryExW is called by the other LoadLibrary functions, so we
 		// only need to hook it.
 
@@ -213,26 +235,31 @@ void HookLoadLibrary() {
 	}
 }
 
-int StartupHookMode() {
+int StartupHookMode()
+{
 	const int pid = (int)GetCurrentProcessId();
 	EmmyFacade::Get()->StartupHookMode(pid);
 	return 0;
 }
 
-void FindAndHook() {
+void FindAndHook()
+{
 	HookLoadLibrary();
 
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
-	if (hSnapshot) {
+	if (hSnapshot)
+	{
 		MODULEENTRY32 module;
 		module.dwSize = sizeof(MODULEENTRY32);
 		BOOL moreModules = Module32First(hSnapshot, &module);
-		while (moreModules) {
+		while (moreModules)
+		{
 			PostLoadLibrary(module.hModule);
 			moreModules = Module32Next(hSnapshot, &module);
 		}
 	}
-	else {
+	else
+	{
 		HMODULE module = GetModuleHandle(nullptr);
 		PostLoadLibrary(module);
 	}
