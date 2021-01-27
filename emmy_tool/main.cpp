@@ -70,13 +70,17 @@ int doRunAndAttach(CommandLine& commandLine)
 	std::string exe = commandLine.GetArg("exe");
 	std::string command = exe + " " + commandLine.GetArg("args");
 
-	PROCESS_INFORMATION process_info;
-	if (!StartProcessAndInjectDll(exe.c_str(), const_cast<LPSTR>(command.c_str()), dir.c_str(), process_info, commandLine))
+	if (!StartProcessAndInjectDll(exe.c_str(),
+	                              const_cast<LPSTR>(command.c_str()),
+	                              dir.c_str(),
+	                              dlldir.c_str(),
+	                              dll.c_str(),
+	                              true
+	))
 	{
 		return -1;
 	}
 
-	
 	return 0;
 }
 
