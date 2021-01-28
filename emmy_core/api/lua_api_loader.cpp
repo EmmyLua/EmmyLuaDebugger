@@ -301,14 +301,7 @@ void* lua_newuserdata(lua_State* L, int size)
 
 void lua_pushglobaltable(lua_State* L)
 {
-	if(luaVersion == LuaVersion::LUA_51)
-	{
-		lua_rawgeti(L, LUA_GLOBALSINDEX, LUA_GLOBALSINDEX);
-	}
-	else
-	{
-		lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_GLOBALSINDEX);
-	}
+	lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_GLOBALSINDEX);
 }
 
 extern "C" bool SetupLuaAPI() {
