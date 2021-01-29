@@ -21,15 +21,18 @@
 #include <Windows.h>
 #include <TlHelp32.h>
 
-HMODULE FindLuaModule() {
+HMODULE FindLuaModule()
+{
 	HMODULE hModule = nullptr;
 	MODULEENTRY32 module;
 	module.dwSize = sizeof(MODULEENTRY32);
 	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, 0);
 	BOOL moreModules = Module32First(hSnapshot, &module);
 
-	while (moreModules) {
-		if (GetProcAddress(module.hModule, "lua_gettop")) {
+	while (moreModules)
+	{
+		if (GetProcAddress(module.hModule, "lua_gettop"))
+		{
 			hModule = module.hModule;
 			break;
 		}
@@ -40,7 +43,8 @@ HMODULE FindLuaModule() {
 
 HMODULE hModule = nullptr;
 
-FARPROC LoadAPI(const char* name) {
+FARPROC LoadAPI(const char* name)
+{
 	if (!hModule)
 		hModule = FindLuaModule();
 	return GetProcAddress(hModule, name);
@@ -113,15 +117,19 @@ IMP_LUA_API_E(lua_newuserdata);
 //54
 IMP_LUA_API_E(lua_newuserdatauv);
 
-int lua_setfenv(lua_State* L, int idx) {
-	if (luaVersion == LuaVersion::LUA_51) {
+int lua_setfenv(lua_State* L, int idx)
+{
+	if (luaVersion == LuaVersion::LUA_51)
+	{
 		return e_lua_setfenv(L, idx);
 	}
 	return lua_setupvalue(L, idx, 1) != nullptr;
 }
 
-int getDebugEvent(lua_Debug* ar) {
-	switch (luaVersion) {
+int getDebugEvent(lua_Debug* ar)
+{
+	switch (luaVersion)
+	{
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.event;
 	case LuaVersion::LUA_52:
@@ -136,8 +144,10 @@ int getDebugEvent(lua_Debug* ar) {
 	}
 }
 
-int getDebugCurrentLine(lua_Debug* ar) {
-	switch (luaVersion) {
+int getDebugCurrentLine(lua_Debug* ar)
+{
+	switch (luaVersion)
+	{
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.currentline;
 	case LuaVersion::LUA_52:
@@ -152,8 +162,10 @@ int getDebugCurrentLine(lua_Debug* ar) {
 	}
 }
 
-int getDebugLineDefined(lua_Debug* ar) {
-	switch (luaVersion) {
+int getDebugLineDefined(lua_Debug* ar)
+{
+	switch (luaVersion)
+	{
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.linedefined;
 	case LuaVersion::LUA_52:
@@ -168,8 +180,10 @@ int getDebugLineDefined(lua_Debug* ar) {
 	}
 }
 
-const char* getDebugSource(lua_Debug* ar) {
-	switch (luaVersion) {
+const char* getDebugSource(lua_Debug* ar)
+{
+	switch (luaVersion)
+	{
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.source;
 	case LuaVersion::LUA_52:
@@ -184,8 +198,10 @@ const char* getDebugSource(lua_Debug* ar) {
 	}
 }
 
-const char* getDebugName(lua_Debug* ar) {
-	switch (luaVersion) {
+const char* getDebugName(lua_Debug* ar)
+{
+	switch (luaVersion)
+	{
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.name;
 	case LuaVersion::LUA_52:
@@ -200,54 +216,69 @@ const char* getDebugName(lua_Debug* ar) {
 	}
 }
 
-lua_Integer lua_tointeger(lua_State* L, int idx) {
-	if (luaVersion > LuaVersion::LUA_51) {
+lua_Integer lua_tointeger(lua_State* L, int idx)
+{
+	if (luaVersion > LuaVersion::LUA_51)
+	{
 		return e_lua_tointegerx(L, idx, nullptr);
 	}
 	return e_lua_tointeger(L, idx);
 }
 
-lua_Number lua_tonumber(lua_State* L, int idx) {
-	if (luaVersion == LuaVersion::LUA_51) {
+lua_Number lua_tonumber(lua_State* L, int idx)
+{
+	if (luaVersion == LuaVersion::LUA_51)
+	{
 		return e_lua_tonumber(L, idx);
 	}
 	return e_lua_tonumberx(L, idx, nullptr);
 }
 
-int lua_getglobal(lua_State* L, const char* name) {
-	if (luaVersion == LuaVersion::LUA_51) {
+int lua_getglobal(lua_State* L, const char* name)
+{
+	if (luaVersion == LuaVersion::LUA_51)
+	{
 		return lua_getfield(L, LUA_GLOBALSINDEX, name);
 	}
-	else {
+	else
+	{
 		return e_lua_getglobal(L, name);
 	}
 }
 
-void lua_setglobal(lua_State* L, const char* name) {
-	if (luaVersion == LuaVersion::LUA_51) {
+void lua_setglobal(lua_State* L, const char* name)
+{
+	if (luaVersion == LuaVersion::LUA_51)
+	{
 		return lua_setfield(L, LUA_GLOBALSINDEX, name);
 	}
-	else {
+	else
+	{
 		return e_lua_setglobal(L, name);
 	}
 }
 
-void lua_call(lua_State* L, int nargs, int nresults) {
+void lua_call(lua_State* L, int nargs, int nresults)
+{
 	if (luaVersion == LuaVersion::LUA_51)
 		e_lua_call(L, nargs, nresults);
 	else
 		e_lua_callk(L, nargs, nresults, 0, nullptr);
 }
 
-int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc) {
+int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc)
+{
 	if (luaVersion == LuaVersion::LUA_51)
 		return e_lua_pcall(L, nargs, nresults, errfunc);
 	return e_lua_pcallk(L, nargs, nresults, errfunc, 0, nullptr);
 }
 
-void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
-	if (luaVersion == LuaVersion::LUA_51) {
-		for (; l->name != nullptr; l++) {
+void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup)
+{
+	if (luaVersion == LuaVersion::LUA_51)
+	{
+		for (; l->name != nullptr; l++)
+		{
 			for (int i = 0; i < nup; i++)
 				lua_pushvalue(L, -nup);
 			lua_pushcclosure(L, l->func, nup);
@@ -257,7 +288,8 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
 	else e_luaL_setfuncs(L, l, nup);
 }
 
-int lua_upvalueindex(int i) {
+int lua_upvalueindex(int i)
+{
 	if (luaVersion == LuaVersion::LUA_54)
 		return -1001000 - i;
 	if (luaVersion == LuaVersion::LUA_53)
@@ -267,9 +299,12 @@ int lua_upvalueindex(int i) {
 	return -10002 - i;
 }
 
-int lua_absindex(lua_State *L, int idx) {
-	if (luaVersion == LuaVersion::LUA_51) {
-		if (idx > 0) {
+int lua_absindex(lua_State* L, int idx)
+{
+	if (luaVersion == LuaVersion::LUA_51)
+	{
+		if (idx > 0)
+		{
 			return idx;
 		}
 		return lua_gettop(L) + idx + 1;
@@ -277,11 +312,14 @@ int lua_absindex(lua_State *L, int idx) {
 	return e_lua_absindex(L, idx);
 }
 
-void lua_remove(lua_State *L, int idx) {
-	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52) {
+void lua_remove(lua_State* L, int idx)
+{
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52)
+	{
 		e_lua_remove(L, idx);
 	}
-	else {
+	else
+	{
 		e_lua_rotate(L, (idx), -1);
 		lua_pop(L, 1);
 	}
@@ -289,7 +327,7 @@ void lua_remove(lua_State *L, int idx) {
 
 void* lua_newuserdata(lua_State* L, int size)
 {
-	if(luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_53)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_53)
 	{
 		return e_lua_newuserdata(L, size);
 	}
@@ -301,10 +339,18 @@ void* lua_newuserdata(lua_State* L, int size)
 
 void lua_pushglobaltable(lua_State* L)
 {
-	lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_GLOBALSINDEX);
+	if (luaVersion == LuaVersion::LUA_51)
+	{
+		lua_pushvalue(L, LUA_GLOBALSINDEX);
+	}
+	else
+	{
+		lua_rawgeti(L, LUA_REGISTRYINDEX, LUA_GLOBALSINDEX);
+	}
 }
 
-extern "C" bool SetupLuaAPI() {
+extern "C" bool SetupLuaAPI()
+{
 	LOAD_LUA_API(lua_gettop);
 	LOAD_LUA_API(lua_settop);
 	LOAD_LUA_API(lua_type);
@@ -338,7 +384,7 @@ extern "C" bool SetupLuaAPI() {
 	LOAD_LUA_API(lua_rawset);
 	LOAD_LUA_API(lua_pushlightuserdata);
 	LOAD_LUA_API(lua_touserdata);
-	
+
 	LOAD_LUA_API(lua_rawseti);
 	LOAD_LUA_API(lua_rawgeti);
 	//51
@@ -364,25 +410,28 @@ extern "C" bool SetupLuaAPI() {
 	LOAD_LUA_API_E(lua_rotate);
 	//54
 	LOAD_LUA_API_E(lua_newuserdatauv);
-	
-	if(e_lua_newuserdatauv)
+
+	if (e_lua_newuserdatauv)
 	{
 		luaVersion = LuaVersion::LUA_54;
 		LUA_REGISTRYINDEX = -1001000;
 		LUA_GLOBALSINDEX = 2;
 	}
-	else if (e_lua_rotate) {
+	else if (e_lua_rotate)
+	{
 		luaVersion = LuaVersion::LUA_53;
 		LUA_REGISTRYINDEX = -1001000;
 		LUA_GLOBALSINDEX = 2;
 	}
-	else if (e_lua_callk) {
+	else if (e_lua_callk)
+	{
 		luaVersion = LuaVersion::LUA_52;
 		//todo
 		LUA_REGISTRYINDEX = -1001000;
 		LUA_GLOBALSINDEX = 2;
 	}
-	else {
+	else
+	{
 		luaVersion = LuaVersion::LUA_51;
 		LUA_REGISTRYINDEX = -10000;
 		LUA_GLOBALSINDEX = -10002;
