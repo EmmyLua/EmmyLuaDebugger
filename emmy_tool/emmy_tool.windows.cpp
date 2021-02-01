@@ -1,6 +1,7 @@
 #include "emmy_tool.h"
 #include <Windows.h>
 #include <ImageHlp.h>
+#include <iomanip>
 #include <iostream>
 #include <string>
 #include "utility.h"
@@ -73,27 +74,24 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 					// windows 初始断点忽略
 					if (firstBreakPoint)
 					{
+						// std::cout << "first breakPoint at: " << (uint64_t)debugEvent.u.Exception.
+						// 	ExceptionRecord.ExceptionAddress << std::endl;
 						firstBreakPoint = false;
 					}
 					else if (!hasInject)
 					{
-						CONTEXT context;
-						context.ContextFlags = CONTEXT_CONTROL | CONTEXT_DEBUG_REGISTERS;
-
-						GetThreadContext(processInfo.hThread, &context);
-
-#if _WIN64
-						if (context.Rip == entryPoint + 1)
-#else
-						if (context.Eip == entryPoint + 1)
-#endif
+						if (reinterpret_cast<size_t>(debugEvent.u.Exception.ExceptionRecord.ExceptionAddress) ==
+							entryPoint)
 						{
-							// Backup the instruction pointer so that we execute the original instruction.
-#if _WIN64
-							--context.Rip;
+							CONTEXT context;
+							context.ContextFlags = CONTEXT_CONTROL;
+							GetThreadContext(processInfo.hThread, &context);
+#ifdef _WIN64
+							context.Rip -= 1;
 #else
-							--context.Eip;
+							context.Eip -= 1;
 #endif
+
 							SetThreadContext(processInfo.hThread, &context);
 
 							// Restore the original code bytes.
@@ -115,109 +113,141 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 							// block thread
 							std::cin >> connected;
 
-							ResumeThread(processInfo.hThread);
 							// 恢复debug
 							DebugActiveProcess(processInfo.dwProcessId);
+							ResumeThread(processInfo.hThread);
 
 							hasInject = true;
 							// done = true;
+							continueStatus = DBG_CONTINUE;
 						}
-
-						continueStatus = DBG_CONTINUE;
 					}
 					else if (!backToEntry)
 					{
-						CONTEXT context;
-						context.ContextFlags = CONTEXT_CONTROL;
-
-						GetThreadContext(processInfo.hThread, &context);
-
-#if _WIN64
-						if (context.Rip == entryPoint)
-#else
-						if (context.Eip == entryPoint)
-#endif
+						if (reinterpret_cast<size_t>(debugEvent.u.Exception.ExceptionRecord.ExceptionAddress) ==
+							entryPoint)
 						{
 							// 此时重新回归到入口函数
 							backToEntry = true;
-							if(!blockOnExit)
+							if (!blockOnExit)
 							{
 								done = true;
 							}
 						}
 						continueStatus = DBG_CONTINUE;
 					}
-					// 忽略所有的异常处理，由进程本身的例程处理
+					else
+					{
+						// 忽略所有的异常处理，由进程本身的例程处理
+						std::cout << "unhandled C breakPoint at: " << (uint64_t)debugEvent.u.Exception.ExceptionRecord.
+							ExceptionAddress << std::endl;
+					}
+					
 				}
 				else
 				{
 					// 对于非断点异常,第一次交给进程例程处理，第二次输出错误的信息，让进程自己终止
-					if (debugEvent.u.Exception.dwFirstChance == 0) {
-						switch (debugEvent.u.Exception.ExceptionRecord.ExceptionCode) {
+					if (debugEvent.u.Exception.dwFirstChance == 0)
+					{
+						switch (debugEvent.u.Exception.ExceptionRecord.ExceptionCode)
+						{
 						case EXCEPTION_ACCESS_VIOLATION:
-							std::cout << "The thread tried to read from or write to a virtual address for which it does not have the appropriate access." << std::endl;
+							std::cout <<
+								"The thread tried to read from or write to a virtual address for which it does not have the appropriate access."
+								<< std::endl;
 							break;
 						case EXCEPTION_ARRAY_BOUNDS_EXCEEDED:
-							std::cout << "The thread tried to access an array element that is out of bounds and the underlying hardware supports bounds checking." << std::endl;
+							std::cout <<
+								"The thread tried to access an array element that is out of bounds and the underlying hardware supports bounds checking."
+								<< std::endl;
 							break;
 						case EXCEPTION_BREAKPOINT:
 							std::cout << "A breakpoint was encountered." << std::endl;
 							break;
 						case EXCEPTION_DATATYPE_MISALIGNMENT:
-							std::cout << "The thread tried to read or write data that is misaligned on hardware that does not provide alignment. For example, 16-bit values must be aligned on 2-byte boundaries; 32-bit values on 4-byte boundaries, and so on." << std::endl;
+							std::cout <<
+								"The thread tried to read or write data that is misaligned on hardware that does not provide alignment. For example, 16-bit values must be aligned on 2-byte boundaries; 32-bit values on 4-byte boundaries, and so on."
+								<< std::endl;
 							break;
 						case EXCEPTION_FLT_DENORMAL_OPERAND:
-							std::cout << "One of the operands in a floating-point operation is denormal. A denormal value is one that is too small to represent as a standard floating-point value." << std::endl;
+							std::cout <<
+								"One of the operands in a floating-point operation is denormal. A denormal value is one that is too small to represent as a standard floating-point value."
+								<< std::endl;
 							break;
 						case EXCEPTION_FLT_DIVIDE_BY_ZERO:
-							std::cout << "The thread tried to divide a floating-point value by a floating-point divisor of zero." << std::endl;
+							std::cout <<
+								"The thread tried to divide a floating-point value by a floating-point divisor of zero."
+								<< std::endl;
 							break;
 						case EXCEPTION_FLT_INEXACT_RESULT:
-							std::cout << "The result of a floating-point operation cannot be represented exactly as a decimal fraction." << std::endl;
+							std::cout <<
+								"The result of a floating-point operation cannot be represented exactly as a decimal fraction."
+								<< std::endl;
 							break;
 						case EXCEPTION_FLT_INVALID_OPERATION:
-							std::cout << "This exception represents any floating-point exception not included in this list." << std::endl;
+							std::cout <<
+								"This exception represents any floating-point exception not included in this list." <<
+								std::endl;
 							break;
 						case EXCEPTION_FLT_OVERFLOW:
-							std::cout << "The exponent of a floating-point operation is greater than the magnitude allowed by the corresponding type." << std::endl;
+							std::cout <<
+								"The exponent of a floating-point operation is greater than the magnitude allowed by the corresponding type."
+								<< std::endl;
 							break;
 						case EXCEPTION_FLT_STACK_CHECK:
-							std::cout << "The stack overflowed or underflowed as the result of a floating-point operation." << std::endl;
+							std::cout <<
+								"The stack overflowed or underflowed as the result of a floating-point operation." <<
+								std::endl;
 							break;
 						case EXCEPTION_FLT_UNDERFLOW:
-							std::cout << "The exponent of a floating-point operation is less than the magnitude allowed by the corresponding type." << std::endl;
+							std::cout <<
+								"The exponent of a floating-point operation is less than the magnitude allowed by the corresponding type."
+								<< std::endl;
 							break;
 						case EXCEPTION_ILLEGAL_INSTRUCTION:
 							std::cout << "The thread tried to execute an invalid instruction." << std::endl;
 							break;
 						case EXCEPTION_IN_PAGE_ERROR:
-							std::cout << "The thread tried to access a page that was not present, and the system was unable to load the page. For example, this exception might occur if a network connection is lost while running a program over the network." << std::endl;
+							std::cout <<
+								"The thread tried to access a page that was not present, and the system was unable to load the page. For example, this exception might occur if a network connection is lost while running a program over the network."
+								<< std::endl;
 							break;
 						case EXCEPTION_INT_DIVIDE_BY_ZERO:
-							std::cout << "The thread tried to divide an integer value by an integer divisor of zero." << std::endl;
+							std::cout << "The thread tried to divide an integer value by an integer divisor of zero." <<
+								std::endl;
 							break;
 						case EXCEPTION_INT_OVERFLOW:
-							std::cout << "The result of an integer operation caused a carry out of the most significant bit of the result." << std::endl;
+							std::cout <<
+								"The result of an integer operation caused a carry out of the most significant bit of the result."
+								<< std::endl;
 							break;
 						case EXCEPTION_INVALID_DISPOSITION:
-							std::cout << "An exception handler returned an invalid disposition to the exception dispatcher. Programmers using a high-level language such as C should never encounter this exception." << std::endl;
+							std::cout <<
+								"An exception handler returned an invalid disposition to the exception dispatcher. Programmers using a high-level language such as C should never encounter this exception."
+								<< std::endl;
 							break;
 						case EXCEPTION_NONCONTINUABLE_EXCEPTION:
-							std::cout << "The thread tried to continue execution after a noncontinuable exception occurred." << std::endl;
+							std::cout <<
+								"The thread tried to continue execution after a noncontinuable exception occurred." <<
+								std::endl;
 							break;
 						case EXCEPTION_PRIV_INSTRUCTION:
-							std::cout << "The thread tried to execute an instruction whose operation is not allowed in the current machine mode." << std::endl;
+							std::cout <<
+								"The thread tried to execute an instruction whose operation is not allowed in the current machine mode."
+								<< std::endl;
 							break;
 						case EXCEPTION_SINGLE_STEP:
-							std::cout << "A trace trap or other single-instruction mechanism signaled that one instruction has been executed." << std::endl;
+							std::cout <<
+								"A trace trap or other single-instruction mechanism signaled that one instruction has been executed."
+								<< std::endl;
 							break;
 						default:
 							std::cout << "Unknown type of Structured Exception" << std::endl;
 						}
-						done = true;						
-					}					
+
+						done = true;
+					}
 				}
-				
 			}
 			else if (debugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
 			{
@@ -237,7 +267,6 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 				{
 					// Offset the entry point by the load address of the process.
 					entryPoint += reinterpret_cast<size_t>(debugEvent.u.CreateProcessInfo.lpBaseOfImage);
-
 					// Write a break point at the entry point of the application so that we
 					// will stop when we reach that point.
 					SetBreakpoint(processInfo.hProcess, reinterpret_cast<void*>(entryPoint), true, &breakPointData);
