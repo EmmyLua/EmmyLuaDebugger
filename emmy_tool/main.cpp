@@ -8,9 +8,9 @@
 
 int doAttach(CommandLine& commandLine)
 {
-	const int pid = std::stoi(commandLine.GetArg("p"));
-	std::string dir = commandLine.GetArg("dir");
-	std::string dll = commandLine.GetArg("dll");
+	const int pid = commandLine.Get<int>("p");
+	std::string dir = commandLine.Get<std::string>("dir");
+	std::string dll = commandLine.Get<std::string>("dll");
 	if (!InjectDll(pid, dir.c_str(), dll.c_str()))
 	{
 		return -1;
@@ -64,18 +64,19 @@ int doRunAndAttach(CommandLine& commandLine)
 {
 	// printf("emmy_tool.exe run_and_attach -dir c:/xx -dll emmy_hook.dll -work d:fff/ -exe c:/lua/lua.exe -args test.lua");
 
-	std::string dlldir = commandLine.GetArg("dir");
-	std::string dll = commandLine.GetArg("dll");
-	std::string dir = commandLine.GetArg("work");
-	std::string exe = commandLine.GetArg("exe");
-	std::string command = exe + " " + commandLine.GetArg("args");
-
+	std::string dlldir = commandLine.Get<std::string>("dir");
+	std::string dll = commandLine.Get<std::string>("dll");
+	std::string dir = commandLine.Get<std::string>("work");
+	std::string exe = commandLine.Get<std::string>("exe");
+	std::string command = exe + " " + commandLine.Get<std::string>("args");
+	bool blockOnExit = commandLine.Get<bool>("blockOnExit");
+	
 	if (!StartProcessAndInjectDll(exe.c_str(),
 	                              const_cast<LPSTR>(command.c_str()),
 	                              dir.c_str(),
 	                              dlldir.c_str(),
 	                              dll.c_str(),
-	                              true
+	                              blockOnExit
 	))
 	{
 		return -1;
@@ -94,17 +95,19 @@ int main(int argc, char** argv)
 	commandLine.AddTarget("run_and_attach");
 
 	// pid
-	commandLine.AddArg("p");
+	commandLine.Add<int>("p");
 	// dir 实际上是dll dir
-	commandLine.AddArg("dir");
+	commandLine.Add<std::string>("dir");
 	// dll 名字
-	commandLine.AddArg("dll");
-	//exe 路径
-	commandLine.AddArg("exe");
+	commandLine.Add<std::string>("dll");
+	// exe 路径
+	commandLine.Add<std::string>("exe");
 	// work space
-	commandLine.AddArg("work");
+	commandLine.Add<std::string>("work");
+	// stop on process exit
+	commandLine.Add<bool>("blockOnExit");
 	// rest param
-	commandLine.AddArg("args", true);
+	commandLine.Add<std::string>("args", true);
 
 	if (!commandLine.Parse(argc, argv))
 	{
