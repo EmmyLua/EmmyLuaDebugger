@@ -1,10 +1,5 @@
 #include "command_line.h"
 
-void CommandLine::AddArg(const std::string& name, bool restOfAll)
-{
-	_args.insert({name, Option{"", restOfAll}});
-}
-
 void CommandLine::AddTarget(const std::string& name, bool isParse)
 {
 	_targets.insert({name, isParse});
@@ -15,14 +10,6 @@ std::string CommandLine::GetTarget() const noexcept
 	return _currentTarget;
 }
 
-std::string CommandLine::GetArg(const std::string& name) const noexcept
-{
-	if (_args.count(name))
-	{
-		return _args.at(name).Value;
-	}
-	return "";
-}
 
 std::string CommandLine::GetArg(int index) const noexcept
 {
@@ -79,7 +66,14 @@ bool CommandLine::Parse(int argc, char** argv)
 			{
 				return false;
 			}
-			Option& option = _args[optionName];
+			CommandLineOption& option = _args[optionName];
+
+			if(option.Type == CommandLineValueType::Boolean)
+			{
+				option.Value = "true";
+				continue;
+			}
+			
 			std::string optionValue;
 			optionValue.reserve(128);
 

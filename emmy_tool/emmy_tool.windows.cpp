@@ -74,8 +74,6 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 					// windows 初始断点忽略
 					if (firstBreakPoint)
 					{
-						// std::cout << "first breakPoint at: " << (uint64_t)debugEvent.u.Exception.
-						// 	ExceptionRecord.ExceptionAddress << std::endl;
 						firstBreakPoint = false;
 					}
 					else if (!hasInject)
@@ -107,6 +105,8 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 							InjectDllForProcess(processInfo.hProcess, dllDirectory, dllName);
 
+							// 刷新之前的数据，以免造成干扰
+							std::cout.flush();
 							// output PID for connect
 							std::cout << "[PID]" << processInfo.dwProcessId << std::endl;
 							std::string connected;
@@ -285,6 +285,13 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 	CloseHandle(processInfo.hProcess);
 	CloseHandle(processInfo.hThread);
 
+	if(!blockOnExit)
+	{
+		std::string block;
+		// block for sub process
+		std::cin >> block;
+	}
+	
 	return true;
 }
 
