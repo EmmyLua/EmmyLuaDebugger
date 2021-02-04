@@ -98,11 +98,28 @@ bool CommandLine::Parse(int argc, char** argv)
 				}
 				if (option.RestOfAll)
 				{
-					optionValue.append(" ").append(value);
+					// 剩余参数通常会被传递到子进程再处理
+					// 如果剩余参数中存在路径，且路径存在空格，那么传递到子进程的创建就会失效
+					// 所以这里要特别的处理
+					if(!value.empty())
+					{
+						// 认为该参数可能是选项
+						if(value[0] == '-')
+						{
+							optionValue.append(" ").append(value);
+						}
+						else //认为该参数是值，所以用引号包含起来
+						{
+							optionValue.append(" ").append("\""+value+"\"");
+						}
+						
+					}
+					
 				}
 				else
 				{
 					// 认为值是被一对引号包起来的
+					// windows下引号已经被自动处理了
 					if (value[0] == '\"' || value[0] == '\'')
 					{
 						optionValue = value.substr(1, value.size() - 2);
@@ -115,7 +132,7 @@ bool CommandLine::Parse(int argc, char** argv)
 				}
 			}
 			while (true);
-
+			
 			option.Value = std::move(optionValue);
 		}
 	}

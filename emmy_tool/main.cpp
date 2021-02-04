@@ -68,9 +68,10 @@ int doRunAndAttach(CommandLine& commandLine)
 	std::string dll = commandLine.Get<std::string>("dll");
 	std::string dir = commandLine.Get<std::string>("work");
 	std::string exe = commandLine.Get<std::string>("exe");
-	std::string command = exe + " " + commandLine.Get<std::string>("args");
-	bool blockOnExit = commandLine.Get<bool>("blockOnExit");
-	
+	// 路径中可能存在空格
+	std::string command = "\"" + exe + "\"" + " " + commandLine.Get<std::string>("args");
+ 	bool blockOnExit = commandLine.Get<bool>("blockOnExit");
+
 	if (!StartProcessAndInjectDll(exe.c_str(),
 	                              const_cast<LPSTR>(command.c_str()),
 	                              dir.c_str(),
