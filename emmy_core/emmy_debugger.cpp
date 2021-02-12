@@ -181,7 +181,8 @@ bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocat
 				// add local variable
 				auto* var = stack->CreateVariable();
 				var->name = name;
-				GetVariable(var, L, -1, 1);
+                int32_t curLoopCount = EMMY_CORE_GETVARIABLE_LIMIT;
+				GetVariable(var, L, -1, 1, true, &curLoopCount);
 				lua_pop(L, 1);
 				stack->localVariables.push_back(var);
 			}
@@ -197,7 +198,8 @@ bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocat
 					// add up variable
 					auto* var = stack->CreateVariable();
 					var->name = name;
-					GetVariable(var, L, -1, 1);
+                    int32_t curLoopCount = EMMY_CORE_GETVARIABLE_LIMIT;
+					GetVariable(var, L, -1, 1, true, &curLoopCount);
 					lua_pop(L, 1);
 					stack->upvalueVariables.push_back(var);
 				}
@@ -239,7 +241,14 @@ std::string ToPointer(lua_State* L, int index) {
 	return ss.str();
 }
 
-void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper) {
+void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper, int32_t* loopCount) {
+    if (loopCount) {
+        (*loopCount)--;
+        if (*loopCount < 0) {
+            return;
+        }
+    }
+
 	const int t1 = lua_gettop(L);
 	index = lua_absindex(L, index);
 	CacheValue(L, index, variable);
@@ -287,7 +296,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 		}
 		if (depth > 1) {
 			if (lua_getmetatable(L, index)) {
-				GetVariable(variable, L, -1, depth);
+				GetVariable(variable, L, -1, depth, queryHelper, loopCount);
 				lua_pop(L, 1); //pop meta
 			}
 		}
@@ -318,7 +327,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 				else {
 					v->name = ToPointer(L, -2);
 				}
-				GetVariable(v, L, -1, depth - 1);
+				GetVariable(v, L, -1, depth - 1, queryHelper, loopCount);
 				variable->children.push_back(v);
 			}
 			lua_pop(L, 1);
@@ -330,7 +339,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			auto* metatable = new Variable;
 			metatable->name = "metatable";
 			metatable->nameType = LUA_TSTRING;
-			GetVariable(metatable, L, -1, 2);
+			GetVariable(metatable, L, -1, 2, queryHelper, loopCount);
 			variable->children.push_back(metatable);
 
 			// __index
@@ -338,7 +347,7 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 				lua_getfield(L, -1, "__index");
 				if (!lua_isnil(L, -1)) {
 					Variable v;
-					GetVariable(&v, L, -1, 2);
+					GetVariable(&v, L, -1, 2, queryHelper, loopCount);
 					if (depth > 1) {
 						for (auto* child : v.children) {
 							variable->children.push_back(child->Clone());
@@ -741,7 +750,8 @@ bool Debugger::DoEval(lua_State* L, EvalContext* evalContext) {
 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);	// 1: cacheTable|nil
 		if (lua_type(L, -1) == LUA_TTABLE) {
 			lua_getfield(L, -1, std::to_string(evalContext->cacheId).c_str()); // 1: cacheTable, 2: value
-			GetVariable(&evalContext->result, L, -1, evalContext->depth);
+            int32_t loopCount = 150;
+			GetVariable(&evalContext->result, L, -1, evalContext->depth, true, &loopCount);
 			lua_pop(L, 2);
 			return true;
 		}
@@ -774,7 +784,8 @@ bool Debugger::DoEval(lua_State* L, EvalContext* evalContext) {
 	r = lua_pcall(L, 0, 1, 0);
 	if (r == LUA_OK) {
 		evalContext->result.name = evalContext->expr;
-		GetVariable(&evalContext->result, L, -1, evalContext->depth);
+        int32_t loopCount = 150;
+		GetVariable(&evalContext->result, L, -1, evalContext->depth, true, &loopCount);
 		lua_pop(L, 1);
 		return true;
 	}
