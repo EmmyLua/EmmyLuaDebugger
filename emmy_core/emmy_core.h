@@ -23,6 +23,10 @@
 #define EMMY_CORE_EXPORT    extern
 #endif
 
+#ifndef EMMY_CORE_GETVARIABLE_LIMIT
+#define EMMY_CORE_GETVARIABLE_LIMIT 188
+#endif
+
 #include "api/lua_api.h"
 
 // lua version

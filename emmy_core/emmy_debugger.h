@@ -84,7 +84,7 @@ public:
 	void AsyncDoString(const char* code);
 	bool Eval(EvalContext* evalContext, bool force = false);
 	bool GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocatorCB alloc);
-	void GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper = true);
+	void GetVariable(Variable* variable, lua_State* L, int index, int depth, bool queryHelper = true, int32_t* loopCount = nullptr);
 	void DoAction(DebugAction action);
 	void EnterDebugMode(lua_State* L);
 	void ExitDebugMode();
