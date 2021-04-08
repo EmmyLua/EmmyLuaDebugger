@@ -17,6 +17,7 @@
 
 #ifdef EMMY_LUA_51
 
+/*
 int lua_absindex(lua_State *L, int idx) {
 	if (idx > 0) {
 		return idx;
@@ -32,5 +33,6 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
 		lua_setfield(L, -(nup + 2), l->name);
 	}
 }
+*/
 
 #endif
