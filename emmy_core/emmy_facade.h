@@ -55,6 +55,7 @@ public:
 	void OnBreak(lua_State* L);
 	void Destroy();
 	void OnEvalResult(EvalContext* context);
+	void SendLog(LogType, const std::string&);
 	void SendLog(LogType type, const char *fmt, ...);
 	void OnLuaStateGC(lua_State* L);
 private:
