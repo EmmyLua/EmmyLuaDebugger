@@ -150,6 +150,11 @@ bool Debugger::IsRunning() const {
 	return running;
 }
 
+bool Debugger::IsBlocking() const
+{
+	return blocking;
+}
+
 bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocatorCB alloc) {
 	int level = 0;
 	while (true) {

@@ -78,6 +78,7 @@ public:
 	void Hook(lua_State* L, lua_Debug* ar);
 	void Stop();
 	bool IsRunning() const;
+	bool IsBlocking() const;
 	void AddBreakPoint(const BreakPoint& breakPoint);
 	void RemoveBreakPoint(const std::string& file, int line);
 	void RemoveAllBreakpoints();
