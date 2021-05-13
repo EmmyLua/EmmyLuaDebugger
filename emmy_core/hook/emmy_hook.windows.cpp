@@ -94,7 +94,7 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols)
 	HOOK(lua_pcall, lua_pcall_worker, false);
 	// lua 5.2
 	HOOK(lua_pcallk, lua_pcallk_worker, false);
-	HOOK(lua_error, lua_error_worker, true);
+	// HOOK(lua_error, lua_error_worker, true);
 }
 
 void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule)

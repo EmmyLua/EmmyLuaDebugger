@@ -135,7 +135,7 @@ void EmmyFacade::WaitIDE(bool force, int timeout) {
 }
 
 int EmmyFacade::BreakHere(lua_State* L) {
-	if (!isIDEReady || Debugger::Get()->IsBlocking())
+	if (!isIDEReady)
 		return 0;
 	Debugger::Get()->HandleBreak(L);
 	return 1;

@@ -88,7 +88,11 @@ void Debugger::Attach(lua_State* L) {
 			const int t = lua_gettop(L);
 			const int r = luaL_loadstring(L, helperCode.c_str());
 			if (r == LUA_OK) {
-				lua_pcall(L, 0, 0, 0);
+				if(lua_pcall(L, 0, 0, 0) != LUA_OK)
+				{
+					std::string msg = lua_tostring(L, -1);
+					printf("msg: %", msg);
+				}
 			}
 			lua_settop(L, t);
 		});
@@ -148,11 +152,6 @@ void Debugger::Stop() {
 
 bool Debugger::IsRunning() const {
 	return running;
-}
-
-bool Debugger::IsBlocking() const
-{
-	return blocking;
 }
 
 bool Debugger::GetStacks(lua_State* L, std::vector<Stack*>& stacks, StackAllocatorCB alloc) {
@@ -330,20 +329,22 @@ void Debugger::GetVariable(Variable* variable, lua_State* L, int index, int dept
 			tableSize++;
 		}
 
+		
 		if (lua_getmetatable(L, index)) {
 			// metatable
 			auto* metatable = new Variable;
 			metatable->name = "metatable";
 			metatable->nameType = LUA_TSTRING;
-			GetVariable(metatable, L, -1, 2);
+			// bug fix obj有元表，元表有field指向obj本身，导致无限递归
+			GetVariable(metatable, L, -1, 1);
 			variable->children.push_back(metatable);
 
-			// __index
+			//__index
 			{
 				lua_getfield(L, -1, "__index");
 				if (!lua_isnil(L, -1)) {
 					Variable v;
-					GetVariable(&v, L, -1, 2);
+					GetVariable(&v, L, -1, 1);
 					if (depth > 1) {
 						for (auto* child : v.children) {
 							variable->children.push_back(child->Clone());
