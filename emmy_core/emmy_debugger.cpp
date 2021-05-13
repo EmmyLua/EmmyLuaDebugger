@@ -91,7 +91,7 @@ void Debugger::Attach(lua_State* L) {
 				if(lua_pcall(L, 0, 0, 0) != LUA_OK)
 				{
 					std::string msg = lua_tostring(L, -1);
-					printf("msg: %s", msg);
+					printf("msg: %s", msg.c_str());
 				}
 			}
 			lua_settop(L, t);
