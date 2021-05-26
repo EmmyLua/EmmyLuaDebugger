@@ -8,7 +8,8 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
                               LPCSTR dllDirectory,
                               LPCSTR dllName,
                               bool blockOnExit,
-							  int debugPort
+							  int debugPort,
+							  bool createNewWindow
     );
 
 bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName);

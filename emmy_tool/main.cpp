@@ -72,14 +72,16 @@ int doRunAndAttach(CommandLine& commandLine)
 	// 路径中可能存在空格
 	std::string command = "\"" + exe + "\"" + " " + commandLine.Get<std::string>("args");
 	bool blockOnExit = commandLine.Get<bool>("blockOnExit");
-
+	bool createNewWindow = commandLine.Get<bool>("createNewWindow");
+	
 	if (!StartProcessAndInjectDll(exe.c_str(),
 	                              const_cast<LPSTR>(command.c_str()),
 	                              dir.c_str(),
 	                              dlldir.c_str(),
 	                              dll.c_str(),
 	                              blockOnExit,
-	                              debugPort
+	                              debugPort,
+								  createNewWindow
 	))
 	{
 		return -1;
@@ -112,6 +114,7 @@ int main(int argc, char** argv)
 	// stop on process exit
 	commandLine.Add<bool>("blockOnExit");
 	commandLine.Add<int>("debugPort");
+	commandLine.Add<bool>("createNewWindow");
 	// rest param
 	commandLine.Add<std::string>("args", true);
 

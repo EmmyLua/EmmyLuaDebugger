@@ -22,7 +22,8 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
                               LPCSTR dllDirectory,
                               LPCSTR dllName,
                               bool blockOnExit,
-                              int debugPort
+                              int debugPort,
+							  bool createNewWindow
 )
 {
 	PROCESS_INFORMATION processInfo;
@@ -37,7 +38,10 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 	}
 
 	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS;
-
+	if(createNewWindow)
+	{
+		flags |= CREATE_NEW_CONSOLE;
+	}
 	if (!CreateProcess(nullptr,
 	                   command,
 	                   nullptr,
