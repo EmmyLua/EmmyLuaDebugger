@@ -1,3 +1,4 @@
+#define   WIN32_LEAN_AND_MEAN  
 #include "emmy_tool.h"
 #include <Windows.h>
 #include <ImageHlp.h>
@@ -6,6 +7,10 @@
 #include <string>
 #include "utility.h"
 #include "shme.h"
+// 使用原生windows socket API
+#include <WinSock2.h>
+#include <WS2tcpip.h>
+#include <thread>
 
 void SetBreakpoint(HANDLE hProcess, LPVOID entryPoint, bool set, BYTE* data);
 
@@ -16,7 +21,8 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
                               LPCSTR workDirectory,
                               LPCSTR dllDirectory,
                               LPCSTR dllName,
-                              bool blockOnExit
+                              bool blockOnExit,
+                              int debugPort
 )
 {
 	PROCESS_INFORMATION processInfo;
@@ -30,7 +36,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 		return false;
 	}
 
-	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS | CREATE_NEW_CONSOLE;
+	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS;
 
 	if (!CreateProcess(nullptr,
 	                   command,
@@ -47,8 +53,33 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 		return false;
 	}
 
-	// Running to the entry point currently doesn't work for managed applications, so
-	// just start it up.
+	// 开始连接 debug session
+	// 开一个网络连接
+	WORD version MAKEWORD(2, 2);
+	WSADATA data;
+	WSAStartup(version, &data);
+
+	sockaddr_in serverAddress;
+	SOCKET hSocket = NULL;
+
+	hSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (hSocket == INVALID_SOCKET)
+	{
+		return false;
+	}
+
+	memset(&serverAddress, 0, sizeof(serverAddress));
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serverAddress.sin_port = htons((short)debugPort);
+
+	if (SOCKET_ERROR == connect(hSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)))
+	{
+		closesocket(hSocket);
+		DWORD error = WSAGetLastError();
+		printf("tcp connect error, err code=%d", error);
+		return false;
+	}
 
 	if (!info.managed)
 	{
@@ -104,14 +135,14 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 							DebugActiveProcessStop(processInfo.dwProcessId);
 
 							InjectDllForProcess(processInfo.hProcess, dllDirectory, dllName);
+			
+							// 会将子进程和自己的pid传递给debug session
+							std::string sendBuffer = std::to_string(processInfo.dwProcessId);
+							
+							::send(hSocket, const_cast<char*>(sendBuffer.data()), sendBuffer.size(), 0);
 
-							// 刷新之前的数据，以免造成干扰
-							std::cout.flush();
-							// output PID for connect
-							std::cout << "[PID]" << processInfo.dwProcessId << std::endl;
-							std::string connected;
-							// block thread
-							std::cin >> connected;
+							char waitConnected[100] = "0";
+							::recv(hSocket, waitConnected, sizeof(waitConnected), 0);
 
 							// 恢复debug
 							DebugActiveProcess(processInfo.dwProcessId);
@@ -129,10 +160,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 						{
 							// 此时重新回归到入口函数
 							backToEntry = true;
-							if (!blockOnExit)
-							{
-								done = true;
-							}
+							done = true;
 						}
 						continueStatus = DBG_CONTINUE;
 					}
@@ -142,7 +170,6 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 						std::cout << "unhandled C breakPoint at: " << (uint64_t)debugEvent.u.Exception.ExceptionRecord.
 							ExceptionAddress << std::endl;
 					}
-					
 				}
 				else
 				{
@@ -251,14 +278,6 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 			}
 			else if (debugEvent.dwDebugEventCode == EXIT_PROCESS_DEBUG_EVENT)
 			{
-				if (blockOnExit)
-				{
-					SuspendThread(processInfo.hThread);
-					std::string breakQuit;
-					// block thread
-					std::cin >> breakQuit;
-				}
-
 				done = true;
 			}
 			else if (debugEvent.dwDebugEventCode == CREATE_PROCESS_DEBUG_EVENT)
@@ -281,19 +300,39 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 		}
 	}
 	DebugActiveProcessStop(processInfo.dwProcessId);
-
-	CloseHandle(processInfo.hProcess);
 	CloseHandle(processInfo.hThread);
 
-	if(!blockOnExit)
-	{
-		std::string block;
-		// block for sub process
-		std::cin >> block;
-	}
+	// 开一个线程等待stop消息
+	std::thread t([&hSocket,&processInfo]()
+		{
+			char waitStop[100] = "0";
+			::recv(hSocket, waitStop, sizeof(waitStop), 0);
+			CloseHandle(processInfo.hProcess);
+			closesocket(hSocket);
+		
+			exit(0);
+		});
+	t.detach();
 	
+	//等待进程自然结束
+	WaitForSingleObject(processInfo.hProcess, INFINITE);
+
+	DWORD dwExitCode;
+	GetExitCodeProcess(processInfo.hProcess, &dwExitCode);
+
+	CloseHandle(processInfo.hProcess);
+	
+	if (blockOnExit)
+	{
+		std::cout << "the process exit code: " << dwExitCode << std::endl;
+		std::string s;
+		std::cin >> s;
+	}
+
+	closesocket(hSocket);
 	return true;
 }
+
 
 void SetBreakpoint(HANDLE hProcess, LPVOID entryPoint, bool set, BYTE* data)
 {

@@ -22,6 +22,7 @@ add_executable(emmy_tool ${SRC_LIST} ${HEADER_LIST} ${SHARED_LIST})
 target_link_libraries(
     emmy_tool
     imagehlp
+    ws2_32
 )
 
 install(

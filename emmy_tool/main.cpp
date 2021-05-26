@@ -68,16 +68,18 @@ int doRunAndAttach(CommandLine& commandLine)
 	std::string dll = commandLine.Get<std::string>("dll");
 	std::string dir = commandLine.Get<std::string>("work");
 	std::string exe = commandLine.Get<std::string>("exe");
+	int debugPort = commandLine.Get<int>("debugPort");
 	// 路径中可能存在空格
 	std::string command = "\"" + exe + "\"" + " " + commandLine.Get<std::string>("args");
- 	bool blockOnExit = commandLine.Get<bool>("blockOnExit");
+	bool blockOnExit = commandLine.Get<bool>("blockOnExit");
 
 	if (!StartProcessAndInjectDll(exe.c_str(),
 	                              const_cast<LPSTR>(command.c_str()),
 	                              dir.c_str(),
 	                              dlldir.c_str(),
 	                              dll.c_str(),
-	                              blockOnExit
+	                              blockOnExit,
+	                              debugPort
 	))
 	{
 		return -1;
@@ -85,6 +87,7 @@ int doRunAndAttach(CommandLine& commandLine)
 
 	return 0;
 }
+
 
 int main(int argc, char** argv)
 {
@@ -94,6 +97,7 @@ int main(int argc, char** argv)
 	commandLine.AddTarget("arch_file", false);
 	commandLine.AddTarget("arch_pid", false);
 	commandLine.AddTarget("run_and_attach");
+
 
 	// pid
 	commandLine.Add<int>("p");
@@ -107,6 +111,7 @@ int main(int argc, char** argv)
 	commandLine.Add<std::string>("work");
 	// stop on process exit
 	commandLine.Add<bool>("blockOnExit");
+	commandLine.Add<int>("debugPort");
 	// rest param
 	commandLine.Add<std::string>("args", true);
 
@@ -141,5 +146,6 @@ int main(int argc, char** argv)
 		//emmy_tool.exe run_and_attach -dir c:/xx -dll emmy_hook.dll -work d:fff/ -exe c:/lua/lua.exe -args test.lua
 		return doRunAndAttach(commandLine);
 	}
+
 	return -1;
 }
