@@ -16,6 +16,7 @@
 
 #include "emmy_debugger/emmy_facade.h"
 #include <cstdarg>
+#include <algorithm>
 #include "emmy_debugger/proto/socket_server_transporter.h"
 #include "emmy_debugger/proto/socket_client_transporter.h"
 #include "emmy_debugger/proto/pipeline_server_transporter.h"
