@@ -32,8 +32,6 @@ target_sources(emmy_core PRIVATE
     ${emmy_core_SOURCE_DIR}/src/emmy_core.cpp
 )
 
-add_definitions(-DEMMY_CORE_BUILD_AS_DLL)   
-
 add_dependencies(
     emmy_core
     emmy_debugger

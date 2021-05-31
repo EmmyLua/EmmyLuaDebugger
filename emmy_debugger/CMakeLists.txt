@@ -53,6 +53,9 @@ target_sources(emmy_debugger PRIVATE
 )
 target_compile_definitions(emmy_debugger PUBLIC -DRAPIDJSON_HAS_STDSTRING)
 
+if(NOT WIN32)
+    target_compile_options(emmy_debugger PUBLIC -fPIC)
+endif()
 
 if(EMMY_USE_LUA_SOURCE)
     target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
