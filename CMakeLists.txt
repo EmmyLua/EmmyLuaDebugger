@@ -61,10 +61,21 @@ endif()
 
 add_definitions(-DEMMY_CORE_VERSION="1.0.16")
 
-add_subdirectory(third-party/${EMMY_LUA_DIR})
+if(EMMY_USE_LUA_SOURCE)
+    add_definitions(-DEMMY_USE_LUA_SOURCE)
+    include_directories(
+        ${CMAKE_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
+    )
+    add_subdirectory(third-party/${EMMY_LUA_DIR})
+endif()
+
 add_subdirectory(third-party/libuv-1.29.0)
+add_subdirectory(emmy_debugger)
 add_subdirectory(emmy_core)
+
 if(WIN32)
+    add_subdirectory(shared)
     add_subdirectory(emmy_tool)
     add_subdirectory(third-party/EasyHook)
+    add_subdirectory(emmy_hook)
 endif(WIN32)
