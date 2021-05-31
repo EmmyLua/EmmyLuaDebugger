@@ -51,6 +51,7 @@ target_sources(emmy_debugger PRIVATE
     ${emmy_debugger_SOURCE_DIR}/src/transporter.cpp
     ${emmy_debugger_SOURCE_DIR}/src/lua_version.cpp
 )
+
 target_compile_definitions(emmy_debugger PUBLIC -DRAPIDJSON_HAS_STDSTRING)
 
 if(NOT WIN32)

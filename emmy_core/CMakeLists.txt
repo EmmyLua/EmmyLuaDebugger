@@ -4,7 +4,24 @@ project (emmy_core)
 
 add_library(emmy_core SHARED)
 
+add_dependencies(
+    emmy_core
+    emmy_debugger
+)
+
 option(EMMY_USE_LUA_SOURCE "Build with lua source" OFF)
+
+set_target_properties(emmy_core PROPERTIES PREFIX "")
+
+target_include_directories(emmy_core PUBLIC 
+    ${CMAKE_SOURCE_DIR}/include
+    PRIVATE src
+)
+
+target_sources(emmy_core PRIVATE
+    ${CMAKE_SOURCE_DIR}/include/emmy_core/emmy_core.h
+    ${emmy_core_SOURCE_DIR}/src/emmy_core.cpp
+)
 
 if (EMMY_USE_LUA_SOURCE)
     if(CMAKE_SYSTEM_NAME MATCHES "Android")
@@ -18,24 +35,6 @@ if (EMMY_USE_LUA_SOURCE)
         PUBLIC lua${EMMY_LUA_VERSION}_a
     )
 endif()
-
-set_target_properties(emmy_core PROPERTIES PREFIX "")
-
-
-target_include_directories(emmy_core PUBLIC 
-    ${CMAKE_SOURCE_DIR}/include
-    PRIVATE src
-)
-
-target_sources(emmy_core PRIVATE
-    ${CMAKE_SOURCE_DIR}/include/emmy_core/emmy_core.h
-    ${emmy_core_SOURCE_DIR}/src/emmy_core.cpp
-)
-
-add_dependencies(
-    emmy_core
-    emmy_debugger
-)
 
 target_link_libraries(
     emmy_core
