@@ -15,6 +15,7 @@
 */
 #include "emmy_core/emmy_core.h"
 #include "emmy_debugger/emmy_helper.h"
+#include "emmy_debugger/emmy_facade.h"
 
 static const luaL_Reg lib[] = {
 	{"tcpListen", tcpListen},
@@ -29,6 +30,7 @@ static const luaL_Reg lib[] = {
 
 extern "C" {
 	EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
+		EmmyFacade::Get().SetWorkMode(WorkMode::emmy_core);
 		if (!install_emmy_core(L))
 			return false;
 		luaL_newlibtable(L, lib);

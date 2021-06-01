@@ -251,7 +251,7 @@ void HookLoadLibrary()
 }
 
 void redirect(int port)
-{
+{	
 	HANDLE readStdPipe = NULL, writeStdPipe = NULL;
 
 	SECURITY_ATTRIBUTES saAttr;

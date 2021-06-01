@@ -27,7 +27,7 @@
 
 EmmyFacade& EmmyFacade::Get()
 {
-	static  EmmyFacade instance;
+	static EmmyFacade instance;
 	return instance;
 }
 
@@ -220,6 +220,11 @@ void EmmyFacade::Destroy()
 		transporter->Stop();
 		transporter = nullptr;
 	}
+}
+
+void EmmyFacade::SetWorkMode(WorkMode mode)
+{
+	workMode = mode;
 }
 
 void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document)
@@ -427,7 +432,7 @@ void EmmyFacade::OnAddBreakPointReq(const rapidjson::Document& document)
 			bp->hitCount = 0;
 			ParsePathParts(bp->file, bp->pathParts);
 			this->breakPoints.push_back(bp);
-			
+
 			for (auto debuggerIt : debuggers)
 			{
 				debuggerIt.second->AddBreakPoint(bp);
@@ -462,11 +467,11 @@ void EmmyFacade::OnActionReq(const rapidjson::Document& document)
 {
 	const auto action = static_cast<DebugAction>(document["action"].GetInt());
 
-	if(breakedDebugger)
+	if (breakedDebugger)
 	{
 		breakedDebugger->DoAction(action);
 	}
-	
+
 	// todo: response
 }
 
@@ -490,7 +495,7 @@ void EmmyFacade::OnEvalReq(const rapidjson::Document& document)
 	context->cacheId = cacheId;
 	context->success = false;
 
-	if(breakedDebugger)
+	if (breakedDebugger)
 	{
 		breakedDebugger->Eval(context);
 	}
@@ -554,9 +559,13 @@ void EmmyFacade::OnLuaStateGC(lua_State* L)
 		debugger->Detach();
 	}
 
-	if (debuggers.empty())
+
+	if (workMode == WorkMode::emmy_core)
 	{
-		Destroy();
+		if (debuggers.empty())
+		{
+			Destroy();
+		}
 	}
 }
 
@@ -572,7 +581,7 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 		debugger = std::make_shared<Debugger>(L);
 		debugger->Start();
 		debugger->Attach(false);
-		
+
 		debuggers.insert({L, debugger});
 		debugger->Hook(ar);
 	}

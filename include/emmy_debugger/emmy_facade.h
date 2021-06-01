@@ -32,6 +32,12 @@ enum class LogType
 	Error
 };
 
+enum class WorkMode
+{
+	emmy_core,
+	attach,
+};
+
 class EmmyFacade
 {
 public:
@@ -68,8 +74,9 @@ public:
 	// for hook
 	void StartupHookMode(int port);
 	void Attach(lua_State* L);
+	void SetWorkMode(WorkMode mode);
 
-	// public ³ÉÔ±·ÅÏÂÃæ
+	// public æˆå‘˜æ”¾ä¸‹é¢
 	
 	std::shared_ptr<HookStateBreak> stateBreak;
 	std::shared_ptr<HookStateStepOver> stateStepOver;
@@ -77,7 +84,7 @@ public:
 	std::shared_ptr<HookStateStepOut> stateStepOut;
 	std::shared_ptr<HookStateContinue> stateContinue;
 	std::shared_ptr<HookStateStop> stateStop;
-	// Start hook ×÷Îª³ÉÔ±´æÔÚ
+	// Start hook ä½œä¸ºæˆå‘˜å­˜åœ¨
 	std::function<void()> StartHook;
 
 private:
@@ -88,7 +95,7 @@ private:
 	void OnActionReq(const rapidjson::Document& document);
 	void OnEvalReq(const rapidjson::Document& document);
 
-	// ³ÉÔ±·ÅÏÂÃæ
+	// æˆå‘˜æ”¾ä¸‹é¢
 	std::shared_ptr<Transporter> transporter;
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
@@ -102,4 +109,7 @@ private:
 	bool isIDEReady;
 	bool isAPIReady;
 	bool isWaitingForIDE;
+	WorkMode workMode;
 };
+
+
