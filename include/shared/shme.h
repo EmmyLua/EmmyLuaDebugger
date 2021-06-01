@@ -15,6 +15,11 @@ struct SharedFile {
 	LPVOID lpMemFile;
 };
 
+struct RemoteThreadParam
+{
+	BOOL bRedirect;
+};
+
 // Size (in bytes) of data to be shared
 #define SHMEMSIZE sizeof(TSharedData)
 // Name of the shared file map (NOTE: Global namespaces must have the SeCreateGlobalPrivilege privilege)

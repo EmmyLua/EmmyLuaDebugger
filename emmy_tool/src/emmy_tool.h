@@ -12,4 +12,6 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 							  bool createNewWindow
     );
 
-bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName);
+bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName, bool capture);
+
+void ReceiveLog(DWORD processId);

@@ -219,6 +219,26 @@ void Transporter::Send(uv_stream_t* handler, int cmd, const char* data, size_t l
 	uv_async_send(async);
 }
 
+void Transporter::Send(uv_stream_t* handler, const char* data, size_t len)
+{
+	if (!IsConnected())
+	{
+		return;
+	}
+	auto* writeReq = new write_req_t();
+	char* newData = static_cast<char*>(malloc(len));
+
+	memcpy(newData , data, len);
+	writeReq->buf = uv_buf_init(newData, len);
+	writeReq->handler = handler;
+
+	// thread safe:
+	auto* async = new uv_async_t;
+	async->data = writeReq;
+	uv_async_init(loop, async, async_write);
+	uv_async_send(async);
+}
+
 void Transporter::StartEventLoop()
 {
 	thread = std::thread(std::bind(&Transporter::Run, this));

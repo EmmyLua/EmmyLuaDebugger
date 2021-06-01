@@ -75,6 +75,8 @@ public:
 protected:
 	virtual void Send(int cmd, const char* data, size_t len) = 0;
 	void Send(uv_stream_t* handler, int cmd, const char* data, size_t len);
+	// send raw data
+	void Send(uv_stream_t* handler, const char* data, size_t len);
 	void Receive(const char* data, size_t len);
 	void OnReceiveMessage(const rapidjson::Document& document);
 	void StartEventLoop();

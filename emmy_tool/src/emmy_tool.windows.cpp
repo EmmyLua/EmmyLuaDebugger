@@ -23,7 +23,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
                               LPCSTR dllName,
                               bool blockOnExit,
                               int debugPort,
-							  bool createNewWindow
+                              bool createNewWindow
 )
 {
 	PROCESS_INFORMATION processInfo;
@@ -38,7 +38,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 	}
 
 	DWORD flags = DEBUG_PROCESS | DEBUG_ONLY_THIS_PROCESS;
-	if(createNewWindow)
+	if (createNewWindow)
 	{
 		flags |= CREATE_NEW_CONSOLE;
 	}
@@ -138,10 +138,10 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 							DebugActiveProcessStop(processInfo.dwProcessId);
 
 							InjectDllForProcess(processInfo.hProcess, dllDirectory, dllName);
-			
+
 							// 会将子进程和自己的pid传递给debug session
 							std::string sendBuffer = std::to_string(processInfo.dwProcessId);
-							
+
 							::send(hSocket, const_cast<char*>(sendBuffer.data()), sendBuffer.size(), 0);
 
 							char waitConnected[100] = "0";
@@ -307,16 +307,16 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 	// 开一个线程等待stop消息
 	std::thread t([&hSocket,&processInfo]()
-		{
-			char waitStop[100] = "0";
-			::recv(hSocket, waitStop, sizeof(waitStop), 0);
-			CloseHandle(processInfo.hProcess);
-			closesocket(hSocket);
-		
-			exit(0);
-		});
+	{
+		char waitStop[100] = "0";
+		::recv(hSocket, waitStop, sizeof(waitStop), 0);
+		CloseHandle(processInfo.hProcess);
+		closesocket(hSocket);
+
+		exit(0);
+	});
 	t.detach();
-	
+
 	//等待进程自然结束
 	WaitForSingleObject(processInfo.hProcess, INFINITE);
 
@@ -324,7 +324,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 	GetExitCodeProcess(processInfo.hProcess, &dwExitCode);
 
 	CloseHandle(processInfo.hProcess);
-	
+
 	if (blockOnExit)
 	{
 		std::cout << "the process exit code: " << dwExitCode << std::endl;
@@ -486,7 +486,7 @@ bool IsBeingInjected(DWORD processId, LPCSTR moduleFileName)
 	return result;
 }
 
-bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName)
+bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName, bool capture)
 {
 	if (IsBeingInjected(processId, dllFileName))
 	{
@@ -522,6 +522,18 @@ bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName)
 		return false;
 	}
 
+
+	void* lpParam = nullptr;
+	if (capture)
+	{
+		lpParam = (void*)VirtualAllocEx(process, 0, sizeof(RemoteThreadParam), MEM_COMMIT,
+		                                             PAGE_READWRITE);
+		RemoteThreadParam param;
+		param.bRedirect = TRUE;
+		
+		::WriteProcessMemory(process, lpParam, &param, sizeof(RemoteThreadParam), NULL);
+	}
+
 	// Read shared data & call 'StartupHookMode()'
 	TSharedData data;
 	if (ReadSharedData(data))
@@ -531,7 +543,7 @@ bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName)
 		                                   nullptr,
 		                                   0,
 		                                   (LPTHREAD_START_ROUTINE)data.lpInit,
-		                                   (void*)GetCurrentProcessId(),
+		                                   (void*)lpParam,
 		                                   0,
 		                                   &threadId);
 
@@ -619,4 +631,55 @@ bool InjectDllForProcess(HANDLE hProcess, const char* dllDir, const char* dllFil
 		MessageEvent("Successfully inject dll!");
 	}
 	return success;
+}
+
+
+void ReceiveLog(DWORD processId)
+{
+	int debugPort = processId;
+	// 1024 - 65535
+	while (debugPort > 0xffff) debugPort -= 0xffff;
+	while (debugPort < 0x400) debugPort += 0x400;
+	debugPort++;
+
+	// 开始连接 debug session
+	// 开一个网络连接
+	WORD version MAKEWORD(2, 2);
+	WSADATA data;
+	WSAStartup(version, &data);
+
+	sockaddr_in serverAddress;
+	SOCKET hSocket = NULL;
+
+	hSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (hSocket == INVALID_SOCKET)
+	{
+		return;
+	}
+
+	memset(&serverAddress, 0, sizeof(serverAddress));
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serverAddress.sin_port = htons((short)debugPort);
+
+	if (SOCKET_ERROR == connect(hSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)))
+	{
+		closesocket(hSocket);
+		DWORD error = WSAGetLastError();
+		printf("tcp connect error, err code=%d", error);
+		return;
+	}
+
+	char receiveBuf[10240] = {0};
+
+	while (true)
+	{
+		int receiveSize = ::recv(hSocket, receiveBuf, sizeof(receiveBuf), 0);
+		if (receiveSize <= 0)
+		{
+			break;
+		}
+
+		fwrite(receiveBuf, sizeof(char), receiveSize, stdout);
+	}
 }

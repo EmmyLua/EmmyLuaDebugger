@@ -10,15 +10,17 @@
 #include <Psapi.h>
 #include "easyhook.h"
 #include "libpe/libpe.h"
-
+#include "io.h"
+#include "emmy_debugger/proto/socket_server_transporter.h"
+#include "shared/shme.h"
 
 typedef TRACED_HOOK_HANDLE HOOK_HANDLE;
 typedef NTSTATUS HOOK_STATUS;
 
 HOOK_STATUS Hook(void* InEntryPoint,
-	void* InHookProc,
-	void* InCallback,
-	HOOK_HANDLE OutHandle);
+                 void* InHookProc,
+                 void* InCallback,
+                 HOOK_HANDLE OutHandle);
 
 HOOK_STATUS UnHook(HOOK_HANDLE InHandle);
 
@@ -248,10 +250,123 @@ void HookLoadLibrary()
 	}
 }
 
-int StartupHookMode()
+void redirect(int port)
+{
+	HANDLE readStdPipe = NULL, writeStdPipe = NULL;
+
+	SECURITY_ATTRIBUTES saAttr;
+	saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+	saAttr.bInheritHandle = TRUE;
+	saAttr.lpSecurityDescriptor = nullptr;
+
+	CreatePipe(&readStdPipe, &writeStdPipe, &saAttr, 0);
+
+	const auto oldStdout = _dup(_fileno(stdout));
+	const auto oldStderr = _dup(_fileno(stderr));
+
+	if (oldStdout == -1 || oldStderr == -1)
+	{
+		printf("stdout or stderr redirect error");
+		_close(oldStdout);
+		_close(oldStderr);
+		return;
+	}
+
+	const auto stream = _open_osfhandle(reinterpret_cast<long>(writeStdPipe), 0);
+	FILE* capture = nullptr;
+	if (stream == -1)
+	{
+		printf("capture stream open fail");
+		_dup2(oldStdout, _fileno(stdout));
+		_dup2(oldStderr, _fileno(stderr));
+
+		_close(oldStdout);
+		_close(oldStderr);
+
+		return;
+	}
+	capture = _fdopen(stream, "wt");
+
+	// stdout now refers to file "capture" 
+	if (_dup2(_fileno(capture), _fileno(stdout)) == -1)
+	{
+		printf("Can't _dup2 stdout to capture");
+
+		_dup2(oldStdout, _fileno(stdout));
+		_dup2(oldStderr, _fileno(stderr));
+
+		_close(oldStdout);
+		_close(oldStderr);
+
+		return;
+	}
+
+	// stderr now refers to file "capture" 
+	if (_dup2(_fileno(capture), _fileno(stderr)) == -1)
+	{
+		printf("Can't _dup2 stderr to capture");
+
+		_dup2(oldStdout, _fileno(stdout));
+		_dup2(oldStderr, _fileno(stderr));
+
+		_close(oldStdout);
+		_close(oldStderr);
+
+		return;
+	}
+	setvbuf(stdout, nullptr, _IONBF, 0);
+	setvbuf(stderr, nullptr, _IONBF, 0);
+	// 1024 - 65535
+	while (port > 0xffff) port -= 0xffff;
+	while (port < 0x400) port += 0x400;
+	port++;
+
+	const auto transport = std::make_shared<SocketServerTransporter>();
+	std::string err;
+	const auto suc = transport->Listen("localhost", port, err);
+
+	if (!suc)
+	{
+		printf("capture log error : %s", err.c_str());
+
+		_dup2(oldStdout, _fileno(stdout));
+		_dup2(oldStderr, _fileno(stderr));
+
+		_close(oldStdout);
+		_close(oldStderr);
+
+		return;
+	}
+
+	std::thread thread([transport,readStdPipe,oldStdout]()
+	{
+		char buf[1024] = {0};
+		while (true)
+		{
+			DWORD readWord;
+			ZeroMemory(buf, 1024);
+			const bool suc = ReadFile(readStdPipe, buf, 1024, &readWord, nullptr);
+
+			if (suc && readWord > 0)
+			{
+				_write(oldStdout, buf, readWord);
+				transport->Send(buf, readWord);
+			}
+		}
+	});
+	thread.detach();
+}
+
+int StartupHookMode(void* lpParam)
 {
 	const int pid = (int)GetCurrentProcessId();
 	EmmyFacade::Get().StartupHookMode(pid);
+	
+	if(lpParam != nullptr && ((RemoteThreadParam*)lpParam)->bRedirect)
+	{
+		redirect(pid);
+	}
+
 	return 0;
 }
 

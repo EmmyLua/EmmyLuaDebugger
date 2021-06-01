@@ -60,6 +60,11 @@ bool SocketServerTransporter::Listen(const std::string& host, int port, std::str
 	return true;
 }
 
+void SocketServerTransporter::Send(const char* data, size_t len)
+{
+	Transporter::Send((uv_stream_t*)uvClient, data, len);
+}
+
 int SocketServerTransporter::Stop() {
 	uv_close((uv_handle_t*)&uvServer, nullptr);
 	if (uvClient) {

@@ -12,11 +12,12 @@ int doAttach(CommandLine& commandLine)
 	const int pid = commandLine.Get<int>("p");
 	std::string dir = commandLine.Get<std::string>("dir");
 	std::string dll = commandLine.Get<std::string>("dll");
-	if (!InjectDll(pid, dir.c_str(), dll.c_str()))
+	auto capture = commandLine.Get<bool>("capture-log");
+	if (!InjectDll(pid, dir.c_str(), dll.c_str(), capture))
 	{
 		return -1;
 	}
-	
+
 	return 0;
 }
 
@@ -70,12 +71,12 @@ int doRunAndAttach(CommandLine& commandLine)
 	std::string dll = commandLine.Get<std::string>("dll");
 	std::string dir = commandLine.Get<std::string>("work");
 	std::string exe = commandLine.Get<std::string>("exe");
-	int debugPort = commandLine.Get<int>("debugPort");
-	// ·���п��ܴ��ڿո�
+	int debugPort = commandLine.Get<int>("debug-port");
+	// 
 	std::string command = "\"" + exe + "\"" + " " + commandLine.Get<std::string>("args");
-	bool blockOnExit = commandLine.Get<bool>("blockOnExit");
-	bool createNewWindow = commandLine.Get<bool>("createNewWindow");
-	
+	bool blockOnExit = commandLine.Get<bool>("block-on-exit");
+	bool createNewWindow = commandLine.Get<bool>("create-new-window");
+
 	if (!StartProcessAndInjectDll(exe.c_str(),
 	                              const_cast<LPSTR>(command.c_str()),
 	                              dir.c_str(),
@@ -83,7 +84,7 @@ int doRunAndAttach(CommandLine& commandLine)
 	                              dll.c_str(),
 	                              blockOnExit,
 	                              debugPort,
-								  createNewWindow
+	                              createNewWindow
 	))
 	{
 		return -1;
@@ -92,6 +93,12 @@ int doRunAndAttach(CommandLine& commandLine)
 	return 0;
 }
 
+int ReceiveLog(CommandLine& commandLine)
+{
+	const int pid = commandLine.Get<int>("p");
+	ReceiveLog(pid);
+	return 0;
+}
 
 int main(int argc, char** argv)
 {
@@ -101,24 +108,26 @@ int main(int argc, char** argv)
 	commandLine.AddTarget("arch_file", false);
 	commandLine.AddTarget("arch_pid", false);
 	commandLine.AddTarget("run_and_attach");
+	commandLine.AddTarget("receive_log");
 
 
 	// pid
 	commandLine.Add<int>("p");
-	// dir ʵ������dll dir
+	// dir 
 	commandLine.Add<std::string>("dir");
-	// dll ����
+	// dll
 	commandLine.Add<std::string>("dll");
-	// exe ·��
+	// exe
 	commandLine.Add<std::string>("exe");
 	// work space
 	commandLine.Add<std::string>("work");
 	// stop on process exit
-	commandLine.Add<bool>("blockOnExit");
-	commandLine.Add<int>("debugPort");
-	commandLine.Add<bool>("createNewWindow");
+	commandLine.Add<bool>("block-on-exit");
+	commandLine.Add<int>("debug-port");
+	commandLine.Add<bool>("create-new-window");
 	// rest param
 	commandLine.Add<std::string>("args", true);
+	commandLine.Add<bool>("capture-log");
 
 	if (!commandLine.Parse(argc, argv))
 	{
@@ -150,6 +159,10 @@ int main(int argc, char** argv)
 	{
 		//emmy_tool.exe run_and_attach -dir c:/xx -dll emmy_hook.dll -work d:fff/ -exe c:/lua/lua.exe -args test.lua
 		return doRunAndAttach(commandLine);
+	}
+	if (target == "receive_log")
+	{
+		return ReceiveLog(commandLine);
 	}
 
 	return -1;

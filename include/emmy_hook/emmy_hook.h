@@ -1,6 +1,8 @@
 
 #pragma once
 
-int StartupHookMode();
+
+
+int StartupHookMode(void* lpParam);
 
 void FindAndHook();
