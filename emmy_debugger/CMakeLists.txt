@@ -16,9 +16,10 @@ target_include_directories(emmy_debugger PUBLIC
     PRIVATE src
 )
 
-target_sources(emmy_debugger PRIVATE
+target_sources(emmy_debugger PUBLIC
 
     ${CMAKE_SOURCE_DIR}/include/emmy_debugger/emmy_debugger.h
+    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/emmy_debugger_manager.h
     ${CMAKE_SOURCE_DIR}/include/emmy_debugger/emmy_facade.h
     ${CMAKE_SOURCE_DIR}/include/emmy_debugger/hook_state.h
     ${CMAKE_SOURCE_DIR}/include/emmy_debugger/lua_version.h
@@ -44,6 +45,7 @@ target_sources(emmy_debugger PRIVATE
 
     #src
     ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger.cpp
+    ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger_manager.cpp
     ${emmy_debugger_SOURCE_DIR}/src/emmy_facade.cpp
     ${emmy_debugger_SOURCE_DIR}/src/emmy_helper.cpp
     ${emmy_debugger_SOURCE_DIR}/src/hook_state.cpp

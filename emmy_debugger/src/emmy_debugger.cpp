@@ -21,6 +21,7 @@
 #include "emmy_debugger/emmy_helper.h"
 
 #define CACHE_TABLE_NAME "_emmy_cache_table_"
+#define CACHE_QUERY_NAME "_emmy_query_table_"
 
 int cacheId = 1;
 
@@ -29,8 +30,9 @@ void HookLua(lua_State* L, lua_Debug* ar)
 	EmmyFacade::Get().Hook(L, ar);
 }
 
-Debugger::Debugger(lua_State* L):
+Debugger::Debugger(lua_State* L, std::shared_ptr<EmmyDebuggerManager> manager):
 	L(L),
+	manager(manager),
 	hookState(nullptr),
 	running(false),
 	skipHook(false),
@@ -48,13 +50,6 @@ void Debugger::Start()
 	blocking = false;
 	running = true;
 	doStringList.clear();
-	RemoveAllBreakpoints();
-
-	// 从EmmyFacade 继承断点
-	const auto& breakPoints = EmmyFacade::Get().GetBreakPoints();
-	this->breakPoints = breakPoints;
-
-	RefreshLineSet();
 }
 
 void Debugger::Attach(bool doHelperCode)
@@ -64,12 +59,12 @@ void Debugger::Attach(bool doHelperCode)
 
 
 	// execute helper code
-	if (doHelperCode && !EmmyFacade::Get().GetHelperCode().empty())
+	if (doHelperCode && ! manager->helperCode.empty())
 	{
 		ExecuteOnLuaThread([this](lua_State* L)
 		{
 			const int t = lua_gettop(L);
-			const int r = luaL_loadstring(L, EmmyFacade::Get().GetHelperCode().c_str());
+			const int r = luaL_loadstring(L, manager->helperCode.c_str());
 			if (r == LUA_OK)
 			{
 				if (lua_pcall(L, 0, 0, 0) != LUA_OK)
@@ -105,14 +100,17 @@ void Debugger::Hook(lua_Debug* ar)
 	}
 	if (getDebugEvent(ar) == LUA_HOOKLINE)
 	{
-		if (luaThreadExecutors.empty() == false)
+		// 对luaTreadExecutors 执行加锁
 		{
-			std::unique_lock<std::mutex> lock(mutexLuaThread);
-			for (auto& executor : luaThreadExecutors)
+			std::unique_lock<std::mutex> lock(luaThreadMtx);
+			if (!luaThreadExecutors.empty())
 			{
-				ExecuteWithSkipHook(executor);
+				for (auto& executor : luaThreadExecutors)
+				{
+					ExecuteWithSkipHook(executor);
+				}
+				luaThreadExecutors.clear();
 			}
-			luaThreadExecutors.clear();
 		}
 		auto bp = FindBreakPoint(ar);
 		if (bp && ProcessBreakPoint(bp))
@@ -137,10 +135,11 @@ void Debugger::Stop()
 
 	hookState = nullptr;
 
-	// clear lua thread executors
-	std::unique_lock<std::mutex> luaThreadLock(mutexLuaThread);
-	luaThreadExecutors.clear();
-
+	{
+		// clear lua thread executors
+		std::unique_lock<std::mutex> luaThreadLock(luaThreadMtx);
+		luaThreadExecutors.clear();
+	}
 	ExitDebugMode();
 }
 
@@ -253,6 +252,7 @@ std::string ToPointer(lua_State* L, int index)
 	return ss.str();
 }
 
+// algorithm optimization
 void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
 	const int t1 = lua_gettop(L);
@@ -331,7 +331,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 		}
 	case LUA_TTABLE:
 		{
-			int tableSize = 0;
+			std::size_t tableSize = 0;
 			const void* tableAddr = lua_topointer(L, index);
 			lua_pushnil(L);
 			while (lua_next(L, index))
@@ -411,7 +411,7 @@ void Debugger::CacheValue(int valueIndex, std::shared_ptr<Variable> variable) co
 	{
 		const int id = cacheId++;
 		variable->cacheId = id;
-		const int t1 = lua_gettop(L);
+		const int top = lua_gettop(L);
 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME); // 1: cacheTable|nil
 		if (lua_isnil(L, -1))
 		{
@@ -420,13 +420,42 @@ void Debugger::CacheValue(int valueIndex, std::shared_ptr<Variable> variable) co
 			lua_setfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME); //
 			lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME); // 1: cacheTable
 		}
+
 		lua_pushvalue(L, valueIndex); // 1: cacheTable, 2: value
-		char Key[10];
-		sprintf(Key, "%d", id);
-		lua_setfield(L, -2, Key); // 1: cacheTable
-		lua_settop(L, t1);
+
+		// snprintf 性能不够，问题也很大，这里采用c++标准算法
+		std::string key = std::to_string(id);
+		lua_setfield(L, -2, key.c_str()); // 1: cacheTable
+
+		lua_settop(L, top);
 	}
 }
+
+// bool Debugger::HasCacheValue(int valueIndex) const
+// {
+// 	const int type = lua_type(L, valueIndex);
+// 	if (type == LUA_TUSERDATA || type == LUA_TTABLE)
+// 	{
+// 		const int id = cacheId++;
+// 		// ->cacheId = id;
+// 		const int top = lua_gettop(L);
+// 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME); // 1: cacheTable|nil
+// 		if (lua_isnil(L, -1))
+// 		{
+// 			lua_pop(L, 1); //
+// 			lua_newtable(L); // 1: {}
+// 			lua_setfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME); //
+// 			lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME); // 1: cacheTable
+// 		}
+// 		lua_pushvalue(L, valueIndex); // 1: cacheTable, 2: value
+//
+// 		// snprintf 性能不够，问题也很大，这里采用c++标准算法
+// 		std::string Key = std::to_string(id);
+// 		lua_setfield(L, -2, Key.c_str()); // 1: cacheTable
+//
+// 		lua_settop(L, top);
+// 	}
+// }
 
 void Debugger::ClearCache() const
 {
@@ -437,7 +466,6 @@ void Debugger::ClearCache() const
 		lua_setfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);
 	}
 	lua_pop(L, 1);
-	
 }
 
 void Debugger::DoAction(DebugAction action)
@@ -445,19 +473,19 @@ void Debugger::DoAction(DebugAction action)
 	switch (action)
 	{
 	case DebugAction::Break:
-		SetHookState(EmmyFacade::Get().stateBreak);
+		SetHookState(manager->stateBreak);
 		break;
 	case DebugAction::Continue:
-		SetHookState(EmmyFacade::Get().stateContinue);
+		SetHookState(manager->stateContinue);
 		break;
 	case DebugAction::StepOver:
-		SetHookState(EmmyFacade::Get().stateStepOver);
+		SetHookState(manager->stateStepOver);
 		break;
 	case DebugAction::StepIn:
-		SetHookState(EmmyFacade::Get().stateStepIn);
+		SetHookState(manager->stateStepIn);
 		break;
 	case DebugAction::Stop:
-		SetHookState(EmmyFacade::Get().stateStop);
+		SetHookState(manager->stateStop);
 		break;
 	default: break;
 	}
@@ -517,6 +545,7 @@ void Debugger::HandleBreak()
 {
 	// to be on the safe side, hook it again
 	UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
+
 	EmmyFacade::Get().OnBreak(L);
 	EnterDebugMode();
 }
@@ -524,11 +553,12 @@ void Debugger::HandleBreak()
 // host thread
 void Debugger::EnterDebugMode()
 {
-	std::unique_lock<std::mutex> lock(mutexRun);
+	std::unique_lock<std::mutex> lock(runMtx);
+
 	blocking = true;
 	while (true)
 	{
-		std::unique_lock<std::mutex> lockEval(mutexEval);
+		std::unique_lock<std::mutex> lockEval(evalMtx);
 		if (evalQueue.empty() && blocking)
 		{
 			lockEval.unlock();
@@ -550,7 +580,6 @@ void Debugger::EnterDebugMode()
 		break;
 	}
 	ClearCache();
-	EmmyFacade::Get().ResetBreakedDebugger();
 }
 
 void Debugger::ExitDebugMode()
@@ -559,37 +588,6 @@ void Debugger::ExitDebugMode()
 	cvRun.notify_all();
 }
 
-void Debugger::AddBreakPoint(std::shared_ptr<BreakPoint> bp)
-{
-	std::lock_guard<std::mutex> lock(mutexBP);
-	breakPoints.push_back(bp);
-	RefreshLineSet();
-}
-
-void Debugger::RemoveBreakPoint(const std::string& file, int line)
-{
-	std::string lowerCaseFile = file;
-	std::transform(file.begin(), file.end(), lowerCaseFile.begin(), tolower);
-	std::lock_guard<std::mutex> lock(mutexBP);
-	auto it = breakPoints.begin();
-	while (it != breakPoints.end())
-	{
-		const auto bp = *it;
-		if (bp->file == lowerCaseFile && bp->line == line)
-		{
-			breakPoints.erase(it);
-			break;
-		}
-		++it;
-	}
-	RefreshLineSet();
-}
-
-void Debugger::RemoveAllBreakpoints()
-{
-	lineSet.clear();
-	breakPoints.clear();
-}
 
 int EnvIndexFunction(lua_State* L)
 {
@@ -632,7 +630,7 @@ int EnvIndexFunction(lua_State* L)
 	return 0;
 }
 
-bool Debugger::CreateEnv(lua_State* L, int stackLevel)
+bool Debugger::CreateEnv(int stackLevel)
 {
 	//assert(L);
 	//const auto L = L;
@@ -780,10 +778,15 @@ bool Debugger::Eval(std::shared_ptr<EvalContext> evalContext, bool force)
 	if (force)
 		return DoEval(evalContext);
 	if (!blocking)
+	{
 		return false;
-	std::unique_lock<std::mutex> lock(mutexEval);
-	evalQueue.push(evalContext);
-	lock.unlock();
+	}
+	// 加锁
+	{
+		std::unique_lock<std::mutex> lock(evalMtx);
+		evalQueue.push(evalContext);
+	}
+
 	cvRun.notify_all();
 	return true;
 }
@@ -820,7 +823,7 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	// call
 	const int fIdx = lua_gettop(L);
 	// create env
-	if (!CreateEnv(L, evalContext->stackLevel))
+	if (!CreateEnv(evalContext->stackLevel))
 		return false;
 	// setup env
 #ifndef EMMY_USE_LUA_SOURCE
@@ -851,6 +854,8 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(lua_Debug* ar)
 {
 	const int cl = getDebugCurrentLine(ar);
+	auto lineSet = manager->GetLineSet();
+
 	if (cl >= 0 && lineSet.find(cl) != lineSet.end())
 	{
 		lua_getinfo(L, "S", ar);
@@ -862,13 +867,14 @@ std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(lua_Debug* ar)
 
 std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(const std::string& file, int line)
 {
-	std::lock_guard<std::mutex> lock(mutexBP);
 	std::vector<std::string> pathParts;
 	std::string lowerCaseFile = file;
 	std::transform(file.begin(), file.end(), lowerCaseFile.begin(), tolower);
 	ParsePathParts(lowerCaseFile, pathParts);
-	auto it = breakPoints.begin();
-	while (it != breakPoints.end())
+
+	auto breakpoints = manager->GetBreakpoints();
+	auto it = breakpoints.begin();
+	while (it != breakpoints.end())
 	{
 		auto const bp = *it;
 		if (bp->line == line)
@@ -909,7 +915,7 @@ bool Debugger::MatchFileName(const std::string& chunkName, const std::string& fi
 	if (chunkName == fileName)
 		return true;
 	// abc == abc.lua
-	for (const auto& ext : EmmyFacade::Get().GetExtNames())
+	for (const auto& ext : manager->extNames)
 	{
 		if (chunkName + ext == fileName)
 		{
@@ -917,16 +923,6 @@ bool Debugger::MatchFileName(const std::string& chunkName, const std::string& fi
 		}
 	}
 	return false;
-}
-
-
-void Debugger::RefreshLineSet()
-{
-	lineSet.clear();
-	for (auto bp : breakPoints)
-	{
-		lineSet.insert(bp->line);
-	}
 }
 
 void Debugger::ExecuteWithSkipHook(const Executor& exec)
@@ -939,7 +935,6 @@ void Debugger::ExecuteWithSkipHook(const Executor& exec)
 
 void Debugger::ExecuteOnLuaThread(const Executor& exec)
 {
-	std::unique_lock<std::mutex> lock(mutexLuaThread);
+	std::unique_lock<std::mutex> lock(luaThreadMtx);
 	luaThreadExecutors.push_back(exec);
 }
-

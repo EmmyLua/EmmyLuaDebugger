@@ -16,7 +16,6 @@
 #pragma once
 
 #include <vector>
-#include <set>
 #include <mutex>
 #include <condition_variable>
 #include <queue>
@@ -27,42 +26,13 @@
 #include "types.h"
 
 using StackAllocatorCB = std::shared_ptr<Stack> (*)();
-using OnBreakCB = void (*)();
 using Executor = std::function<void(lua_State* L)> ;
+class EmmyDebuggerManager;
 
 class Debugger : public std::enable_shared_from_this<Debugger>
 {
-	lua_State* L;
-	std::shared_ptr<HookState> hookState;
-
-	bool running;
-	bool skipHook;
-	bool blocking;
-
-
-	std::vector<std::string> doStringList;
-	std::vector<std::shared_ptr<BreakPoint>> breakPoints;
-	std::set<int> lineSet;
-	std::mutex mutexRun;
-	std::condition_variable cvRun;
-	std::mutex mutexEval;
-	std::queue<std::shared_ptr<EvalContext>> evalQueue;
-	std::mutex mutexBP;
-
-	std::mutex mutexLuaThread;
-	std::vector<Executor> luaThreadExecutors;
-
-
-
-	friend class EmmyFacade;
-	friend class StackLevelBasedState;
-	friend class HookStateStepIn;
-	friend class HookStateStepOut;
-	friend class HookStateStepOver;
-	friend class HookStateBreak;
-	friend class HookStateStop;
 public:
-	Debugger(lua_State* L);
+	Debugger(lua_State* L, std::shared_ptr<EmmyDebuggerManager> manager);
 	~Debugger();
 
 	void Start();
@@ -71,9 +41,7 @@ public:
 	void Hook(lua_Debug* ar);
 	void Stop();
 	bool IsRunning() const;
-	void AddBreakPoint(std::shared_ptr<BreakPoint> breakPoint);
-	void RemoveBreakPoint(const std::string& file, int line);
-	void RemoveAllBreakpoints();
+	
 	void AsyncDoString(const std::string& code);
 	bool Eval(std::shared_ptr<EvalContext> evalContext, bool force = false);
 	bool GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc);
@@ -83,21 +51,43 @@ public:
 	void ExitDebugMode();
 	void ExecuteWithSkipHook(const Executor& exec);
 	void ExecuteOnLuaThread(const Executor& exec);
+	void HandleBreak();
+	int GetStackLevel(bool skipC) const;
+	void UpdateHook(int mask);
 
 private:
 	std::shared_ptr<BreakPoint> FindBreakPoint(lua_Debug* ar);
 	std::shared_ptr<BreakPoint> FindBreakPoint(const std::string& file, int line);
 	std::string GetFile(lua_Debug* ar) const;
-	int GetStackLevel(bool skipC) const;
-	void RefreshLineSet();
-	void UpdateHook(int mask);
-	void HandleBreak();
+
 	void SetHookState(std::shared_ptr<HookState> newState);
 	void CheckDoString();
-	bool CreateEnv(lua_State* L, int stackLevel);
+	bool CreateEnv( int stackLevel);
 	bool ProcessBreakPoint(std::shared_ptr<BreakPoint> bp);
 	bool DoEval(std::shared_ptr<EvalContext> evalContext);
 	bool MatchFileName(const std::string& chunkName, const std::string& fileName) const;
 	void CacheValue(int valueIndex, std::shared_ptr<Variable> variable) const;
+	// bool HasCacheValue(int valueIndex) const;
 	void ClearCache() const;
+
+	lua_State* L;
+	std::shared_ptr<EmmyDebuggerManager> manager;
+	
+	std::shared_ptr<HookState> hookState;
+
+	bool running;
+	bool skipHook;
+	bool blocking;
+
+	std::vector<std::string> doStringList;
+
+	std::mutex runMtx;
+	std::condition_variable cvRun;
+
+	std::mutex luaThreadMtx;
+	std::vector<Executor> luaThreadExecutors;
+
+	std::mutex evalMtx;
+	std::queue<std::shared_ptr<EvalContext>> evalQueue;
+
 };

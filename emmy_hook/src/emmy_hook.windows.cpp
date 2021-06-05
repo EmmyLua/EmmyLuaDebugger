@@ -251,7 +251,7 @@ void HookLoadLibrary()
 }
 
 void redirect(int port)
-{	
+{
 	HANDLE readStdPipe = NULL, writeStdPipe = NULL;
 
 	SECURITY_ATTRIBUTES saAttr;
@@ -267,8 +267,15 @@ void redirect(int port)
 	if (oldStdout == -1 || oldStderr == -1)
 	{
 		printf("stdout or stderr redirect error");
-		_close(oldStdout);
-		_close(oldStderr);
+		if (oldStdout != -1)
+		{
+			_close(oldStdout);
+		}
+		if (oldStderr != -1)
+		{
+			_close(oldStderr);
+		}
+
 		return;
 	}
 
@@ -361,8 +368,8 @@ int StartupHookMode(void* lpParam)
 {
 	const int pid = (int)GetCurrentProcessId();
 	EmmyFacade::Get().StartupHookMode(pid);
-	
-	if(lpParam != nullptr && ((RemoteThreadParam*)lpParam)->bRedirect)
+
+	if (lpParam != nullptr && ((RemoteThreadParam*)lpParam)->bRedirect)
 	{
 		redirect(pid);
 	}

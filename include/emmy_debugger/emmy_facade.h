@@ -21,9 +21,7 @@
 #include <map>
 #include "emmy_debugger/transporter.h"
 #include "emmy_debugger/api/lua_api.h"
-#include "emmy_debugger/emmy_debugger.h"
-
-class EvalContext;
+#include "emmy_debugger/emmy_debugger_manager.h"
 
 enum class LogType
 {
@@ -53,6 +51,7 @@ public:
 	bool PipeListen(lua_State* L, const std::string& name, std::string& err);
 	bool PipeConnect(lua_State* L, const std::string& name, std::string& err);
 	int BreakHere(lua_State* L);
+	
 	int OnConnect(bool suc);
 	int OnDisconnect();
 	void WaitIDE(bool force = false, int timeout = 0);
@@ -63,27 +62,17 @@ public:
 	void SendLog(LogType type, const char* fmt, ...);
 	void OnLuaStateGC(lua_State* L);
 	void Hook(lua_State* L, lua_Debug* ar);
-	std::shared_ptr<Debugger> GetDebugger(lua_State* L);
+
 	std::shared_ptr<Variable> GetVariableRef(Variable* variable);
 	void AddVariableRef(std::shared_ptr<Variable> variable);
 	void RemoveVariableRef(Variable* variable);
-	const std::vector<std::string>& GetExtNames() const;
-	const std::string& GetHelperCode() const;
-	const std::vector<std::shared_ptr<BreakPoint>>& GetBreakPoints() const;
-	void ResetBreakedDebugger();
+	std::shared_ptr<Debugger> GetDebugger(lua_State* L);
+
 	// for hook
 	void StartupHookMode(int port);
 	void Attach(lua_State* L);
 	void SetWorkMode(WorkMode mode);
-
-	// public 成员放下面
 	
-	std::shared_ptr<HookStateBreak> stateBreak;
-	std::shared_ptr<HookStateStepOver> stateStepOver;
-	std::shared_ptr<HookStateStepIn> stateStepIn;
-	std::shared_ptr<HookStateStepOut> stateStepOut;
-	std::shared_ptr<HookStateContinue> stateContinue;
-	std::shared_ptr<HookStateStop> stateStop;
 	// Start hook 作为成员存在
 	std::function<void()> StartHook;
 
@@ -95,21 +84,18 @@ private:
 	void OnActionReq(const rapidjson::Document& document);
 	void OnEvalReq(const rapidjson::Document& document);
 
-	// 成员放下面
-	std::shared_ptr<Transporter> transporter;
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
-	std::map<lua_State*, std::shared_ptr<Debugger>> debuggers;
+	
+	std::shared_ptr<Transporter> transporter;
 	std::map<Variable*, std::shared_ptr<Variable>> luaVariableRef;
-	std::shared_ptr<Debugger> breakedDebugger;
-
-	std::vector<std::shared_ptr<BreakPoint>> breakPoints;
-	std::string helperCode;
-	std::vector<std::string> extNames;
+	
 	bool isIDEReady;
 	bool isAPIReady;
 	bool isWaitingForIDE;
 	WorkMode workMode;
+
+	std::shared_ptr<EmmyDebuggerManager> emmyDebuggerManager;
 };
 
 

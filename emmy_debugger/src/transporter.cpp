@@ -127,9 +127,7 @@ void Transporter::Receive(const char* data, size_t len)
 
 void Transporter::OnReceiveMessage(const rapidjson::Document& document)
 {
-	// if (facade) {
 	EmmyFacade::Get().OnReceiveMessage(document);
-	// }
 }
 
 void Transporter::OnDisconnect()
@@ -148,10 +146,8 @@ void Transporter::OnConnect(bool suc)
 	connected = suc;
 	readHead = true;
 	receiveSize = 0;
-	// if (facade)
-	// {
+
 	EmmyFacade::Get().OnConnect(suc);
-	// }
 }
 
 bool Transporter::IsConnected() const
