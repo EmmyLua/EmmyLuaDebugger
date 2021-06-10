@@ -184,6 +184,8 @@ int EmmyFacade::OnDisconnect()
 	isIDEReady = false;
 	isWaitingForIDE = false;
 
+	emmyDebuggerManager->OnDisconnect();
+	
 	return 0;
 }
 

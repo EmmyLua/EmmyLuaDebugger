@@ -172,3 +172,12 @@ void EmmyDebuggerManager::Eval(std::shared_ptr<EvalContext> ctx)
 		debugger->Eval(ctx, false);
 	}
 }
+
+void EmmyDebuggerManager::OnDisconnect()
+{
+	std::lock_guard<std::mutex> lock(debuggerMtx);
+	for(auto it: debuggers)
+	{
+		it.second->Stop();
+	}
+}

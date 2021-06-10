@@ -44,6 +44,8 @@ public:
 
 	// 计算表达式
 	void Eval(std::shared_ptr<EvalContext> ctx);
+
+	void OnDisconnect();
 	
 	// public 成员放下面
 	std::shared_ptr<HookStateBreak> stateBreak;
