@@ -36,7 +36,7 @@ public:
 	std::string condition;
 	std::string hitCondition;
 	std::string logMessage;
-	std::vector<std::string> pathParts;
+	// std::vector<std::string> pathParts;
 	int hitCount;
 	int line;
 };

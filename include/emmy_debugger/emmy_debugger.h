@@ -65,7 +65,11 @@ private:
 	bool CreateEnv( int stackLevel);
 	bool ProcessBreakPoint(std::shared_ptr<BreakPoint> bp);
 	bool DoEval(std::shared_ptr<EvalContext> evalContext);
-	bool MatchFileName(const std::string& chunkName, const std::string& fileName) const;
+
+	// 模糊匹配算法会算出匹配度
+	// 当多个文件路径都有可能命中应该采用匹配度最高的路径
+	// TODO 以后再实现了
+	int FuzzyMatchFileName(const std::string& chunkName, const std::string& fileName) const;
 	void CacheValue(int valueIndex, std::shared_ptr<Variable> variable) const;
 	// bool HasCacheValue(int valueIndex) const;
 	void ClearCache() const;

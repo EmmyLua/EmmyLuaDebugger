@@ -859,70 +859,156 @@ std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(lua_Debug* ar)
 	if (cl >= 0 && lineSet.find(cl) != lineSet.end())
 	{
 		lua_getinfo(L, "S", ar);
-		const auto file = GetFile(ar);
-		return FindBreakPoint(file, cl);
+		const auto chunkname = GetFile(ar);
+		return FindBreakPoint(chunkname, cl);
 	}
 	return nullptr;
 }
 
-std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(const std::string& file, int line)
+std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(const std::string& chunkname, int line)
 {
-	std::vector<std::string> pathParts;
-	std::string lowerCaseFile = file;
-	std::transform(file.begin(), file.end(), lowerCaseFile.begin(), tolower);
-	ParsePathParts(lowerCaseFile, pathParts);
+	std::shared_ptr<BreakPoint> breakedpoint = nullptr;
+	int maxMatchProcess = 0;
 
 	auto breakpoints = manager->GetBreakpoints();
-	auto it = breakpoints.begin();
-	while (it != breakpoints.end())
+	for (const auto bp : breakpoints)
 	{
-		auto const bp = *it;
 		if (bp->line == line)
 		{
-			// full match: bp(a/b/c), file(a/b/c)
-			if (bp->file == lowerCaseFile)
-			{
-				return *it;
-			}
 			// fuzz match: bp(x/a/b/c), file(a/b/c)
-			if (bp->pathParts.size() >= pathParts.size() && MatchFileName(pathParts.back(), bp->pathParts.back()))
+			int matchProcess = FuzzyMatchFileName(chunkname, bp->file);
+
+			if (matchProcess > 0 && matchProcess > maxMatchProcess)
 			{
-				bool match = true;
-				for (size_t i = 1; i < pathParts.size(); i++)
-				{
-					const auto p = *(bp->pathParts.end() - i - 1);
-					const auto f = *(pathParts.end() - i - 1);
-					if (p != f)
-					{
-						match = false;
-						break;
-					}
-				}
-				if (match)
-				{
-					return bp;
-				}
+				maxMatchProcess = matchProcess;
+				breakedpoint = bp;
 			}
 		}
-		++it;
 	}
 
-	return nullptr;
+	return breakedpoint;
 }
 
-bool Debugger::MatchFileName(const std::string& chunkName, const std::string& fileName) const
+#undef min
+// 重写模糊匹配算法
+int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string& fileName) const
 {
-	if (chunkName == fileName)
-		return true;
-	// abc == abc.lua
+	auto chunkSize = chunkName.size();
+	auto fileSize = fileName.size();
+
+
+	std::size_t chunkExtSize = 0;
+	std::size_t fileExtSize = 0;
+	// trim 掉后缀
 	for (const auto& ext : manager->extNames)
 	{
-		if (chunkName + ext == fileName)
+		if (EndWith(chunkName, ext))
 		{
-			return true;
+			if (ext.size() > chunkExtSize)
+			{
+				chunkExtSize = ext.size();
+			}
+		}
+
+		if (EndWith(fileName, ext))
+		{
+			if (ext.size() > fileExtSize)
+			{
+				fileExtSize = ext.size();
+			}
 		}
 	}
-	return false;
+
+	chunkSize -= chunkExtSize;
+	fileSize -= fileExtSize;
+
+	// 我们用chunkname去匹配filename
+	int maxMatchSize = static_cast<int>(std::min(chunkSize, fileSize));
+
+	int matchProcess = 1;
+
+	for (int i = 1; i != maxMatchSize; i++)
+	{
+		char cChar = chunkName[chunkSize - i];
+		char fChar = fileName[fileSize - i];
+
+		if (cChar != fChar)
+		{
+			// 以下匹配顺序是有意义的，不要轻易改变
+
+			if (::tolower(cChar) == ::tolower(fChar))
+			{
+				continue;
+			}
+
+			// 认为来自编辑器的路径不会是相对路径
+			// chunkname有可能是(./aaaa)也可能是(aaa/./bbb)
+			// 并不匹配(../)的情况
+			// 因为 ../的路径意义并不唯一
+			if (cChar == '.')
+			{
+				std::size_t cLastindex = chunkSize - i + 1;
+
+				if (cLastindex >= chunkSize)
+				{
+					matchProcess = 0;
+					break;
+				}
+
+				char cLastChar = chunkName[cLastindex];
+				if(cLastChar != '/' && cLastChar != '\\')
+				{
+					matchProcess = 0;
+					break;
+				}
+
+				// 该值可能为负数
+				int cNextIndex = static_cast<int>(chunkSize) - i - 1;
+				if(cNextIndex < 0)
+				{
+					// 匹配已经完毕
+					break;
+				}
+
+				char cNextChar = chunkName[cNextIndex];
+
+				// 那chunkname 就是 aaa./bbbb 那就不匹配
+				if(cNextChar != '/' && cNextChar != '\\')
+				{
+					matchProcess = 0;
+					break;
+				}
+
+				// 这里会消耗掉 next的匹配
+				i++;
+				
+				// 这里是指保持下一次循环时fChar不变
+				fileSize += 2;
+				continue;
+			}
+
+			if (cChar == '/' || cChar == '\\')
+			{
+				if (fChar == '/' || fChar == '\\') {
+					matchProcess++;
+					continue;
+				}
+				// 一些人会写出 require './aaaa' 这种代码
+				// 导致lua程序 的chunkname 给的是 .\\/aaaa.lua
+
+
+				//保持fChar 下次循环时不变
+				fileSize++;
+				continue;
+			}
+
+			// 那就是不匹配
+			matchProcess = 0;
+			break;
+		}
+	}
+
+	return matchProcess;
 }
 
 void Debugger::ExecuteWithSkipHook(const Executor& exec)

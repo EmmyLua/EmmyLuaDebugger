@@ -343,7 +343,7 @@ void EmmyFacade::OnBreak(lua_State* L)
 		return;
 	}
 
-	emmyDebuggerManager->SetBreakedpoint(debugger);
+	emmyDebuggerManager->SetBreakedDebugger(debugger);
 
 	debugger->GetStacks(stacks, []()
 	{
@@ -404,10 +404,9 @@ void EmmyFacade::OnAddBreakPointReq(const rapidjson::Document& document)
 		{
 			auto bp = std::make_shared<BreakPoint>();
 			ReadBreakPoint(*it, bp);
-
-			std::transform(bp->file.begin(), bp->file.end(), bp->file.begin(), ::tolower);
+			
 			bp->hitCount = 0;
-			ParsePathParts(bp->file, bp->pathParts);
+			// ParsePathParts(bp->file, bp->pathParts);
 
 			emmyDebuggerManager->AddBreakpoint(bp);
 

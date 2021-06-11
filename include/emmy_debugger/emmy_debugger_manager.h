@@ -5,12 +5,13 @@
 #include <set>
 #include "emmy_debugger/hook_state.h"
 #include "emmy_debugger/emmy_debugger.h"
+#include "emmy_debugger/emmy_helper.h"
 #include "api/lua_api.h"
 
-class EmmyDebuggerManager: public std::enable_shared_from_this<EmmyDebuggerManager>
+
+class EmmyDebuggerManager : public std::enable_shared_from_this<EmmyDebuggerManager>
 {
 public:
-
 	EmmyDebuggerManager();
 	~EmmyDebuggerManager();
 
@@ -24,8 +25,8 @@ public:
 
 	std::shared_ptr<Debugger> GetBreakedpoint();
 
-	void SetBreakedpoint(std::shared_ptr<Debugger> debugger);
-	
+	void SetBreakedDebugger(std::shared_ptr<Debugger> debugger);
+
 	bool IsDebuggerEmpty();
 
 	void AddBreakpoint(std::shared_ptr<BreakPoint> breakpoint);
@@ -38,7 +39,7 @@ public:
 	std::set<int> GetLineSet();
 
 	void HandleBreak(lua_State* L);
-	
+
 	// 响应行为
 	void DoAction(DebugAction action);
 
@@ -46,7 +47,7 @@ public:
 	void Eval(std::shared_ptr<EvalContext> ctx);
 
 	void OnDisconnect();
-	
+
 	// public 成员放下面
 	std::shared_ptr<HookStateBreak> stateBreak;
 	std::shared_ptr<HookStateStepOver> stateStepOver;
@@ -70,7 +71,4 @@ private:
 	std::mutex breakpointsMtx;
 	std::vector<std::shared_ptr<BreakPoint>> breakpoints;
 	std::set<int> lineSet;
-
-
-	
 };

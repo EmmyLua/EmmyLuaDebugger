@@ -1,4 +1,5 @@
 #include "emmy_debugger/emmy_debugger_manager.h"
+#include "emmy_debugger/emmy_helper.h"
 
 EmmyDebuggerManager::EmmyDebuggerManager()
 	: stateBreak(std::make_shared<HookStateBreak>()),
@@ -74,7 +75,7 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::GetBreakedpoint()
 	return breakedDebugger;
 }
 
-void EmmyDebuggerManager::SetBreakedpoint(std::shared_ptr<Debugger> debugger)
+void EmmyDebuggerManager::SetBreakedDebugger(std::shared_ptr<Debugger> debugger)
 {
 	std::lock_guard<std::mutex> lock(breakDebuggerMtx);
 	breakedDebugger = debugger;
@@ -89,7 +90,21 @@ bool EmmyDebuggerManager::IsDebuggerEmpty()
 void EmmyDebuggerManager::AddBreakpoint(std::shared_ptr<BreakPoint> breakpoint)
 {
 	std::lock_guard<std::mutex> lock(breakpointsMtx);
-	breakpoints.push_back(breakpoint);
+	bool isAdd = false;
+	for(std::shared_ptr<BreakPoint>& bp: breakpoints)
+	{
+		if(bp->line == breakpoint->line  && CompareIgnoreCase(bp->file,breakpoint->file) == 0)
+		{
+			bp = breakpoint;
+			isAdd = true;
+		}
+	}
+	
+	if(!isAdd)
+	{
+		breakpoints.push_back(breakpoint);
+	}
+
 	RefreshLineSet();
 }
 
@@ -101,15 +116,13 @@ std::vector<std::shared_ptr<BreakPoint>> EmmyDebuggerManager::GetBreakpoints()
 
 void EmmyDebuggerManager::RemoveBreakpoint(const std::string& file, int line)
 {
-	// 该锁粒度较大
 	std::lock_guard<std::mutex> lock(breakpointsMtx);
-	std::string lowerCaseFile = file;
-	std::transform(file.begin(), file.end(), lowerCaseFile.begin(), ::tolower);
 	auto it = breakpoints.begin();
 	while (it != breakpoints.end())
 	{
+		// 然而
 		const auto bp = *it;
-		if (bp->file == lowerCaseFile && bp->line == line)
+		if (bp->line == line && CompareIgnoreCase(bp->file, file) == 0)
 		{
 			breakpoints.erase(it);
 			break;
@@ -150,7 +163,7 @@ void EmmyDebuggerManager::HandleBreak(lua_State* L)
 		debugger = AddDebugger(L);
 	}
 
-	SetBreakedpoint(debugger);
+	SetBreakedDebugger(debugger);
 
 	debugger->HandleBreak();
 }
@@ -176,7 +189,7 @@ void EmmyDebuggerManager::Eval(std::shared_ptr<EvalContext> ctx)
 void EmmyDebuggerManager::OnDisconnect()
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
-	for(auto it: debuggers)
+	for (auto it : debuggers)
 	{
 		it.second->Stop();
 	}
