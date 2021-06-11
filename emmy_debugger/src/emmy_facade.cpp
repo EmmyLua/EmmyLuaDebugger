@@ -613,7 +613,8 @@ void EmmyFacade::Attach(lua_State* L)
 		// send attached notify
 		rapidjson::Document rspDoc;
 		rspDoc.SetObject();
-		rspDoc.AddMember("state", (size_t)L, rspDoc.GetAllocator());
+		// fix macosx compiler error
+		rspDoc.AddMember("state", reinterpret_cast<uint64_t>(L), rspDoc.GetAllocator());
 		this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
 	}
 }
