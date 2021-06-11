@@ -16,7 +16,6 @@
 
 #include "emmy_debugger/emmy_facade.h"
 #include <cstdarg>
-#include <cstddef>
 #include "emmy_debugger/proto/socket_server_transporter.h"
 #include "emmy_debugger/proto/socket_client_transporter.h"
 #include "emmy_debugger/proto/pipeline_server_transporter.h"
@@ -613,8 +612,10 @@ void EmmyFacade::Attach(lua_State* L)
 		// send attached notify
 		rapidjson::Document rspDoc;
 		rspDoc.SetObject();
-		// fix macosx compiler error
-		rspDoc.AddMember("state", reinterpret_cast<ptrdiff_t>(L), rspDoc.GetAllocator());
+		// fix macosx compiler error,
+		// repidjson 应该有重载决议的错误
+		int64_t state = reinterpret_cast<int64_t>(L);
+		rspDoc.AddMember("state", state, rspDoc.GetAllocator());
 		this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
 	}
 }
