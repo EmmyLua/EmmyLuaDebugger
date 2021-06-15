@@ -18,7 +18,11 @@
 
 //luacfg
 typedef double lua_Number;
-typedef ptrdiff_t lua_Integer;
+// 不同的lua版本定义是不同的，不同的平台定义也是不同的
+// x64 上最终都是long long
+// x86 上lua5.3以上是long long，lua5.2以下是ptrdiff_t通常是int
+// 传参时
+typedef long long lua_Integer;
 typedef ptrdiff_t lua_KContext;
 
 /*
