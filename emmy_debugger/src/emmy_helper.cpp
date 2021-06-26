@@ -207,6 +207,7 @@ int luaopen_emmy_helper(lua_State* L)
 {
 	initialized = false;
 	lua_pushglobaltable(L);
+
 	lua_pushstring(L, "emmyHelperInit");
 	lua_pushcfunction(L, emmyHelperInit);
 	lua_rawset(L, -3);

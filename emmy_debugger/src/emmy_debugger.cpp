@@ -255,13 +255,21 @@ std::string ToPointer(lua_State* L, int index)
 // algorithm optimization
 void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
-	const int t1 = lua_gettop(L);
+	// 如果没有计算深度则不予计算
+	if(depth <= 0)
+	{
+		return;
+	}
+	
+	const int topIndex = lua_gettop(L);
 	index = lua_absindex(L, index);
 	CacheValue(index, variable);
 	const int type = lua_type(L, index);
 	const char* typeName = lua_typename(L, type);
 	variable->valueTypeName = typeName;
 	variable->valueType = type;
+
+	
 	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA))
 	{
 		if (query_variable(L, variable, typeName, index, depth))
@@ -298,7 +306,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 			if (string == nullptr)
 			{
 				int result;
-				if (CallMetaFunction(L, t1, "__tostring", 1, result) && result == 0)
+				if (CallMetaFunction(L, topIndex, "__tostring", 1, result) && result == 0)
 				{
 					string = lua_tostring(L, -1);
 					lua_pop(L, 1);
@@ -365,10 +373,10 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 			{
 				// metatable
 				auto metatable = std::make_shared<Variable>();
-				metatable->name = "metatable";
+				metatable->name = "(metatable)";
 				metatable->nameType = LUA_TSTRING;
 
-				GetVariable(metatable, -1, 1);
+				GetVariable(metatable, -1, depth -1);
 				variable->children.push_back(metatable);
 
 				//__index
@@ -377,15 +385,18 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 					if (!lua_isnil(L, -1))
 					{
 						auto v = std::make_shared<Variable>();
-						GetVariable(v, -1, 1);
-						if (depth > 1)
-						{
-							for (auto child : v->children)
-							{
-								variable->children.push_back(child->Clone());
-							}
-						}
-						tableSize += v->children.size();
+						v->name = "(metatable.__index)";
+						v->nameType = LUA_TSTRING;
+						GetVariable(v, -1, depth -1);
+						variable->children.push_back(v);
+						// if (depth > 1)
+						// {
+						// 	for (auto child : v->children)
+						// 	{
+						// 		variable->children.push_back(child->Clone());
+						// 	}
+						// }
+						// tableSize += v->children.size();
 					}
 					lua_pop(L, 1);
 				}
@@ -401,7 +412,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 		}
 	}
 	const int t2 = lua_gettop(L);
-	assert(t2 == t1);
+	assert(t2 == topIndex);
 }
 
 void Debugger::CacheValue(int valueIndex, std::shared_ptr<Variable> variable) const
