@@ -23,6 +23,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
                               LPCSTR dllName,
                               bool blockOnExit,
                               int debugPort,
+                              bool listenMode,
                               bool createNewWindow
 )
 {
@@ -64,6 +65,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 	sockaddr_in serverAddress;
 	SOCKET hSocket = NULL;
+	SOCKET hSocket2 = NULL;
 
 	hSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (hSocket == INVALID_SOCKET)
@@ -76,12 +78,39 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 	serverAddress.sin_addr.s_addr = inet_addr("127.0.0.1");
 	serverAddress.sin_port = htons((short)debugPort);
 
-	if (SOCKET_ERROR == connect(hSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)))
+	if (listenMode)
 	{
-		closesocket(hSocket);
-		DWORD error = WSAGetLastError();
-		printf("tcp connect error, err code=%d", error);
-		return false;
+		if (SOCKET_ERROR == bind(hSocket, (sockaddr*)&serverAddress, sizeof(sockaddr)))
+		{
+			closesocket(hSocket);
+			DWORD error = WSAGetLastError();
+			printf("tcp bind error, err code=%d", error);
+			return false;
+		}
+
+		if (SOCKET_ERROR == listen(hSocket, 1))
+		{
+			closesocket(hSocket);
+			DWORD error = WSAGetLastError();
+			printf("tcp listen error, err code=%d", error);
+			return false;
+		}
+		sockaddr_in addClient;
+		int len = sizeof(sockaddr);
+
+		hSocket2 = accept(hSocket, (sockaddr*)&addClient, &len);
+
+		std::swap(hSocket, hSocket2);
+	}
+	else
+	{
+		if (SOCKET_ERROR == connect(hSocket, (sockaddr*)&serverAddress, sizeof(serverAddress)))
+		{
+			closesocket(hSocket);
+			DWORD error = WSAGetLastError();
+			printf("tcp connect error, err code=%d", error);
+			return false;
+		}
 	}
 
 	if (!info.managed)
@@ -141,7 +170,7 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 
 							// 会将子进程和自己的pid传递给debug session
 							std::string sendBuffer = std::to_string(processInfo.dwProcessId);
-
+							sendBuffer.append("\n");
 							::send(hSocket, const_cast<char*>(sendBuffer.data()), sendBuffer.size(), 0);
 
 							char waitConnected[100] = "0";
@@ -306,12 +335,16 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 	CloseHandle(processInfo.hThread);
 
 	// 开一个线程等待stop消息
-	std::thread t([&hSocket,&processInfo]()
+	std::thread t([&hSocket,&hSocket2,&processInfo]()
 	{
 		char waitStop[100] = "0";
 		::recv(hSocket, waitStop, sizeof(waitStop), 0);
 		CloseHandle(processInfo.hProcess);
 		closesocket(hSocket);
+		if (hSocket2 != NULL)
+		{
+			closesocket(hSocket2);
+		}
 
 		exit(0);
 	});
@@ -333,6 +366,10 @@ bool StartProcessAndInjectDll(LPCSTR exeFileName,
 	}
 
 	closesocket(hSocket);
+	if (hSocket2 != NULL)
+	{
+		closesocket(hSocket2);
+	}
 	return true;
 }
 
@@ -527,10 +564,10 @@ bool InjectDll(DWORD processId, const char* dllDir, const char* dllFileName, boo
 	if (capture)
 	{
 		lpParam = (void*)VirtualAllocEx(process, 0, sizeof(RemoteThreadParam), MEM_COMMIT,
-		                                             PAGE_READWRITE);
+		                                PAGE_READWRITE);
 		RemoteThreadParam param;
 		param.bRedirect = TRUE;
-		
+
 		::WriteProcessMemory(process, lpParam, &param, sizeof(RemoteThreadParam), NULL);
 	}
 

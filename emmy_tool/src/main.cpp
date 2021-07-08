@@ -72,6 +72,8 @@ int doRunAndAttach(CommandLine& commandLine)
 	std::string dir = commandLine.Get<std::string>("work");
 	std::string exe = commandLine.Get<std::string>("exe");
 	int debugPort = commandLine.Get<int>("debug-port");
+	bool listenMode = commandLine.Get<bool>("listen-mode");
+	
 	// 
 	std::string command = "\"" + exe + "\"" + " " + commandLine.Get<std::string>("args");
 	bool blockOnExit = commandLine.Get<bool>("block-on-exit");
@@ -84,6 +86,7 @@ int doRunAndAttach(CommandLine& commandLine)
 	                              dll.c_str(),
 	                              blockOnExit,
 	                              debugPort,
+								  listenMode,
 	                              createNewWindow
 	))
 	{
@@ -101,7 +104,7 @@ int ReceiveLog(CommandLine& commandLine)
 }
 
 int main(int argc, char** argv)
-{
+{	
 	CommandLine commandLine;
 	commandLine.AddTarget("attach");
 	commandLine.AddTarget("list_processes");
@@ -124,6 +127,7 @@ int main(int argc, char** argv)
 	// stop on process exit
 	commandLine.Add<bool>("block-on-exit");
 	commandLine.Add<int>("debug-port");
+	commandLine.Add<bool>("listen-mode");
 	commandLine.Add<bool>("create-new-window");
 	// rest param
 	commandLine.Add<std::string>("args", true);
@@ -131,6 +135,7 @@ int main(int argc, char** argv)
 
 	if (!commandLine.Parse(argc, argv))
 	{
+		printf("parse fail");
 		return -1;
 	}
 
