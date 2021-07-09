@@ -48,12 +48,12 @@ public:
 	~Variable();
 
 	std::string name;
-	int nameType;
+	int nameType = 0;
 	std::string value;
-	int valueType;
+	int valueType = 0;
 	std::string valueTypeName;
 	std::vector<std::shared_ptr<Variable>> children;
-	int cacheId;
+	int cacheId = 0;
 
 	std::shared_ptr<Variable> Clone();
 	std::shared_ptr<Variable> CreateChildNode();
@@ -64,8 +64,8 @@ class Stack
 public:
 	std::string file;
 	std::string functionName;
-	int level;
-	int line;
+	int level = 0;
+	int line = 0;
 	std::vector<std::shared_ptr<Variable>> localVariables;
 	std::vector<std::shared_ptr<Variable>> upvalueVariables;
 public:
@@ -84,10 +84,10 @@ public:
 
 	std::string expr;
 	std::string error;
-	int seq;
-	int stackLevel;
-	int depth;
-	int cacheId;
+	int seq = 0;
+	int stackLevel = 0;
+	int depth = 0;
+	int cacheId = 0;
 	std::shared_ptr<Variable> result;
-	bool success;
+	bool success = false;
 };

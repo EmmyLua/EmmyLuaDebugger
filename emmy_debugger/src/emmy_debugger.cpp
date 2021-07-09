@@ -716,6 +716,7 @@ bool Debugger::ProcessBreakPoint(std::shared_ptr<BreakPoint> bp)
 	{
 		auto ctx = std::make_shared<EvalContext>();
 		ctx->expr = bp->condition;
+		ctx->depth = 1;
 		bool suc = DoEval(ctx);
 		return suc && ctx->result->valueType == LUA_TBOOLEAN && ctx->result->value == "true";
 	}
