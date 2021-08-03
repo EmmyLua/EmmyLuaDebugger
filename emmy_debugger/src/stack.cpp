@@ -16,7 +16,7 @@
 
 #include <memory>
 #include "emmy_debugger/types.h"
-#include "emmy_debugger/api/lua_api_loader.h"
+#include "emmy_debugger/api/lua_api.h"
 
 Variable::Variable(): nameType(LUA_TSTRING), valueType(0), cacheId(0){
 }

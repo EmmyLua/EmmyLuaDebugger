@@ -10,29 +10,29 @@ add_dependencies(
 )
 
 target_include_directories(emmy_debugger PUBLIC 
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/third-party/rapidjson-1.1.0/include
-    ${CMAKE_SOURCE_DIR}/third-party/libuv-1.29.0/include
+    ${emmy_SOURCE_DIR}/include
+    ${emmy_SOURCE_DIR}/third-party/rapidjson-1.1.0/include
+    ${emmy_SOURCE_DIR}/third-party/libuv-1.29.0/include
     PRIVATE src
 )
 
 target_sources(emmy_debugger PUBLIC
 
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/emmy_debugger.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/emmy_debugger_manager.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/emmy_facade.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/hook_state.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/lua_version.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/transporter.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/types.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/emmy_helper.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_debugger.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_debugger_manager.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_facade.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/hook_state.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/lua_version.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/transporter.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/types.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_helper.h
     
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/api/lua_api.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/api/lua_api.h
 
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/proto/pipeline_client_transporter.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/proto/pipeline_server_transporter.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/proto/socket_client_transporter.h
-    ${CMAKE_SOURCE_DIR}/include/emmy_debugger/proto/socket_server_transporter.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/pipeline_client_transporter.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/pipeline_server_transporter.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/socket_client_transporter.h
+    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/socket_server_transporter.h
 
     #src/api
     ${emmy_debugger_SOURCE_DIR}/src/api/lua_api.cpp
@@ -63,17 +63,20 @@ endif()
 if(EMMY_USE_LUA_SOURCE)
     target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
     target_include_directories(emmy_debugger PUBLIC 
-        ${CMAKE_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
+        ${emmy_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
     )
     list(APPEND LINK_LIBRARIES lua${EMMY_LUA_VERSION}_a)
     target_link_libraries(
         emmy_debugger
         PUBLIC lua${EMMY_LUA_VERSION}_a
     )
+elseif(EMMY_COMPILE_AS_LIB)
+    message("emmy build as lib")
+    target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
 else()
     target_sources(emmy_debugger
         PUBLIC
-        ${CMAKE_SOURCE_DIR}/include/emmy_debugger/api/lua_api_loader.h
+        ${emmy_SOURCE_DIR}/include/emmy_debugger/api/lua_api_loader.h
         ${emmy_debugger_SOURCE_DIR}/src/api/lua_api_loader.cpp
     )
 

@@ -15,7 +15,7 @@
 */
 #include "emmy_debugger/hook_state.h"
 #include "emmy_debugger/emmy_debugger.h"
-#include "emmy_debugger/api/lua_api_loader.h"
+#include "emmy_debugger/api/lua_api.h"
 
 HookState::HookState():
 	currentStateL(nullptr) {

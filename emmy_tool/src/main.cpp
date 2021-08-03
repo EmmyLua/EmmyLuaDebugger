@@ -73,6 +73,7 @@ int doRunAndAttach(CommandLine& commandLine)
 	std::string exe = commandLine.Get<std::string>("exe");
 	int debugPort = commandLine.Get<int>("debug-port");
 	bool listenMode = commandLine.Get<bool>("listen-mode");
+
 	
 	// 
 	std::string command = "\"" + exe + "\"" + " " + commandLine.Get<std::string>("args");
@@ -132,6 +133,7 @@ int main(int argc, char** argv)
 	// rest param
 	commandLine.Add<std::string>("args", true);
 	commandLine.Add<bool>("capture-log");
+	commandLine.Add<bool>("unitbuf");
 
 	if (!commandLine.Parse(argc, argv))
 	{
