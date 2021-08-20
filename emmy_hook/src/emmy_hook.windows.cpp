@@ -28,6 +28,8 @@ typedef int (*_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
 
 typedef int (*_lua_pcallk)(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k);
 
+typedef int (*_lua_resume)(lua_State* L, lua_State* from, int nargs, int* nresults);
+
 typedef HMODULE (WINAPI *LoadLibraryExW_t)(LPCWSTR lpFileName, HANDLE hFile, DWORD dwFlags);
 
 LoadLibraryExW_t LoadLibraryExW_dll = nullptr;
@@ -89,6 +91,15 @@ int lua_error_worker(lua_State* L)
 	return error(L);
 }
 
+int lua_resume_worker(lua_State* L, lua_State* from, int nargs, int* nresults)
+{
+	LPVOID lp;
+	LhBarrierGetCallback(&lp);
+	const auto luaResume = (_lua_resume)lp;
+	EmmyFacade::Get().Attach(L);
+	return luaResume(L, from, nargs, nresults);
+}
+
 #define HOOK(FN, WORKER, REQUIRED) {\
 	const auto it = symbols.find(""#FN"");\
 	if (it != symbols.end()) {\
@@ -110,6 +121,7 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols)
 	// lua 5.2
 	HOOK(lua_pcallk, lua_pcallk_worker, false);
 	// HOOK(lua_error, lua_error_worker, true);
+	HOOK(lua_resume, lua_resume_worker, false);
 }
 
 void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule)
