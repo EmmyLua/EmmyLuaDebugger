@@ -14,8 +14,11 @@
 * limitations under the License.
 */
 
-#ifdef EMMY_LUA_51
 
+
+
+#ifdef EMMY_LUA_51
+#include "emmy_debugger/api/lua_api.h"
 int lua_absindex(lua_State *L, int idx) {
 	if (idx > 0) {
 		return idx;
@@ -30,6 +33,11 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
 		lua_pushcclosure(L, l->func, nup);
 		lua_setfield(L, -(nup + 2), l->name);
 	}
+}
+
+void lua_pushglobaltable(lua_State* L)
+{
+	lua_pushvalue(L, LUA_GLOBALSINDEX);
 }
 
 #endif

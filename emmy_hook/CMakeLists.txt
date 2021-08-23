@@ -4,10 +4,6 @@ project (emmy_hook)
 
 add_library(emmy_hook SHARED )
 
-if (EMMY_USE_LUA_SOURCE)
-    set(EMMY_CORE_NAME "emmy_hook.${EMMY_LUA_VERSION}")
-endif()
-
 set_target_properties(emmy_hook PROPERTIES PREFIX "")
 
 target_include_directories(emmy_hook PUBLIC 

@@ -65,11 +65,12 @@ if(EMMY_USE_LUA_SOURCE)
     target_include_directories(emmy_debugger PUBLIC 
         ${emmy_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
     )
-    list(APPEND LINK_LIBRARIES lua${EMMY_LUA_VERSION}_a)
+
     target_link_libraries(
         emmy_debugger
-        PUBLIC lua${EMMY_LUA_VERSION}_a
+        PRIVATE lua${EMMY_LUA_VERSION}
     )
+
 elseif(EMMY_COMPILE_AS_LIB)
     message("emmy build as lib")
     target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)

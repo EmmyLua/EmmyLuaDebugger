@@ -18,23 +18,10 @@ target_include_directories(emmy_core PUBLIC
     PRIVATE src
 )
 
-target_sources(emmy_core PRIVATE
+target_sources(emmy_core PUBLIC
     ${emmy_SOURCE_DIR}/include/emmy_core/emmy_core.h
     ${emmy_core_SOURCE_DIR}/src/emmy_core.cpp
 )
-
-if (EMMY_USE_LUA_SOURCE)
-    if(CMAKE_SYSTEM_NAME MATCHES "Android")
-        message("use android lib name")
-        set(emmy_core "libemmy_core")
-    else(CMAKE_SYSTEM_NAME)
-        set(emmy_core "emmy_core.${EMMY_LUA_VERSION}")
-    endif()
-    target_link_libraries(
-        emmy_core
-        PUBLIC lua${EMMY_LUA_VERSION}_a
-    )
-endif()
 
 target_link_libraries(
     emmy_core

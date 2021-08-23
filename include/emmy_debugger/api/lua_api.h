@@ -42,6 +42,8 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 #define luaL_newlib(L,l)  \
   (luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
 
+void lua_pushglobaltable(lua_State* L);
+
 #endif
 
 inline int getDebugEvent(lua_Debug* ar) {
