@@ -13,6 +13,8 @@ target_link_libraries(xlua PRIVATE emmy_core)
 5.构建完之后复制xlua.dll/libxlua.so到unity对应的目录中
 6.在自己的C#代码中加上
 
+```C#
+
 namespace LuaDLL
 { 
     public partial class Lua
@@ -27,6 +29,7 @@ namespace LuaDLL
         }
     }
 }
+```
 
 并且在创建LuaEnv实例之后加上
 
