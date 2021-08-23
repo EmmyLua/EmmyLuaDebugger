@@ -30,38 +30,38 @@ public:
 	bool IsDebuggerEmpty();
 
 	void AddBreakpoint(std::shared_ptr<BreakPoint> breakpoint);
-	// ·µ»Ø¿½±´ºóµÄ¶ÏµãÁĞ±í
+	// è¿”å›æ‹·è´åçš„æ–­ç‚¹åˆ—è¡¨
 	std::vector<std::shared_ptr<BreakPoint>> GetBreakpoints();
 	void RemoveBreakpoint(const std::string& file, int line);
 	void RemoveAllBreakPoints();
 	void RefreshLineSet();
-	// ·µ»Ø¿½±´ºóµÄ¶ÏµãĞĞ¼¯
+	// è¿”å›æ‹·è´åçš„æ–­ç‚¹è¡Œé›†
 	std::set<int> GetLineSet();
 
 	void HandleBreak(lua_State* L);
 
-	// ÏìÓ¦ĞĞÎª
+	// å“åº”è¡Œä¸º
 	void DoAction(DebugAction action);
 
-	// ¼ÆËã±í´ïÊ½
+	// è®¡ç®—è¡¨è¾¾å¼
 	void Eval(std::shared_ptr<EvalContext> ctx);
 
 	void OnDisconnect();
 
-	// public ³ÉÔ±·ÅÏÂÃæ
+	// public æˆå‘˜æ”¾ä¸‹é¢
 	std::shared_ptr<HookStateBreak> stateBreak;
 	std::shared_ptr<HookStateStepOver> stateStepOver;
 	std::shared_ptr<HookStateStepIn> stateStepIn;
 	std::shared_ptr<HookStateStepOut> stateStepOut;
 	std::shared_ptr<HookStateContinue> stateContinue;
 	std::shared_ptr<HookStateStop> stateStop;
-	// °´µÀÀíĞèÒª¼ÓËø
-	// µ«Êµ¼ÊÉÏÍ¨³£²»»á¸Ä±ä
-	// ÔİÊ±²»¼Ó
+	// æŒ‰é“ç†éœ€è¦åŠ é”
+	// ä½†å®é™…ä¸Šé€šå¸¸ä¸ä¼šæ”¹å˜
+	// æš‚æ—¶ä¸åŠ 
 	std::string helperCode;
 	std::vector<std::string> extNames;
 private:
-	// Èç¹ûÆäËûluaĞéÄâ»úÔÚ²»Í¬Ïß³Ì£¬ÔòĞèÒªÒ»¸öËø
+	// å¦‚æœå…¶ä»–luaè™šæ‹Ÿæœºåœ¨ä¸åŒçº¿ç¨‹ï¼Œåˆ™éœ€è¦ä¸€ä¸ªé”
 	std::mutex debuggerMtx;
 	std::map<lua_State*, std::shared_ptr<Debugger>> debuggers;
 

@@ -33,7 +33,7 @@ bool install_emmy_core(struct lua_State* L);
  */
 void ParsePathParts(const std::string& file, std::vector<std::string>& paths);
 
-// µÈÓÚ0±íÊ¾ÏàµÈ
+// ç­‰äº0è¡¨ç¤ºç›¸ç­‰
 bool CompareIgnoreCase(const std::string& lh, const std::string& rh);
 
 struct CaseInsensitiveLess final
@@ -41,5 +41,5 @@ struct CaseInsensitiveLess final
 	bool operator()(const std::string& lhs, const std::string& rhs) const;
 };
 
-// Ö±µ½C++ 20²ÅÓĞendwith£¬ÕâÀï×Ô¼ºĞ´Ò»¸ö
+// ç›´åˆ°C++ 20æ‰æœ‰endwithï¼Œè¿™é‡Œè‡ªå·±å†™ä¸€ä¸ª
 bool EndWith(const std::string& source, const std::string& end);

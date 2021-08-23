@@ -361,7 +361,7 @@ void ParsePathParts(const std::string& file, std::vector<std::string>& paths)
 	paths.emplace_back(file.substr(idx));
 }
 
-// glibcµÄËã·¨
+// glibc å‡½æ•°
 int __strncasecmp(const char* s1, const char* s2, int n)
 {
 	if (n && s1 != s2)

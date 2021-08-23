@@ -18,10 +18,10 @@
 
 //luacfg
 typedef double lua_Number;
-// ²»Í¬µÄlua°æ±¾¶¨ÒåÊÇ²»Í¬µÄ£¬²»Í¬µÄÆ½Ì¨¶¨ÒåÒ²ÊÇ²»Í¬µÄ
-// x64 ÉÏ×îÖÕ¶¼ÊÇlong long
-// x86 ÉÏlua5.3ÒÔÉÏÊÇlong long£¬lua5.2ÒÔÏÂÊÇptrdiff_tÍ¨³£ÊÇint
-// ´«²ÎÊ±
+// ä¸åŒçš„luaç‰ˆæœ¬å®šä¹‰æ˜¯ä¸åŒçš„ï¼Œä¸åŒçš„å¹³å°å®šä¹‰ä¹Ÿæ˜¯ä¸åŒçš„
+// x64 ä¸Šæœ€ç»ˆéƒ½æ˜¯long long
+// x86 ä¸Šlua5.3ä»¥ä¸Šæ˜¯long longï¼Œlua5.2ä»¥ä¸‹æ˜¯ptrdiff_té€šå¸¸æ˜¯int
+// ä¼ å‚æ—¶
 typedef long long lua_Integer;
 typedef ptrdiff_t lua_KContext;
 

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.11)
 
 project (emmy_tool)
 
@@ -10,12 +10,12 @@ add_dependencies(
 )
 
 target_include_directories(emmy_tool PUBLIC 
-    ${CMAKE_SOURCE_DIR}/include
+    ${emmy_SOURCE_DIR}/include
     ./
 )
 
 target_sources(emmy_tool PRIVATE
-    ${CMAKE_SOURCE_DIR}/include/shared/shme.h
+    ${emmy_SOURCE_DIR}/include/shared/shme.h
 
     ${emmy_tool_SOURCE_DIR}/src/utility.h
     ${emmy_tool_SOURCE_DIR}/src/emmy_tool.h

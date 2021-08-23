@@ -613,7 +613,7 @@ void EmmyFacade::Attach(lua_State* L)
 		rapidjson::Document rspDoc;
 		rspDoc.SetObject();
 		// fix macosx compiler error,
-		// repidjson 应该有重载决议的错误
+		// repidjson 搴旇鏈夐噸杞藉喅璁殑閿欒
 		int64_t state = reinterpret_cast<int64_t>(L);
 		rspDoc.AddMember("state", state, rspDoc.GetAllocator());
 		this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);

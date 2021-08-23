@@ -100,7 +100,7 @@ void Debugger::Hook(lua_Debug* ar)
 	}
 	if (getDebugEvent(ar) == LUA_HOOKLINE)
 	{
-		// ¶ÔluaTreadExecutors Ö´ĞĞ¼ÓËø
+		// å¯¹luaTreadExecutors æ‰§è¡ŒåŠ é”
 		{
 			std::unique_lock<std::mutex> lock(luaThreadMtx);
 			if (!luaThreadExecutors.empty())
@@ -255,7 +255,7 @@ std::string ToPointer(lua_State* L, int index)
 // algorithm optimization
 void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
-	// Èç¹ûÃ»ÓĞ¼ÆËãÉî¶ÈÔò²»Óè¼ÆËã
+	// å¦‚æœæ²¡æœ‰è®¡ç®—æ·±åº¦åˆ™ä¸äºˆè®¡ç®—
 	if(depth <= 0)
 	{
 		return;
@@ -434,7 +434,7 @@ void Debugger::CacheValue(int valueIndex, std::shared_ptr<Variable> variable) co
 
 		lua_pushvalue(L, valueIndex); // 1: cacheTable, 2: value
 
-		// snprintf ĞÔÄÜ²»¹»£¬ÎÊÌâÒ²ºÜ´ó£¬ÕâÀï²ÉÓÃc++±ê×¼Ëã·¨
+		// snprintf æ€§èƒ½ä¸å¤Ÿï¼Œé—®é¢˜ä¹Ÿå¾ˆå¤§ï¼Œè¿™é‡Œé‡‡ç”¨c++æ ‡å‡†ç®—æ³•
 		std::string key = std::to_string(id);
 		lua_setfield(L, -2, key.c_str()); // 1: cacheTable
 
@@ -460,7 +460,7 @@ void Debugger::CacheValue(int valueIndex, std::shared_ptr<Variable> variable) co
 // 		}
 // 		lua_pushvalue(L, valueIndex); // 1: cacheTable, 2: value
 //
-// 		// snprintf ĞÔÄÜ²»¹»£¬ÎÊÌâÒ²ºÜ´ó£¬ÕâÀï²ÉÓÃc++±ê×¼Ëã·¨
+// 		// snprintf æ€§èƒ½ä¸å¤Ÿï¼Œé—®é¢˜ä¹Ÿå¾ˆå¤§ï¼Œè¿™é‡Œé‡‡ç”¨c++æ ‡å‡†ç®—æ³•
 // 		std::string Key = std::to_string(id);
 // 		lua_setfield(L, -2, Key.c_str()); // 1: cacheTable
 //
@@ -793,7 +793,7 @@ bool Debugger::Eval(std::shared_ptr<EvalContext> evalContext, bool force)
 	{
 		return false;
 	}
-	// ¼ÓËø
+	// åŠ é”
 	{
 		std::unique_lock<std::mutex> lock(evalMtx);
 		evalQueue.push(evalContext);
@@ -902,7 +902,7 @@ std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(const std::string& chunknam
 }
 
 #undef min
-// ÖØĞ´Ä£ºıÆ¥ÅäËã·¨
+// é‡å†™æ¨¡ç³ŠåŒ¹é…ç®—æ³•
 int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string& fileName) const
 {
 	auto chunkSize = chunkName.size();
@@ -911,7 +911,7 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 
 	std::size_t chunkExtSize = 0;
 	std::size_t fileExtSize = 0;
-	// trim µôºó×º
+	// trim æ‰åç¼€
 	for (const auto& ext : manager->extNames)
 	{
 		if (EndWith(chunkName, ext))
@@ -934,7 +934,7 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 	chunkSize -= chunkExtSize;
 	fileSize -= fileExtSize;
 
-	// ÎÒÃÇÓÃchunknameÈ¥Æ¥Åäfilename
+	// æˆ‘ä»¬ç”¨chunknameå»åŒ¹é…filename
 	int maxMatchSize = static_cast<int>(std::min(chunkSize, fileSize));
 
 	int matchProcess = 1;
@@ -946,17 +946,17 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 
 		if (cChar != fChar)
 		{
-			// ÒÔÏÂÆ¥ÅäË³ĞòÊÇÓĞÒâÒåµÄ£¬²»ÒªÇáÒ×¸Ä±ä
+			// ä»¥ä¸‹åŒ¹é…é¡ºåºæ˜¯æœ‰æ„ä¹‰çš„ï¼Œä¸è¦è½»æ˜“æ”¹å˜
 
 			if (::tolower(cChar) == ::tolower(fChar))
 			{
 				continue;
 			}
 
-			// ÈÏÎªÀ´×Ô±à¼­Æ÷µÄÂ·¾¶²»»áÊÇÏà¶ÔÂ·¾¶
-			// chunknameÓĞ¿ÉÄÜÊÇ(./aaaa)Ò²¿ÉÄÜÊÇ(aaa/./bbb)
-			// ²¢²»Æ¥Åä(../)µÄÇé¿ö
-			// ÒòÎª ../µÄÂ·¾¶ÒâÒå²¢²»Î¨Ò»
+			// è®¤ä¸ºæ¥è‡ªç¼–è¾‘å™¨çš„è·¯å¾„ä¸ä¼šæ˜¯ç›¸å¯¹è·¯å¾„
+			// chunknameæœ‰å¯èƒ½æ˜¯(./aaaa)ä¹Ÿå¯èƒ½æ˜¯(aaa/./bbb)
+			// å¹¶ä¸åŒ¹é…(../)çš„æƒ…å†µ
+			// å› ä¸º ../çš„è·¯å¾„æ„ä¹‰å¹¶ä¸å”¯ä¸€
 			if (cChar == '.')
 			{
 				std::size_t cLastindex = chunkSize - i + 1;
@@ -974,27 +974,27 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 					break;
 				}
 
-				// ¸ÃÖµ¿ÉÄÜÎª¸ºÊı
+				// è¯¥å€¼å¯èƒ½ä¸ºè´Ÿæ•°
 				int cNextIndex = static_cast<int>(chunkSize) - i - 1;
 				if(cNextIndex < 0)
 				{
-					// Æ¥ÅäÒÑ¾­Íê±Ï
+					// åŒ¹é…å·²ç»å®Œæ¯•
 					break;
 				}
 
 				char cNextChar = chunkName[cNextIndex];
 
-				// ÄÇchunkname ¾ÍÊÇ aaa./bbbb ÄÇ¾Í²»Æ¥Åä
+				// é‚£chunkname å°±æ˜¯ aaa./bbbb é‚£å°±ä¸åŒ¹é…
 				if(cNextChar != '/' && cNextChar != '\\')
 				{
 					matchProcess = 0;
 					break;
 				}
 
-				// ÕâÀï»áÏûºÄµô nextµÄÆ¥Åä
+				// è¿™é‡Œä¼šæ¶ˆè€—æ‰ nextçš„åŒ¹é…
 				i++;
 				
-				// ÕâÀïÊÇÖ¸±£³ÖÏÂÒ»´ÎÑ­»·Ê±fChar²»±ä
+				// è¿™é‡Œæ˜¯æŒ‡ä¿æŒä¸‹ä¸€æ¬¡å¾ªç¯æ—¶fCharä¸å˜
 				fileSize += 2;
 				continue;
 			}
@@ -1005,16 +1005,16 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 					matchProcess++;
 					continue;
 				}
-				// Ò»Ğ©ÈË»áĞ´³ö require './aaaa' ÕâÖÖ´úÂë
-				// µ¼ÖÂlua³ÌĞò µÄchunkname ¸øµÄÊÇ .\\/aaaa.lua
+				// ä¸€äº›äººä¼šå†™å‡º require './aaaa' è¿™ç§ä»£ç 
+				// å¯¼è‡´luaç¨‹åº çš„chunkname ç»™çš„æ˜¯ .\\/aaaa.lua
 
 
-				//±£³ÖfChar ÏÂ´ÎÑ­»·Ê±²»±ä
+				//ä¿æŒfChar ä¸‹æ¬¡å¾ªç¯æ—¶ä¸å˜
 				fileSize++;
 				continue;
 			}
 
-			// ÄÇ¾ÍÊÇ²»Æ¥Åä
+			// é‚£å°±æ˜¯ä¸åŒ¹é…
 			matchProcess = 0;
 			break;
 		}

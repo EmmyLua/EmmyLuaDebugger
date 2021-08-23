@@ -47,7 +47,7 @@ bool CommandLine::Parse(int argc, char** argv)
 		return true;
 	}
 
-	// index = 0 µÄ²ÎÊıÊÇ³ÌĞòÃû
+	// index = 0 çš„å‚æ•°æ˜¯ç¨‹åºå
 	for (int index = 1; index < argc; index++)
 	{
 		std::string current = argv[index];
@@ -58,9 +58,9 @@ bool CommandLine::Parse(int argc, char** argv)
 		// not empty
 		if (current[0] == '-')
 		{
-			// ½ö½öÖ§³Ö-dirÕâÖÖĞÎÊ½
+			// ä»…ä»…æ”¯æŒ-dirè¿™ç§å½¢å¼
 			std::string optionName = current.substr(1);
-			// Èç¹û¸Ã²ÎÊı²»´æÔÚ
+			// å¦‚æœè¯¥å‚æ•°ä¸å­˜åœ¨
 			if (_args.count(optionName) == 0)
 			{
 				return false;
@@ -76,8 +76,8 @@ bool CommandLine::Parse(int argc, char** argv)
 			std::string optionValue;
 			optionValue.reserve(128);
 
-			// ¸ÃÑ¡ÏîÖ®ºóÃ»ÓĞ½Ó²ÎÊı
-			// Ä¿Ç°Ã»ÓĞÖ§³ÖboolÑ¡ÏîµÄ±ØÒª
+			// è¯¥é€‰é¡¹ä¹‹åæ²¡æœ‰æ¥å‚æ•°
+			// ç›®å‰æ²¡æœ‰æ”¯æŒboolé€‰é¡¹çš„å¿…è¦
 			if (argc <= (index + 1) && !option.RestOfAll)
 			{
 				return false;
@@ -97,17 +97,17 @@ bool CommandLine::Parse(int argc, char** argv)
 				}
 				if (option.RestOfAll)
 				{
-					// Ê£Óà²ÎÊıÍ¨³£»á±»´«µİµ½×Ó½ø³ÌÔÙ´¦Àí
-					// Èç¹ûÊ£Óà²ÎÊıÖĞ´æÔÚÂ·¾¶£¬ÇÒÂ·¾¶´æÔÚ¿Õ¸ñ£¬ÄÇÃ´´«µİµ½×Ó½ø³ÌµÄ´´½¨¾Í»áÊ§Ğ§
-					// ËùÒÔÕâÀïÒªÌØ±ğµÄ´¦Àí
+					// å‰©ä½™å‚æ•°é€šå¸¸ä¼šè¢«ä¼ é€’åˆ°å­è¿›ç¨‹å†å¤„ç†
+					// å¦‚æœå‰©ä½™å‚æ•°ä¸­å­˜åœ¨è·¯å¾„ï¼Œä¸”è·¯å¾„å­˜åœ¨ç©ºæ ¼ï¼Œé‚£ä¹ˆä¼ é€’åˆ°å­è¿›ç¨‹çš„åˆ›å»ºå°±ä¼šå¤±æ•ˆ
+					// æ‰€ä»¥è¿™é‡Œè¦ç‰¹åˆ«çš„å¤„ç†
 					if (!value.empty())
 					{
-						// ÈÏÎª¸Ã²ÎÊı¿ÉÄÜÊÇÑ¡Ïî
+						// è®¤ä¸ºè¯¥å‚æ•°å¯èƒ½æ˜¯é€‰é¡¹
 						if (value[0] == '-')
 						{
 							optionValue.append(" ").append(value);
 						}
-						else //ÈÏÎª¸Ã²ÎÊıÊÇÖµ£¬ËùÒÔÓÃÒıºÅ°üº¬ÆğÀ´
+						else //è®¤ä¸ºè¯¥å‚æ•°æ˜¯å€¼ï¼Œæ‰€ä»¥ç”¨å¼•å·åŒ…å«èµ·æ¥
 						{
 							optionValue.append(" ").append("\"" + value + "\"");
 						}
@@ -115,8 +115,8 @@ bool CommandLine::Parse(int argc, char** argv)
 				}
 				else
 				{
-					// ÈÏÎªÖµÊÇ±»Ò»¶ÔÒıºÅ°üÆğÀ´µÄ
-					// windowsÏÂÒıºÅÒÑ¾­±»×Ô¶¯´¦ÀíÁË
+					// è®¤ä¸ºå€¼æ˜¯è¢«ä¸€å¯¹å¼•å·åŒ…èµ·æ¥çš„
+					// windowsä¸‹å¼•å·å·²ç»è¢«è‡ªåŠ¨å¤„ç†äº†
 					if (value[0] == '\"' || value[0] == '\'')
 					{
 						optionValue = value.substr(1, value.size() - 2);

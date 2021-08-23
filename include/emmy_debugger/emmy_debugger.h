@@ -66,8 +66,8 @@ private:
 	bool ProcessBreakPoint(std::shared_ptr<BreakPoint> bp);
 	bool DoEval(std::shared_ptr<EvalContext> evalContext);
 
-	// 模糊匹配算法会算出匹配度
-	// 当多个文件路径都有可能命中应该采用匹配度最高的路径
+	// 妯＄硦鍖归厤绠楁硶浼氱畻鍑哄尮閰嶅害
+	// 褰撳涓枃浠惰矾寰勯兘鏈夊彲鑳藉懡涓簲璇ラ噰鐢ㄥ尮閰嶅害鏈�楂樼殑璺緞
 	int FuzzyMatchFileName(const std::string& chunkName, const std::string& fileName) const;
 	void CacheValue(int valueIndex, std::shared_ptr<Variable> variable) const;
 	// bool HasCacheValue(int valueIndex) const;

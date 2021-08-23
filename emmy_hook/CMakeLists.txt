@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.11)
 
 project (emmy_hook)
 
@@ -11,13 +11,13 @@ endif()
 set_target_properties(emmy_hook PROPERTIES PREFIX "")
 
 target_include_directories(emmy_hook PUBLIC 
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/third-party/EasyHook/EasyHookDll
+    ${emmy_SOURCE_DIR}/include
+    ${emmy_SOURCE_DIR}/third-party/EasyHook/EasyHookDll
     PRIVATE src
 )
 
 target_sources(emmy_hook PRIVATE
-    ${CMAKE_SOURCE_DIR}/include/emmy_hook/emmy_hook.h
+    ${emmy_SOURCE_DIR}/include/emmy_hook/emmy_hook.h
 
     #src
     ${emmy_hook_SOURCE_DIR}/src/dllmain.cpp

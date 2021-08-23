@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.2)
+cmake_minimum_required(VERSION 3.11)
 
 project (emmy)
 set(CMAKE_INSTALL_PREFIX install)

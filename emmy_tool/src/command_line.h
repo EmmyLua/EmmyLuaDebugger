@@ -23,8 +23,8 @@ class CommandLineException : std::exception
 {
 public:
 	/**
-	 * \param msg Òì³£ÏûÏ¢
-	 * \remark vsºÍgcc½öÓĞ¸Ã¹²ÓĞµÄ²ÎÊıÀàĞÍ
+	 * \param msg å¼‚å¸¸æ¶ˆæ¯
+	 * \remark vså’Œgccä»…æœ‰è¯¥å…±æœ‰çš„å‚æ•°ç±»å‹
 	 */
 	CommandLineException(const char* msg)
 		: std::exception(msg)
@@ -33,20 +33,20 @@ public:
 };
 
 /**
- * \brief ÌØ¶¨Óï·¨½á¹¹µÄÃüÁîĞĞ½âÎö¹¤¾ß
+ * \brief ç‰¹å®šè¯­æ³•ç»“æ„çš„å‘½ä»¤è¡Œè§£æå·¥å…·
  */
 class CommandLine
 {
 public:
 	/**
-	 * \brief Ìí¼Ó½âÎöµÄ×Ö·û´®²ÎÊı
-	 * \param restOfAll Îªtrue ±íÊ¾´Ë²ÎÊıÖ®ºóµÄËùÓĞ²ÎÊı¹²Í¬¹¹³É¸Ã²ÎÊıµÄÄÚÈİ
+	 * \brief æ·»åŠ è§£æçš„å­—ç¬¦ä¸²å‚æ•°
+	 * \param restOfAll ä¸ºtrue è¡¨ç¤ºæ­¤å‚æ•°ä¹‹åçš„æ‰€æœ‰å‚æ•°å…±åŒæ„æˆè¯¥å‚æ•°çš„å†…å®¹
 	 */
 	template <typename T>
 	bool Add(const std::string& name, bool restOfAll = false)
 	{
 		CommandLineValueType type = CommandLineValueType::Boolean;
-		// C++17 ¿ÉÒÔÓÃif constexpr
+		// C++17 å¯ä»¥ç”¨if constexpr
 		if (std::is_same_v<T, bool>)
 		{
 			type = CommandLineValueType::Boolean;
@@ -69,7 +69,7 @@ public:
 	}
 
 	/**
-	 * \remark C++ 11 ²»Ö§³Ö if constexpr£¬ËùÒÔĞ´·¨»áÆæ¹ÖºÜ¶à
+	 * \remark C++ 11 ä¸æ”¯æŒ if constexprï¼Œæ‰€ä»¥å†™æ³•ä¼šå¥‡æ€ªå¾ˆå¤š
 	 */
 	template <typename T>
 	T Get(const std::string& name) const
@@ -116,15 +116,15 @@ public:
 	}
 
 	/**
-	 * \brief Ìí¼Ó½âÎöÄ¿±êÀıÈç attach
-	 * \param isParse ÊÇ·ñ½âÎöºóĞø²ÎÊı
+	 * \brief æ·»åŠ è§£æç›®æ ‡ä¾‹å¦‚ attach
+	 * \param isParse æ˜¯å¦è§£æåç»­å‚æ•°
 	 */
 	void AddTarget(const std::string& name, bool isParse = true);
 
 	std::string GetTarget() const noexcept;
 
 	/**
-	 * \brief °´Ë³Ğò»ñÈ¡²ÎÊı
+	 * \brief æŒ‰é¡ºåºè·å–å‚æ•°
 	 */
 	std::string GetArg(int index) const noexcept;
 

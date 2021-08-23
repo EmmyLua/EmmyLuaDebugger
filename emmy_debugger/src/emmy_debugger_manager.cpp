@@ -120,7 +120,7 @@ void EmmyDebuggerManager::RemoveBreakpoint(const std::string& file, int line)
 	auto it = breakpoints.begin();
 	while (it != breakpoints.end())
 	{
-		// È»¶ø
+	
 		const auto bp = *it;
 		if (bp->line == line && CompareIgnoreCase(bp->file, file) == 0)
 		{
