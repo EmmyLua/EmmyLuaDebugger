@@ -290,6 +290,22 @@ int waitIDE(lua_State* L)
 	return 0;
 }
 
+int tcpSharedListen(lua_State* L)
+{
+	luaL_checkstring(L, 1);
+	std::string err;
+	const auto host = lua_tostring(L, 1);
+	luaL_checknumber(L, 2);
+	const auto port = lua_tointeger(L, 2);
+	const auto suc = EmmyFacade::Get().TcpSharedListen(L, host, port, err);
+	lua_pushboolean(L, suc);
+	if (suc) return 1;
+	lua_pushstring(L, err.c_str());
+	return 2;
+}
+
+
+
 // emmy.stop()
 int stop(lua_State* L)
 {

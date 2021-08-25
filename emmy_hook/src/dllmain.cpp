@@ -25,7 +25,7 @@ HINSTANCE g_hInstance = NULL;
 
 BOOL WINAPI DllMain(HINSTANCE hModule, DWORD reason, LPVOID reserved) {
 	g_hInstance = hModule;
-	EmmyFacade::Get().SetWorkMode(WorkMode::attach);
+	EmmyFacade::Get().SetWorkMode(WorkMode::Attach);
 	EmmyFacade::Get().StartHook = FindAndHook;
 	
 	if (reason == DLL_PROCESS_ATTACH) {

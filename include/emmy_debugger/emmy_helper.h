@@ -23,6 +23,8 @@ int breakHere(lua_State* L);
 // emmy.waitIDE(timeout: number): void
 int waitIDE(lua_State* L);
 
+int tcpSharedListen(lua_State* L);
+
 // emmy.stop()
 int stop(lua_State* L);
 

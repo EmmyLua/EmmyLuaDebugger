@@ -25,12 +25,13 @@ static const luaL_Reg lib[] = {
 	{"waitIDE", waitIDE},
 	{"breakHere", breakHere},
 	{"stop", stop},
+	{"tcpSharedListen", tcpSharedListen},
 	{nullptr, nullptr}
 };
 
 extern "C" {
 	EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
-		EmmyFacade::Get().SetWorkMode(WorkMode::emmy_core);
+		EmmyFacade::Get().SetWorkMode(WorkMode::EmmyCore);
 		if (!install_emmy_core(L))
 			return false;
 		luaL_newlibtable(L, lib);

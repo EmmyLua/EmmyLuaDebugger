@@ -93,6 +93,14 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 	return suc;
 }
 
+bool EmmyFacade::TcpSharedListen(lua_State* L, const std::string& host, int port, std::string& err)
+{
+	if(transporter == nullptr)
+	{
+		return TcpListen(L, host, port, err);
+	}
+}
+
 bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std::string& err)
 {
 	Destroy();
@@ -517,7 +525,7 @@ void EmmyFacade::OnLuaStateGC(lua_State* L)
 		debugger->Detach();
 	}
 
-	if (workMode == WorkMode::emmy_core)
+	if (workMode == WorkMode::EmmyCore)
 	{
 		if (emmyDebuggerManager->IsDebuggerEmpty())
 		{
