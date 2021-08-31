@@ -118,9 +118,18 @@ void Debugger::Hook(lua_Debug* ar)
 			HandleBreak();
 			return;
 		}
-		if (hookState)
+		// 加锁
+
+		std::shared_ptr<HookState> state = nullptr;
+
 		{
-			hookState->ProcessHook(shared_from_this(), L, ar);
+			std::lock_guard<std::mutex> lock(hookStateMtx);
+			state = hookState;
+		}
+
+		if (state)
+		{
+			state->ProcessHook(shared_from_this(), L, ar);
 		}
 	}
 }
@@ -256,11 +265,11 @@ std::string ToPointer(lua_State* L, int index)
 void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
 	// 如果没有计算深度则不予计算
-	if(depth <= 0)
+	if (depth <= 0)
 	{
 		return;
 	}
-	
+
 	const int topIndex = lua_gettop(L);
 	index = lua_absindex(L, index);
 	CacheValue(index, variable);
@@ -269,7 +278,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 	variable->valueTypeName = typeName;
 	variable->valueType = type;
 
-	
+
 	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA))
 	{
 		if (query_variable(L, variable, typeName, index, depth))
@@ -376,7 +385,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 				metatable->name = "(metatable)";
 				metatable->nameType = LUA_TSTRING;
 
-				GetVariable(metatable, -1, depth -1);
+				GetVariable(metatable, -1, depth - 1);
 				variable->children.push_back(metatable);
 
 				//__index
@@ -387,7 +396,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 						auto v = std::make_shared<Variable>();
 						v->name = "(metatable.__index)";
 						v->nameType = LUA_TSTRING;
-						GetVariable(v, -1, depth -1);
+						GetVariable(v, -1, depth - 1);
 						variable->children.push_back(v);
 						// if (depth > 1)
 						// {
@@ -736,6 +745,7 @@ bool Debugger::ProcessBreakPoint(std::shared_ptr<BreakPoint> bp)
 
 void Debugger::SetHookState(std::shared_ptr<HookState> newState)
 {
+	std::lock_guard<std::mutex> lock(hookStateMtx);
 	hookState = nullptr;
 	if (newState->Start(shared_from_this(), L))
 	{
@@ -968,7 +978,7 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 				}
 
 				char cLastChar = chunkName[cLastindex];
-				if(cLastChar != '/' && cLastChar != '\\')
+				if (cLastChar != '/' && cLastChar != '\\')
 				{
 					matchProcess = 0;
 					break;
@@ -976,7 +986,7 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 
 				// 该值可能为负数
 				int cNextIndex = static_cast<int>(chunkSize) - i - 1;
-				if(cNextIndex < 0)
+				if (cNextIndex < 0)
 				{
 					// 匹配已经完毕
 					break;
@@ -985,7 +995,7 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 				char cNextChar = chunkName[cNextIndex];
 
 				// 那chunkname 就是 aaa./bbbb 那就不匹配
-				if(cNextChar != '/' && cNextChar != '\\')
+				if (cNextChar != '/' && cNextChar != '\\')
 				{
 					matchProcess = 0;
 					break;
@@ -993,7 +1003,7 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 
 				// 这里会消耗掉 next的匹配
 				i++;
-				
+
 				// 这里是指保持下一次循环时fChar不变
 				fileSize += 2;
 				continue;
@@ -1001,7 +1011,8 @@ int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string
 
 			if (cChar == '/' || cChar == '\\')
 			{
-				if (fChar == '/' || fChar == '\\') {
+				if (fChar == '/' || fChar == '\\')
+				{
 					matchProcess++;
 					continue;
 				}

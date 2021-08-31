@@ -99,6 +99,7 @@ bool EmmyFacade::TcpSharedListen(lua_State* L, const std::string& host, int port
 	{
 		return TcpListen(L, host, port, err);
 	}
+	return true;
 }
 
 bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std::string& err)
@@ -443,7 +444,7 @@ void EmmyFacade::OnRemoveBreakPointReq(const rapidjson::Document& document)
 void EmmyFacade::OnActionReq(const rapidjson::Document& document)
 {
 	const auto action = static_cast<DebugAction>(document["action"].GetInt());
-
+	
 	emmyDebuggerManager->DoAction(action);
 	// todo: response
 }

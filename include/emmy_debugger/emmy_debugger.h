@@ -75,7 +75,8 @@ private:
 
 	lua_State* L;
 	std::shared_ptr<EmmyDebuggerManager> manager;
-	
+
+	std::mutex hookStateMtx;
 	std::shared_ptr<HookState> hookState;
 
 	bool running;
