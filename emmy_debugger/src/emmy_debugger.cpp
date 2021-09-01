@@ -731,14 +731,14 @@ bool Debugger::ProcessBreakPoint(std::shared_ptr<BreakPoint> bp)
 	}
 	if (!bp->logMessage.empty())
 	{
-		DoLogMessage(bp->logMessage);
+		DoLogMessage(bp);
 		return false;
 	}
 	if (!bp->hitCondition.empty())
 	{
 		bp->hitCount++;
-		//TODO check hit condition
-		return false;
+
+		return DoHitCondition(bp);
 	}
 	return true;
 }
@@ -873,8 +873,9 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	return false;
 }
 
-void Debugger::DoLogMessage(const std::string& logMessage)
+void Debugger::DoLogMessage(std::shared_ptr<BreakPoint> bp)
 {
+	std::string& logMessage = bp->logMessage;
 	// 为什么不用regex?
 	// 因为gcc 4.8 regex还是空实现
 	// 而且后续版本的gcc中正则表达式行为似乎也不太正常
@@ -883,7 +884,7 @@ void Debugger::DoLogMessage(const std::string& logMessage)
 		Normal,
 		LeftBrace,
 		RightBrace
-	} state= ParseState::Normal;
+	} state = ParseState::Normal;
 
 	std::vector<LogMessageReplaceExpress> replaceExpresses;
 
@@ -1018,7 +1019,9 @@ void Debugger::DoLogMessage(const std::string& logMessage)
 		}
 	}
 
-	EmmyFacade::Get().SendLog(LogType::Info, "%s", message.str().c_str());
+	std::string baseName = BaseName(bp->file);
+
+	EmmyFacade::Get().SendLog(LogType::Info, "[%s:%d] %s", baseName.c_str(), bp->line, message.str().c_str());
 }
 
 std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(lua_Debug* ar)
@@ -1060,6 +1063,213 @@ std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(const std::string& chunknam
 }
 
 #undef min
+bool Debugger::DoHitCondition(std::shared_ptr<BreakPoint> bp)
+{
+	auto& hitCondition = bp->hitCondition;
+
+	enum class ParseState
+	{
+		ExpectedOperator,
+		// 大于
+		Gt,
+		// 小于
+		Le,
+		// 单等号 
+		Eq,
+
+		ExpectedHitTimes,
+
+		ParseDigit,
+
+		ParseFinish
+	} state = ParseState::ExpectedOperator;
+
+	enum class Operator
+	{
+		// 大于
+		Gt,
+		// 小于
+		Le,
+		// 小于等于
+		LeEq,
+		// 大于等于
+		GtEq,
+		// 双等号
+		EqEq,
+	} evalOperator = Operator::EqEq;
+
+	unsigned long long hitTimes = 0;
+
+	for (std::size_t index = 0; index != hitCondition.size(); index++)
+	{
+		char ch = hitCondition[index];
+
+		switch (state)
+		{
+		case ParseState::ExpectedOperator:
+			{
+				if (ch == ' ')
+				{
+					continue;
+				}
+
+				if (ch == '=')
+				{
+					state = ParseState::Eq;
+				}
+				else if (ch == '<')
+				{
+					state = ParseState::Le;
+				}
+				else if (ch == '>')
+				{
+					state = ParseState::Gt;
+				}
+				else
+				{
+					return false;
+				}
+
+				break;
+			}
+		case ParseState::Eq:
+			{
+				if (ch == '=')
+				{
+					evalOperator = Operator::EqEq;
+					state = ParseState::ExpectedHitTimes;
+				}
+				else
+				{
+					return false;
+				}
+				break;
+			}
+		case ParseState::Gt:
+			{
+				if (ch == '=')
+				{
+					evalOperator = Operator::GtEq;
+					state = ParseState::ExpectedHitTimes;
+				}
+				else if (isdigit(ch))
+				{
+					evalOperator = Operator::Gt;
+					hitTimes = ch - '0';
+					state = ParseState::ParseDigit;
+				}
+				else if (ch == ' ')
+				{
+					evalOperator = Operator::Gt;
+					state = ParseState::ExpectedHitTimes;
+				}
+				else
+				{
+					return false;
+				}
+				break;
+			}
+		case ParseState::Le:
+			{
+				if (ch == '=')
+				{
+					evalOperator = Operator::LeEq;
+					state = ParseState::ExpectedHitTimes;
+				}
+				else if (isdigit(ch))
+				{
+					evalOperator = Operator::Le;
+					hitTimes = ch - '0';
+					state = ParseState::ParseDigit;
+				}
+				else if (ch == ' ')
+				{
+					evalOperator = Operator::Gt;
+					state = ParseState::ExpectedHitTimes;
+				}
+				else
+				{
+					return false;
+				}
+				break;
+			}
+		case ParseState::ExpectedHitTimes:
+			{
+				if (ch == ' ')
+				{
+					continue;
+				}
+				else if (isdigit(ch))
+				{
+					hitTimes = ch - '0';
+					state = ParseState::ParseDigit;
+				}
+				else
+				{
+					return false;
+				}
+				break;
+			}
+		case ParseState::ParseDigit:
+			{
+				if (isdigit(ch))
+				{
+					hitTimes = hitTimes * 10 + (ch - '0');
+				}
+				else if (ch== ' ')
+				{
+					state = ParseState::ParseFinish;
+				}
+				else
+				{
+					return false;
+				}
+
+				break;
+			}
+		case ParseState::ParseFinish:
+			{
+				if (ch == ' ')
+				{
+					break;
+				}
+				else
+				{
+					return false;
+				}
+				break;
+			}
+		}
+	}
+
+	switch (evalOperator)
+	{
+	case Operator::EqEq:
+		{
+			return bp->hitCount == hitTimes;
+		}
+	case Operator::Gt:
+		{
+			return bp->hitCount > hitTimes;
+		}
+	case Operator::GtEq:
+		{
+			return bp->hitCount >= hitTimes;
+		}
+	case Operator::Le:
+		{
+			return bp->hitCount < hitTimes;
+		}
+	case Operator::LeEq:
+		{
+			return bp->hitCount <= hitTimes;
+		}
+	}
+
+
+	return false;
+}
+
 // 重写模糊匹配算法
 int Debugger::FuzzyMatchFileName(const std::string& chunkName, const std::string& fileName) const
 {
