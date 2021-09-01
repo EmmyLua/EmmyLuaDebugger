@@ -123,7 +123,7 @@ void Debugger::Hook(lua_Debug* ar)
 		std::shared_ptr<HookState> state = nullptr;
 
 		{
-			std::lock_guard<std::mutex> lock(hookStateMtx);
+			std::lock_guard<std::recursive_mutex> lock(hookStateMtx);
 			state = hookState;
 		}
 
@@ -139,7 +139,7 @@ void Debugger::Stop()
 	running = false;
 	skipHook = true;
 	blocking = false;
-
+	// 那么存在一个问题，当前协程死掉了，我断开链接会怎么样呢
 	UpdateHook(0);
 
 	hookState = nullptr;
@@ -731,7 +731,7 @@ bool Debugger::ProcessBreakPoint(std::shared_ptr<BreakPoint> bp)
 	}
 	if (!bp->logMessage.empty())
 	{
-		EmmyFacade::Get().SendLog(LogType::Info, bp->logMessage.c_str());
+		DoLogMessage(bp->logMessage);
 		return false;
 	}
 	if (!bp->hitCondition.empty())
@@ -745,7 +745,7 @@ bool Debugger::ProcessBreakPoint(std::shared_ptr<BreakPoint> bp)
 
 void Debugger::SetHookState(std::shared_ptr<HookState> newState)
 {
-	std::lock_guard<std::mutex> lock(hookStateMtx);
+	std::lock_guard<std::recursive_mutex> lock(hookStateMtx);
 	hookState = nullptr;
 	if (newState->Start(shared_from_this(), L))
 	{
@@ -871,6 +871,154 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	}
 
 	return false;
+}
+
+void Debugger::DoLogMessage(const std::string& logMessage)
+{
+	// 为什么不用regex?
+	// 因为gcc 4.8 regex还是空实现
+	// 而且后续版本的gcc中正则表达式行为似乎也不太正常
+	enum class ParseState
+	{
+		Normal,
+		LeftBrace,
+		RightBrace
+	} state= ParseState::Normal;
+
+	std::vector<LogMessageReplaceExpress> replaceExpresses;
+
+
+	std::size_t leftBraceBegin = 0;
+
+	std::size_t rightBraceBegin = 0;
+
+	// 如果在表达式中出现左大括号
+	std::size_t exprLeftCount = 0;
+
+
+	for (std::size_t index = 0; index != logMessage.size(); index++)
+	{
+		char ch = logMessage[index];
+
+		switch (state)
+		{
+		case ParseState::Normal:
+			{
+				if (ch == '{')
+				{
+					state = ParseState::LeftBrace;
+					leftBraceBegin = index;
+					exprLeftCount = 0;
+				}
+				else if (ch == '}')
+				{
+					state = ParseState::RightBrace;
+					rightBraceBegin = index;
+				}
+				break;
+			}
+		case ParseState::LeftBrace:
+			{
+				if (ch == '{')
+				{
+					// 认为是左双大括号转义为可见的'{'
+					if (index == leftBraceBegin + 1)
+					{
+						replaceExpresses.emplace_back("{", leftBraceBegin, index, false);
+						state = ParseState::Normal;
+					}
+					else
+					{
+						exprLeftCount++;
+					}
+				}
+				else if (ch == '}')
+				{
+					// 认为是表达式内的大括号
+					if (exprLeftCount > 0)
+					{
+						exprLeftCount--;
+						continue;
+					}
+
+					replaceExpresses.emplace_back(logMessage.substr(leftBraceBegin + 1, index - leftBraceBegin - 1),
+					                              leftBraceBegin, index, true);
+
+
+					state = ParseState::Normal;
+				}
+				break;
+			}
+		case ParseState::RightBrace:
+			{
+				if (ch == '}' && (index == rightBraceBegin + 1))
+				{
+					replaceExpresses.emplace_back("}", rightBraceBegin, index, false);
+				}
+				else
+				{
+					//认为左右大括号失配，之前的不做处理，退格一位回去重新判断
+					index--;
+				}
+				state = ParseState::Normal;
+				break;
+			}
+		}
+	}
+
+	std::stringstream message;
+
+	if (replaceExpresses.empty())
+	{
+		message << logMessage;
+	}
+	else
+	{
+		// 拼接字符串
+		// 怎么replace 函数都没有啊
+
+		std::size_t start = 0;
+		for (std::size_t index = 0; index != replaceExpresses.size(); index++)
+		{
+			auto& replaceExpress = replaceExpresses[index];
+			if (start < replaceExpress.StartIndex)
+			{
+				auto fragment = logMessage.substr(start, replaceExpress.StartIndex - start);
+				message << fragment;
+				start = replaceExpress.StartIndex;
+			}
+
+			if (replaceExpress.NeedEval)
+			{
+				auto ctx = std::make_shared<EvalContext>();
+				ctx->expr = std::move(replaceExpress.Expr);
+				ctx->depth = 1;
+				bool succeed = DoEval(ctx);
+				if (succeed)
+				{
+					message << ctx->result->value;
+				}
+				else
+				{
+					message << ctx->error;
+				}
+			}
+			else
+			{
+				message << replaceExpress.Expr;
+			}
+
+			start = replaceExpress.EndIndex + 1;
+		}
+
+		if (start < logMessage.size())
+		{
+			auto fragment = logMessage.substr(start, logMessage.size() - start);
+			message << fragment;
+		}
+	}
+
+	EmmyFacade::Get().SendLog(LogType::Info, "%s", message.str().c_str());
 }
 
 std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(lua_Debug* ar)

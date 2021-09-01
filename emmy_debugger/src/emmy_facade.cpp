@@ -390,7 +390,7 @@ void ReadBreakPoint(const rapidjson::Value& value, std::shared_ptr<BreakPoint> b
 	}
 	if (value.HasMember("logMessage"))
 	{
-		bp->hitCondition = value["logMessage"].GetString();
+		bp->logMessage = value["logMessage"].GetString();
 	}
 }
 

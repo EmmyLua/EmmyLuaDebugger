@@ -65,7 +65,7 @@ private:
 	bool CreateEnv( int stackLevel);
 	bool ProcessBreakPoint(std::shared_ptr<BreakPoint> bp);
 	bool DoEval(std::shared_ptr<EvalContext> evalContext);
-
+	void DoLogMessage(const std::string& logMessage);
 	// 模糊匹配算法会算出匹配度
 	// 当多个文件路径都有可能命中应该采用匹配度最高的路径
 	int FuzzyMatchFileName(const std::string& chunkName, const std::string& fileName) const;
@@ -76,7 +76,8 @@ private:
 	lua_State* L;
 	std::shared_ptr<EmmyDebuggerManager> manager;
 
-	std::mutex hookStateMtx;
+	// 这里专门用的递归锁
+	std::recursive_mutex hookStateMtx;
 	std::shared_ptr<HookState> hookState;
 
 	bool running;
@@ -95,3 +96,5 @@ private:
 	std::queue<std::shared_ptr<EvalContext>> evalQueue;
 
 };
+
+

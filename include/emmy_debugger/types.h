@@ -91,3 +91,20 @@ public:
 	std::shared_ptr<Variable> result;
 	bool success = false;
 };
+
+class LogMessageReplaceExpress
+{
+public:
+	LogMessageReplaceExpress(std::string&& expr, std::size_t startIndex, std::size_t endIndex, bool needEval)
+		: Expr(expr),
+		  StartIndex(startIndex),
+		  EndIndex(endIndex),
+		  NeedEval(needEval)
+	{
+	}
+
+	std::string Expr;
+	std::size_t StartIndex;
+	std::size_t EndIndex;
+	bool NeedEval;
+};
