@@ -25,7 +25,7 @@ int lua_absindex(lua_State *L, int idx) {
 	}
 	return lua_gettop(L) + idx + 1;
 }
-
+#ifndef EMMY_LUA_JIT_SUPPORT_LUA_SETFUNCS
 void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
 	for (; l->name != nullptr; l++) {
 		for (int i = 0; i < nup; i++)
@@ -34,6 +34,7 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup) {
 		lua_setfield(L, -(nup + 2), l->name);
 	}
 }
+#endif
 
 void lua_pushglobaltable(lua_State* L)
 {

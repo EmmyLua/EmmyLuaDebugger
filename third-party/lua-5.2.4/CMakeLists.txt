@@ -23,7 +23,7 @@ if(WIN32)
     target_compile_definitions(lua52 PUBLIC -DLUA_BUILD_AS_DLL)
 endif(WIN32)
 
-target_sources(lua52 PUBLIC
+target_sources(lua52 PRIVATE
 
     #SOURCES
     ${lua52_SOURCE_DIR}/src/lapi.c

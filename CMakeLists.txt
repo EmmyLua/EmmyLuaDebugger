@@ -43,7 +43,7 @@ macro(source_group_by_dir proj_dir source_files)
     endif(MSVC OR APPLE)
 endmacro(source_group_by_dir)
 
-set(EMMY_LUA_VERSION "54" CACHE STRING "Lua version: 51/52/53")
+set(EMMY_LUA_VERSION "54" CACHE STRING "Lua version: jit/51/52/53/54")
 
 if(${EMMY_LUA_VERSION} STREQUAL "54")
     set(EMMY_LUA_DIR "lua-5.4.0")
@@ -57,6 +57,11 @@ elseif(${EMMY_LUA_VERSION} STREQUAL "52")
 elseif(${EMMY_LUA_VERSION} STREQUAL "51")
     set(EMMY_LUA_DIR "lua-5.1.5")
     add_definitions(-DEMMY_LUA_51)
+elseif(${EMMY_LUA_VERSION} STREQUAL "jit")
+    set(EMMY_LUA_DIR "luajit")
+    add_definitions(-DEMMY_LUA_51)
+    # if LUAJIT support lua_setfuncs use this macro define
+    #add_definitions(-DEMMY_LUA_JIT_SUPPORT_LUA_SETFUNCS)
 endif()
 
 add_definitions(-DEMMY_CORE_VERSION="1.0.16")
@@ -66,7 +71,11 @@ if(EMMY_USE_LUA_SOURCE)
     include_directories(
         ${CMAKE_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
     )
-    add_subdirectory(third-party/${EMMY_LUA_DIR})
+    if(${EMMY_LUA_VERSION} STREQUAL "jit")
+        #ignore
+    else()
+        add_subdirectory(third-party/${EMMY_LUA_DIR})
+    endif()
 endif()
 
 add_subdirectory(third-party/libuv-1.29.0)

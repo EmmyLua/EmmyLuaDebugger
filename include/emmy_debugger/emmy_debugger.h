@@ -54,13 +54,14 @@ public:
 	void HandleBreak();
 	int GetStackLevel(bool skipC) const;
 	void UpdateHook(int mask);
+	void SetHookState(std::shared_ptr<HookState> newState);
+	std::shared_ptr<EmmyDebuggerManager> GetEmmyDebuggerManager();
 
 private:
 	std::shared_ptr<BreakPoint> FindBreakPoint(lua_Debug* ar);
 	std::shared_ptr<BreakPoint> FindBreakPoint(const std::string& file, int line);
 	std::string GetFile(lua_Debug* ar) const;
 
-	void SetHookState(std::shared_ptr<HookState> newState);
 	void CheckDoString();
 	bool CreateEnv( int stackLevel);
 	bool ProcessBreakPoint(std::shared_ptr<BreakPoint> bp);
@@ -77,8 +78,8 @@ private:
 	lua_State* L;
 	std::shared_ptr<EmmyDebuggerManager> manager;
 
-	// 这里专门用的递归锁
-	std::recursive_mutex hookStateMtx;
+	// 取消递归锁的使用
+	std::mutex hookStateMtx;
 	std::shared_ptr<HookState> hookState;
 
 	bool running;

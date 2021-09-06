@@ -65,11 +65,20 @@ if(EMMY_USE_LUA_SOURCE)
     target_include_directories(emmy_debugger PUBLIC 
         ${emmy_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
     )
-
-    target_link_libraries(
-        emmy_debugger
-        PRIVATE lua${EMMY_LUA_VERSION}
-    )
+    if(${EMMY_LUA_VERSION} STREQUAL "jit")
+        target_link_directories(emmy_debugger PUBLIC 
+            ${emmy_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
+        )
+        target_link_libraries(
+            emmy_debugger
+            PRIVATE lua51.lib
+        )
+    else()
+        target_link_libraries(
+            emmy_debugger
+            PRIVATE lua${EMMY_LUA_VERSION}
+        )
+    endif()
 
 elseif(EMMY_COMPILE_AS_LIB)
     message("emmy build as lib")

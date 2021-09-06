@@ -123,7 +123,7 @@ void Debugger::Hook(lua_Debug* ar)
 		std::shared_ptr<HookState> state = nullptr;
 
 		{
-			std::lock_guard<std::recursive_mutex> lock(hookStateMtx);
+			std::lock_guard<std::mutex> lock(hookStateMtx);
 			state = hookState;
 		}
 
@@ -490,6 +490,8 @@ void Debugger::ClearCache() const
 
 void Debugger::DoAction(DebugAction action)
 {
+	// 锁加到这里
+	std::lock_guard<std::mutex> lock(hookStateMtx);
 	switch (action)
 	{
 	case DebugAction::Break:
@@ -745,12 +747,16 @@ bool Debugger::ProcessBreakPoint(std::shared_ptr<BreakPoint> bp)
 
 void Debugger::SetHookState(std::shared_ptr<HookState> newState)
 {
-	std::lock_guard<std::recursive_mutex> lock(hookStateMtx);
 	hookState = nullptr;
 	if (newState->Start(shared_from_this(), L))
 	{
 		hookState = newState;
 	}
+}
+
+std::shared_ptr<EmmyDebuggerManager> Debugger::GetEmmyDebuggerManager()
+{
+	return manager;
 }
 
 int Debugger::GetStackLevel(bool skipC) const

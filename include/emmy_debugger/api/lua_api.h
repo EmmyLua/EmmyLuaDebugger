@@ -35,12 +35,20 @@ typedef int(*lua_KFunction) (lua_State *L, int status, lua_KContext ctx);
 #define LUA_OK 0
 
 int lua_absindex(lua_State *L, int idx);
-void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 
+#ifndef EMMY_LUA_JIT_SUPPORT_LUA_SETFUNCS
+void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
+#endif
+
+#ifndef luaL_newlibtable
 #define luaL_newlibtable(L,l)	\
   lua_createtable(L, 0, sizeof(l)/sizeof((l)[0]) - 1)
+#endif
+
+#ifndef luaL_newlib
 #define luaL_newlib(L,l)  \
   (luaL_newlibtable(L,l), luaL_setfuncs(L,l,0))
+#endif
 
 void lua_pushglobaltable(lua_State* L);
 
