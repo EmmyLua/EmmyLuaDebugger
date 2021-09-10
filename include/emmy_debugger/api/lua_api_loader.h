@@ -15,7 +15,6 @@
 */
 #pragma once
 #include <cstddef>
-
 //luacfg
 typedef double lua_Number;
 // 不同的lua版本定义是不同的，不同的平台定义也是不同的
@@ -24,6 +23,8 @@ typedef double lua_Number;
 // 传参时
 typedef long long lua_Integer;
 typedef ptrdiff_t lua_KContext;
+
+typedef struct lua_State lua_State;
 
 /*
 @@ LUA_IDSIZE gives the maximum size for the description of the source
@@ -44,7 +45,7 @@ typedef ptrdiff_t lua_KContext;
 #define LUA_ERRERR	6
 
 
-typedef struct lua_State lua_State;
+// typedef struct lua_State lua_State;
 
 
 /*
@@ -194,6 +195,8 @@ int getDebugLineDefined(lua_Debug* ar);
 const char* getDebugSource(lua_Debug* ar);
 const char* getDebugName(lua_Debug* ar);
 
+
+
 /* Functions to be called by the debugger in specific events */
 typedef void(*lua_Hook) (lua_State *L, lua_Debug *ar);
 
@@ -312,6 +315,12 @@ typedef void*(*dll_lua_rawseti)(lua_State *L, int idx, lua_Integer n);
 DEF_LUA_API(lua_rawseti);
 typedef void*(*dll_lua_rawgeti)(lua_State *L, int idx, lua_Integer n);
 DEF_LUA_API(lua_rawgeti);
+typedef void* (*dll_luaL_newstate)(void);
+DEF_LUA_API(luaL_newstate);
+typedef void (*dll_lua_close)(lua_State* L);
+DEF_LUA_API(lua_close);
+typedef int (*dll_lua_pushthread)(lua_State* L);
+DEF_LUA_API(lua_pushthread);
 
 //51
 typedef int (*dll_e_lua_setfenv)(lua_State* L, int idx);
@@ -324,10 +333,14 @@ typedef int (*dll_e_lua_call)(lua_State* L, int nargs, int nresults);
 DEF_LUA_API_E(lua_call);
 typedef int (*dll_e_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
 DEF_LUA_API_E(lua_pcall);
+typedef void (*dll_e_lua_insert)(lua_State* L, int idx);
+DEF_LUA_API_E(lua_insert);
+
+
 //51 & 52
 typedef void (*dll_e_lua_remove)(lua_State *L, int idx);
 DEF_LUA_API_E(lua_remove);
-//52 & 53
+//52 & 53 & 54
 typedef lua_Integer (*dll_e_lua_tointegerx)(lua_State* L, int idx, int* isnum);
 DEF_LUA_API_E(lua_tointegerx);
 typedef lua_Number(*dll_e_lua_tonumberx) (lua_State *L, int idx, int *isnum);
@@ -344,6 +357,13 @@ typedef void (*dll_e_luaL_setfuncs)(lua_State* L, const luaL_Reg* l, int nup);
 DEF_LUA_API_E(luaL_setfuncs);
 typedef int(*dll_e_lua_absindex)(lua_State *L, int idx);
 DEF_LUA_API_E(lua_absindex);
+typedef int(*dll_e_lua_rawgetp)(lua_State *L, int idx, const void* p);
+DEF_LUA_API_E(lua_rawgetp);
+typedef void(*dll_e_lua_rawsetp)(lua_State* L, int idx, const void* p);
+DEF_LUA_API_E(lua_rawsetp);
+typedef int(*dll_e_lua_pushthread)(lua_State* L);
+DEF_LUA_API_E(lua_pushthread);
+
 // 51 & 52 & 53
 typedef void* (*dll_e_lua_newuserdata)(lua_State* L, int size);
 DEF_LUA_API_E(lua_newuserdata);
@@ -368,3 +388,6 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup);
 void lua_remove(lua_State *L, int idx);
 void* lua_newuserdata(lua_State* L, int size);
 void lua_pushglobaltable(lua_State* L);
+int lua_rawgetp(lua_State* L, int idx, const void* p);
+void lua_rawsetp(lua_State* L, int idx, const void* p);
+void lua_insert(lua_State* L, int idx);

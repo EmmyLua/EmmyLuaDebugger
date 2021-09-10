@@ -157,6 +157,14 @@ bool Debugger::IsRunning() const
 	return running;
 }
 
+bool Debugger::IsMainThread() const
+{
+	int ret = lua_pushthread(L);
+	lua_pop(L, 1);
+
+	return ret == 1;
+}
+
 bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc)
 {
 	int level = 0;

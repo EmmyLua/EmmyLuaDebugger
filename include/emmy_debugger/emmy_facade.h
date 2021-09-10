@@ -45,6 +45,7 @@ public:
 	~EmmyFacade();
 #ifndef EMMY_USE_LUA_SOURCE
 	bool SetupLuaAPI();
+	bool IsApiReady() const;
 #endif
 	bool TcpListen(lua_State* L, const std::string& host, int port, std::string& err);
 	bool TcpSharedListen(lua_State* L, const std::string& host, int port, std::string& err);

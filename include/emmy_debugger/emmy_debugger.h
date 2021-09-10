@@ -41,7 +41,8 @@ public:
 	void Hook(lua_Debug* ar);
 	void Stop();
 	bool IsRunning() const;
-	
+
+	bool IsMainThread() const;
 	void AsyncDoString(const std::string& code);
 	bool Eval(std::shared_ptr<EvalContext> evalContext, bool force = false);
 	bool GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc);

@@ -95,6 +95,9 @@ IMP_LUA_API(lua_rawget);
 IMP_LUA_API(lua_rawset);
 IMP_LUA_API(lua_pushlightuserdata);
 IMP_LUA_API(lua_touserdata);
+IMP_LUA_API(luaL_newstate);
+IMP_LUA_API(lua_close);
+IMP_LUA_API(lua_pushthread);
 
 IMP_LUA_API(lua_rawseti);
 IMP_LUA_API(lua_rawgeti);
@@ -105,6 +108,11 @@ IMP_LUA_API_E(lua_tonumber);
 IMP_LUA_API_E(lua_call);
 IMP_LUA_API_E(lua_pcall);
 IMP_LUA_API_E(lua_remove);
+IMP_LUA_API_E(lua_insert);
+// 52 53 54
+IMP_LUA_API_E(lua_rawgetp);
+IMP_LUA_API_E(lua_rawsetp);
+
 //53
 IMP_LUA_API_E(lua_tointegerx);
 IMP_LUA_API_E(lua_tonumberx);
@@ -352,6 +360,52 @@ void lua_pushglobaltable(lua_State* L)
 	}
 }
 
+int lua_rawgetp(lua_State* L, int idx, const void* p)
+{
+	if(luaVersion == LuaVersion::LUA_51)
+	{
+		if (idx < 0) {
+			idx += lua_gettop(L) + 1;
+		}
+		lua_pushlightuserdata(L, (void*)p);
+		lua_rawget(L, idx);
+	}
+	else
+	{
+		return e_lua_rawgetp(L, idx, p);
+	}
+}
+
+void lua_rawsetp(lua_State* L, int idx, const void* p)
+{
+	if(luaVersion == LuaVersion::LUA_51)
+	{
+		if (idx < 0) {
+			idx += lua_gettop(L) + 1;
+		}
+		lua_pushlightuserdata(L, (void*)p);
+		lua_insert(L, -2);
+		lua_rawset(L, idx);
+	}
+	else
+	{
+		return e_lua_rawsetp(L, idx, p);
+	}
+}
+
+void lua_insert(lua_State* L, int idx)
+{
+	if(luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52)
+	{
+		return e_lua_insert(L, idx);
+	}
+	else
+	{
+		return e_lua_rotate(L, idx, 1);
+	}
+}
+
+
 extern "C" bool SetupLuaAPI()
 {
 	LOAD_LUA_API(lua_gettop);
@@ -387,6 +441,9 @@ extern "C" bool SetupLuaAPI()
 	LOAD_LUA_API(lua_rawset);
 	LOAD_LUA_API(lua_pushlightuserdata);
 	LOAD_LUA_API(lua_touserdata);
+	LOAD_LUA_API(luaL_newstate);
+	LOAD_LUA_API(lua_close);
+	LOAD_LUA_API(lua_pushthread);
 
 	LOAD_LUA_API(lua_rawseti);
 	LOAD_LUA_API(lua_rawgeti);
@@ -398,7 +455,7 @@ extern "C" bool SetupLuaAPI()
 	LOAD_LUA_API_E(lua_pcall);
 	//51 & 52
 	LOAD_LUA_API_E(lua_remove);
-	//52 & 53
+	//52 & 53 & 54
 	LOAD_LUA_API_E(lua_tointegerx);
 	LOAD_LUA_API_E(lua_tonumberx);
 	LOAD_LUA_API_E(lua_getglobal);
@@ -407,6 +464,11 @@ extern "C" bool SetupLuaAPI()
 	LOAD_LUA_API_E(lua_pcallk);
 	LOAD_LUA_API_E(luaL_setfuncs);
 	LOAD_LUA_API_E(lua_absindex);
+	LOAD_LUA_API_E(lua_rawgetp);
+	LOAD_LUA_API_E(lua_rawsetp);
+	
+
+
 	// 51 & 52 & 53
 	LOAD_LUA_API_E(lua_newuserdata);
 	//53

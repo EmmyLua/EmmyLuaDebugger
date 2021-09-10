@@ -52,6 +52,11 @@ bool EmmyFacade::SetupLuaAPI()
 	isAPIReady = ::SetupLuaAPI();
 	return isAPIReady;
 }
+
+bool EmmyFacade::IsApiReady() const
+{
+	return isAPIReady;
+}
 #endif
 
 int LuaError(lua_State* L)
@@ -95,7 +100,7 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 
 bool EmmyFacade::TcpSharedListen(lua_State* L, const std::string& host, int port, std::string& err)
 {
-	if(transporter == nullptr)
+	if (transporter == nullptr)
 	{
 		return TcpListen(L, host, port, err);
 	}
@@ -193,7 +198,7 @@ int EmmyFacade::OnDisconnect()
 	isWaitingForIDE = false;
 
 	emmyDebuggerManager->OnDisconnect();
-	
+
 	return 0;
 }
 
@@ -412,7 +417,7 @@ void EmmyFacade::OnAddBreakPointReq(const rapidjson::Document& document)
 		{
 			auto bp = std::make_shared<BreakPoint>();
 			ReadBreakPoint(*it, bp);
-			
+
 			bp->hitCount = 0;
 			// ParsePathParts(bp->file, bp->pathParts);
 
@@ -444,7 +449,7 @@ void EmmyFacade::OnRemoveBreakPointReq(const rapidjson::Document& document)
 void EmmyFacade::OnActionReq(const rapidjson::Document& document)
 {
 	const auto action = static_cast<DebugAction>(document["action"].GetInt());
-	
+
 	emmyDebuggerManager->DoAction(action);
 	// todo: response
 }
@@ -608,15 +613,28 @@ void EmmyFacade::Attach(lua_State* L)
 {
 	if (!this->transporter->IsConnected())
 		return;
+
 	auto debugger = emmyDebuggerManager->GetDebugger(L);
 
 	if (!debugger)
 	{
-		auto debugger = emmyDebuggerManager->AddDebugger(L);
+		debugger = emmyDebuggerManager->AddDebugger(L);
 
-		install_emmy_core(L);
 		debugger->Start();
-		debugger->Attach();
+
+		bool install = false;
+
+		if(!IsApiReady())
+		{
+			install = install_emmy_core(L);
+		}
+
+		if(debugger->IsMainThread() && !install)
+		{
+			install = install_emmy_core(L);
+		}
+
+		debugger->Attach(debugger->IsMainThread());
 
 		// send attached notify
 		rapidjson::Document rspDoc;

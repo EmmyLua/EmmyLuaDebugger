@@ -28,7 +28,7 @@ int metaQuery(lua_State* L)
 	const int argN = lua_gettop(L);
 	auto* var = (Variable*)lua_touserdata(L, 1);
 	const int index = 2;
-	const int depth = lua_tonumber(L, 3);
+	const auto depth = lua_tonumber(L, 3);
 	bool queryHelper = false;
 	if (argN >= 4)
 	{
@@ -39,7 +39,7 @@ int metaQuery(lua_State* L)
 
 	if (debugger && variable)
 	{
-		debugger->GetVariable(variable, index, depth, queryHelper);
+		debugger->GetVariable(variable, index, static_cast<int>(depth), queryHelper);
 	}
 	return 0;
 }
@@ -108,7 +108,7 @@ int metaNewIndex(lua_State* L)
 	}
 	else if (k == "valueType")
 	{
-		var->valueType = lua_tonumber(L, 3);
+		var->valueType = static_cast<int>(lua_tonumber(L, 3));
 	}
 	else if (k == "valueTypeName")
 	{
@@ -224,7 +224,7 @@ int tcpListen(struct lua_State* L)
 	const auto host = lua_tostring(L, 1);
 	luaL_checknumber(L, 2);
 	const auto port = lua_tointeger(L, 2);
-	const auto suc = EmmyFacade::Get().TcpListen(L, host, port, err);
+	const auto suc = EmmyFacade::Get().TcpListen(L, host, static_cast<int>(port), err);
 	lua_pushboolean(L, suc);
 	if (suc) return 1;
 	lua_pushstring(L, err.c_str());
@@ -239,7 +239,7 @@ int tcpConnect(lua_State* L)
 	const auto host = lua_tostring(L, 1);
 	luaL_checknumber(L, 2);
 	const auto port = lua_tointeger(L, 2);
-	const auto suc = EmmyFacade::Get().TcpConnect(L, host, port, err);
+	const auto suc = EmmyFacade::Get().TcpConnect(L, host, static_cast<int>(port), err);
 	lua_pushboolean(L, suc);
 	if (suc) return 1;
 	lua_pushstring(L, err.c_str());
@@ -285,7 +285,10 @@ int waitIDE(lua_State* L)
 {
 	int top = lua_gettop(L);
 	int timeout = 0;
-	if (top >= 1) timeout = luaL_checknumber(L, 1);
+	if (top >= 1)
+	{
+		timeout = static_cast<int>(luaL_checknumber(L, 1));
+	}
 	EmmyFacade::Get().WaitIDE(false, timeout);
 	return 0;
 }
@@ -297,13 +300,12 @@ int tcpSharedListen(lua_State* L)
 	const auto host = lua_tostring(L, 1);
 	luaL_checknumber(L, 2);
 	const auto port = lua_tointeger(L, 2);
-	const auto suc = EmmyFacade::Get().TcpSharedListen(L, host, port, err);
+	const auto suc = EmmyFacade::Get().TcpSharedListen(L, host, static_cast<int>(port), err);
 	lua_pushboolean(L, suc);
 	if (suc) return 1;
 	lua_pushstring(L, err.c_str());
 	return 2;
 }
-
 
 
 // emmy.stop()
@@ -449,5 +451,4 @@ std::string BaseName(const std::string& filePath)
 	{
 		return filePath.substr(sepIndex + 1);
 	}
-
 }
