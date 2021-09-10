@@ -52,7 +52,7 @@ void InitHook(lua_State* L, lua_Debug* ar)
 
 	lua_pop(L, 1);
 
-	lua_sethook(L, nullptr, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+	lua_sethook(L, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 
 	EmmyFacade::Get().Hook(L, ar);
 }
