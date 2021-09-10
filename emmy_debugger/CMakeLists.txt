@@ -36,6 +36,7 @@ target_sources(emmy_debugger PUBLIC
 
     #src/api
     ${emmy_debugger_SOURCE_DIR}/src/api/lua_api.cpp
+    ${emmy_debugger_SOURCE_DIR}/src/api/lua_state.cpp
 
     #src/proto
     ${emmy_debugger_SOURCE_DIR}/src/proto/pipeline_client_transporter.cpp
@@ -84,11 +85,23 @@ elseif(EMMY_COMPILE_AS_LIB)
     message("emmy build as lib")
     target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
 else()
+    target_include_directories(emmy_debugger PRIVATE
+        ${emmy_SOURCE_DIR}/third-party
+    )
+
     target_sources(emmy_debugger
         PUBLIC
         ${emmy_SOURCE_DIR}/include/emmy_debugger/api/lua_api_loader.h
         ${emmy_debugger_SOURCE_DIR}/src/api/lua_api_loader.cpp
+
+        PRIVATE
+        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_54.cpp
+        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_53.cpp
+        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_52.cpp
+        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_51.cpp
     )
+   
+
 
 endif(EMMY_USE_LUA_SOURCE)
 

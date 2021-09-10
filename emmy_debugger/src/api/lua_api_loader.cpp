@@ -368,7 +368,7 @@ int lua_rawgetp(lua_State* L, int idx, const void* p)
 			idx += lua_gettop(L) + 1;
 		}
 		lua_pushlightuserdata(L, (void*)p);
-		lua_rawget(L, idx);
+		return lua_rawget(L, idx);
 	}
 	else
 	{

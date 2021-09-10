@@ -45,8 +45,8 @@ public:
 	~EmmyFacade();
 #ifndef EMMY_USE_LUA_SOURCE
 	bool SetupLuaAPI();
-	bool IsApiReady() const;
 #endif
+
 	bool TcpListen(lua_State* L, const std::string& host, int port, std::string& err);
 	bool TcpSharedListen(lua_State* L, const std::string& host, int port, std::string& err);
 	bool TcpConnect(lua_State* L, const std::string& host, int port, std::string& err);
@@ -64,6 +64,7 @@ public:
 	void SendLog(LogType type, const char* fmt, ...);
 	void OnLuaStateGC(lua_State* L);
 	void Hook(lua_State* L, lua_Debug* ar);
+	std::shared_ptr<EmmyDebuggerManager> GetDebugManager() const;
 
 	std::shared_ptr<Variable> GetVariableRef(Variable* variable);
 	void AddVariableRef(std::shared_ptr<Variable> variable);

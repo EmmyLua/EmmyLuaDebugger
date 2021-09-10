@@ -53,10 +53,6 @@ bool EmmyFacade::SetupLuaAPI()
 	return isAPIReady;
 }
 
-bool EmmyFacade::IsApiReady() const
-{
-	return isAPIReady;
-}
 #endif
 
 int LuaError(lua_State* L)
@@ -258,12 +254,6 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 	{
 		emmyDebuggerManager->helperCode = document["emmyHelper"].GetString();
 	}
-	auto debuggers = emmyDebuggerManager->GetDebuggers();
-	for (auto debugger : debuggers)
-	{
-		debugger->Start();
-		debugger->Attach();
-	}
 
 	//file extension names: .lua, .txt, .lua.txt ...
 	if (document.HasMember("ext"))
@@ -279,6 +269,17 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 		}
 
 		emmyDebuggerManager->extNames = extNames;
+	}
+
+	//TODO 这里有个线程安全问题，但是解决不了
+	// 
+	// 只能在消息线程设置hook
+
+	auto debuggers = emmyDebuggerManager->GetDebuggers();
+	for (auto debugger : debuggers)
+	{
+		debugger->Start();
+		debugger->Attach(false);
 	}
 }
 
@@ -551,10 +552,15 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 	{
 		debugger = emmyDebuggerManager->AddDebugger(L);
 		debugger->Start();
-		debugger->Attach(false);
+		debugger->Attach();
 
 		debugger->Hook(ar);
 	}
+}
+
+std::shared_ptr<EmmyDebuggerManager> EmmyFacade::GetDebugManager() const
+{
+	return emmyDebuggerManager;
 }
 
 
@@ -624,17 +630,20 @@ void EmmyFacade::Attach(lua_State* L)
 
 		bool install = false;
 
-		if(!IsApiReady())
+		if(!isAPIReady)
+		{
+			install = install_emmy_core(L);
+			// 考虑到emmy_hook use lua source
+			isAPIReady = install;
+		}
+
+
+		if(debugger->IsMainCoroutine() && !install)
 		{
 			install = install_emmy_core(L);
 		}
 
-		if(debugger->IsMainThread() && !install)
-		{
-			install = install_emmy_core(L);
-		}
-
-		debugger->Attach(debugger->IsMainThread());
+		debugger->Attach();
 
 		// send attached notify
 		rapidjson::Document rspDoc;

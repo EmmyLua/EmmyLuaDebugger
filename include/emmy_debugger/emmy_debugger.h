@@ -36,13 +36,16 @@ public:
 	~Debugger();
 
 	void Start();
-	void Attach(bool doHelperCode=true);
+	/*
+	 * @param isMainThread 代表是否是在主线程执行
+	 */
+	void Attach(bool isMainThread=true);
 	void Detach();
 	void Hook(lua_Debug* ar);
 	void Stop();
 	bool IsRunning() const;
 
-	bool IsMainThread() const;
+	bool IsMainCoroutine() const;
 	void AsyncDoString(const std::string& code);
 	bool Eval(std::shared_ptr<EvalContext> evalContext, bool force = false);
 	bool GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc);
@@ -55,6 +58,8 @@ public:
 	void HandleBreak();
 	int GetStackLevel(bool skipC) const;
 	void UpdateHook(int mask);
+	void SetInitHook();
+
 	void SetHookState(std::shared_ptr<HookState> newState);
 	std::shared_ptr<EmmyDebuggerManager> GetEmmyDebuggerManager();
 

@@ -30,8 +30,10 @@ int stop(lua_State* L);
 
 bool install_emmy_core(struct lua_State* L);
 
+std::vector<lua_State*> FindAllCoroutine(struct lua_State* L);
+
 /*
- * \deprecated
+ * @deprecated
  */
 void ParsePathParts(const std::string& file, std::vector<std::string>& paths);
 

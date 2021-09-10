@@ -30,6 +30,34 @@ void HookLua(lua_State* L, lua_Debug* ar)
 	EmmyFacade::Get().Hook(L, ar);
 }
 
+void InitHook(lua_State* L, lua_Debug* ar)
+{
+	int ret = lua_pushthread(L);
+	if(ret == 1)
+	{
+		auto states = FindAllCoroutine(L);
+
+		for(auto state : states)
+		{
+			auto debuggerManager = EmmyFacade::Get().GetDebugManager();
+			auto debugger = debuggerManager->GetDebugger(state);
+			if (!debugger) {
+				debugger = debuggerManager->AddDebugger(state);
+				debugger->Start();
+				debugger->Attach();
+			}
+		}
+
+	}
+
+	lua_pop(L, 1);
+
+	lua_sethook(L, nullptr, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+
+	EmmyFacade::Get().Hook(L, ar);
+}
+
+
 Debugger::Debugger(lua_State* L, std::shared_ptr<EmmyDebuggerManager> manager):
 	L(L),
 	manager(manager),
@@ -52,33 +80,44 @@ void Debugger::Start()
 	doStringList.clear();
 }
 
-void Debugger::Attach(bool doHelperCode)
+void Debugger::Attach(bool isMainThread)
 {
 	if (!running)
 		return;
 
-
 	// execute helper code
-	if (doHelperCode && ! manager->helperCode.empty())
+	if (!manager->helperCode.empty())
 	{
 		ExecuteOnLuaThread([this](lua_State* L)
 		{
 			const int t = lua_gettop(L);
-			const int r = luaL_loadstring(L, manager->helperCode.c_str());
-			if (r == LUA_OK)
+			// 判断是不是主lua_state
+			int ret = lua_pushthread(L);
+			if (ret == 1)
 			{
-				if (lua_pcall(L, 0, 0, 0) != LUA_OK)
+				const int r = luaL_loadstring(L, manager->helperCode.c_str());
+				if (r == LUA_OK)
 				{
-					std::string msg = lua_tostring(L, -1);
-					printf("msg: %s", msg.c_str());
+					if (lua_pcall(L, 0, 0, 0) != LUA_OK)
+					{
+						std::string msg = lua_tostring(L, -1);
+						printf("msg: %s", msg.c_str());
+					}
 				}
 			}
 			lua_settop(L, t);
 		});
 	}
-	// todo: just set hook when break point added.
-	UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
 
+	if (isMainThread)
+	{
+		// todo: just set hook when break point added.
+		UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
+	}
+	else
+	{
+		SetInitHook();
+	}
 	// todo: hook co
 	// auto root = G(L)->allgc;
 }
@@ -157,7 +196,7 @@ bool Debugger::IsRunning() const
 	return running;
 }
 
-bool Debugger::IsMainThread() const
+bool Debugger::IsMainCoroutine() const
 {
 	int ret = lua_pushthread(L);
 	lua_pop(L, 1);
@@ -527,6 +566,11 @@ void Debugger::UpdateHook(int mask)
 		lua_sethook(L, nullptr, mask, 0);
 	else
 		lua_sethook(L, HookLua, mask, 0);
+}
+
+void Debugger::SetInitHook()
+{
+	lua_sethook(L, InitHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 }
 
 // _G.emmy.fixPath = function(path) return (newPath) end
@@ -1230,7 +1274,7 @@ bool Debugger::DoHitCondition(std::shared_ptr<BreakPoint> bp)
 				{
 					hitTimes = hitTimes * 10 + (ch - '0');
 				}
-				else if (ch== ' ')
+				else if (ch == ' ')
 				{
 					state = ParseState::ParseFinish;
 				}
