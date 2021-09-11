@@ -30,27 +30,24 @@ void HookLua(lua_State* L, lua_Debug* ar)
 	EmmyFacade::Get().Hook(L, ar);
 }
 
+
+void WaitConnectedHook(lua_State* L, lua_Debug* ar)
+{
+	// EmmyFacade::Get()
+	// std::lock_guard<std::mutex> lock()
+}
+
+
 void InitHook(lua_State* L, lua_Debug* ar)
 {
-	int ret = lua_pushthread(L);
-	if(ret == 1)
+	auto mainL = GetMainState(L);
+
+	auto states = FindAllCoroutine(mainL);
+
+	for (auto state : states)
 	{
-		auto states = FindAllCoroutine(L);
-
-		for(auto state : states)
-		{
-			auto debuggerManager = EmmyFacade::Get().GetDebugManager();
-			auto debugger = debuggerManager->GetDebugger(state);
-			if (!debugger) {
-				debugger = debuggerManager->AddDebugger(state);
-				debugger->Start();
-				debugger->Attach();
-			}
-		}
-
+		lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 	}
-
-	lua_pop(L, 1);
 
 	lua_sethook(L, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 
@@ -59,7 +56,8 @@ void InitHook(lua_State* L, lua_Debug* ar)
 
 
 Debugger::Debugger(lua_State* L, std::shared_ptr<EmmyDebuggerManager> manager):
-	L(L),
+	currentL(L),
+	mainL(L),
 	manager(manager),
 	hookState(nullptr),
 	running(false),
@@ -111,32 +109,42 @@ void Debugger::Attach(bool isMainThread)
 
 	if (isMainThread)
 	{
+		auto states = FindAllCoroutine(mainL);
+
+		for (auto state : states)
+		{
+			lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+		}
+
 		// todo: just set hook when break point added.
-		UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
+		lua_sethook(mainL, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 	}
 	else
 	{
 		SetInitHook();
 	}
-	// todo: hook co
-	// auto root = G(L)->allgc;
 }
 
 void Debugger::Detach()
 {
-	// const auto it = states.find(L);
-	// if (it != states.end())
-	// {
-	// 	states.erase(it);
-	// }
+	// states.clear();
 }
 
-void Debugger::Hook(lua_Debug* ar)
+
+void Debugger::SetCurrentState(lua_State* L)
+{
+	currentL = L;
+}
+
+void Debugger::Hook(lua_Debug* ar, lua_State* L)
 {
 	if (skipHook)
 	{
 		return;
 	}
+	// 设置当前协程
+	currentL = L;
+
 	if (getDebugEvent(ar) == LUA_HOOKLINE)
 	{
 		// 对luaTreadExecutors 执行加锁
@@ -168,7 +176,7 @@ void Debugger::Hook(lua_Debug* ar)
 
 		if (state)
 		{
-			state->ProcessHook(shared_from_this(), L, ar);
+			state->ProcessHook(shared_from_this(), currentL, ar);
 		}
 	}
 }
@@ -178,8 +186,10 @@ void Debugger::Stop()
 	running = false;
 	skipHook = true;
 	blocking = false;
-	// 那么存在一个问题，当前协程死掉了，我断开链接会怎么样呢
-	UpdateHook(0);
+
+	// 停止main_state 的hook
+	// 但不停止coroutine的hook因为没有办法知道这个lua state 指针是否有效
+	UpdateHook(0, mainL);
 
 	hookState = nullptr;
 
@@ -196,16 +206,20 @@ bool Debugger::IsRunning() const
 	return running;
 }
 
-bool Debugger::IsMainCoroutine() const
+bool Debugger::IsMainCoroutine(lua_State* L) const
 {
-	int ret = lua_pushthread(L);
-	lua_pop(L, 1);
-
-	return ret == 1;
+	return L == mainL;
 }
 
 bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc)
 {
+	if (!currentL)
+	{
+		return false;
+	}
+
+	auto L = currentL;
+
 	int level = 0;
 	while (true)
 	{
@@ -311,6 +325,13 @@ std::string ToPointer(lua_State* L, int index)
 // algorithm optimization
 void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
+	if (!currentL)
+	{
+		return;
+	}
+
+	auto L = currentL;
+
 	// 如果没有计算深度则不予计算
 	if (depth <= 0)
 	{
@@ -473,6 +494,13 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 
 void Debugger::CacheValue(int valueIndex, std::shared_ptr<Variable> variable) const
 {
+	if (!currentL)
+	{
+		return;
+	}
+
+	auto L = currentL;
+
 	const int type = lua_type(L, valueIndex);
 	if (type == LUA_TUSERDATA || type == LUA_TTABLE)
 	{
@@ -526,6 +554,14 @@ void Debugger::CacheValue(int valueIndex, std::shared_ptr<Variable> variable) co
 
 void Debugger::ClearCache() const
 {
+	if (!currentL)
+	{
+		return;
+	}
+
+	auto L = currentL;
+
+
 	lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);
 	if (!lua_isnil(L, -1))
 	{
@@ -560,7 +596,7 @@ void Debugger::DoAction(DebugAction action)
 	}
 }
 
-void Debugger::UpdateHook(int mask)
+void Debugger::UpdateHook(int mask, lua_State* L)
 {
 	if (mask == 0)
 		lua_sethook(L, nullptr, mask, 0);
@@ -570,7 +606,12 @@ void Debugger::UpdateHook(int mask)
 
 void Debugger::SetInitHook()
 {
-	lua_sethook(L, InitHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+	lua_sethook(mainL, InitHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+}
+
+void Debugger::SetWaitConnectedHook(lua_State* L)
+{
+	lua_sethook(L, WaitConnectedHook,LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 }
 
 // _G.emmy.fixPath = function(path) return (newPath) end
@@ -593,7 +634,13 @@ int FixPath(lua_State* L)
 
 std::string Debugger::GetFile(lua_Debug* ar) const
 {
-	assert(L);
+	if (!currentL)
+	{
+		return "";
+	}
+
+	auto L = currentL;
+
 	const char* file = getDebugSource(ar);
 	if (getDebugCurrentLine(ar) < 0)
 		return file;
@@ -618,10 +665,12 @@ std::string Debugger::GetFile(lua_Debug* ar) const
 void Debugger::HandleBreak()
 {
 	// to be on the safe side, hook it again
-	UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET);
+	UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, currentL);
 
-	EmmyFacade::Get().OnBreak(L);
-	EnterDebugMode();
+	if (EmmyFacade::Get().OnBreak(shared_from_this()))
+	{
+		EnterDebugMode();
+	}
 }
 
 // host thread
@@ -706,6 +755,14 @@ int EnvIndexFunction(lua_State* L)
 
 bool Debugger::CreateEnv(int stackLevel)
 {
+	if (!currentL)
+	{
+		return false;
+	}
+
+	auto L = currentL;
+
+
 	//assert(L);
 	//const auto L = L;
 
@@ -799,6 +856,13 @@ bool Debugger::ProcessBreakPoint(std::shared_ptr<BreakPoint> bp)
 
 void Debugger::SetHookState(std::shared_ptr<HookState> newState)
 {
+	if (!currentL)
+	{
+		return;
+	}
+
+	auto L = currentL;
+
 	hookState = nullptr;
 	if (newState->Start(shared_from_this(), L))
 	{
@@ -813,6 +877,13 @@ std::shared_ptr<EmmyDebuggerManager> Debugger::GetEmmyDebuggerManager()
 
 int Debugger::GetStackLevel(bool skipC) const
 {
+	if (!currentL)
+	{
+		return 0;
+	}
+
+	auto L = currentL;
+
 	int level = 0, i = 0;
 	lua_Debug ar{};
 	while (lua_getstack(L, i, &ar))
@@ -832,6 +903,14 @@ void Debugger::AsyncDoString(const std::string& code)
 
 void Debugger::CheckDoString()
 {
+	if (!currentL)
+	{
+		return;
+	}
+
+	auto L = currentL;
+
+
 	if (!doStringList.empty())
 	{
 		const auto skip = skipHook;
@@ -874,8 +953,13 @@ bool Debugger::Eval(std::shared_ptr<EvalContext> evalContext, bool force)
 // host thread
 bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 {
-	assert(L);
-	assert(evalContext);
+	if (!currentL || !evalContext)
+	{
+		return false;
+	}
+
+	auto L = currentL;
+
 	//auto* const L = L;
 	// From "cacheId"
 	if (evalContext->cacheId > 0)
@@ -1084,6 +1168,13 @@ void Debugger::DoLogMessage(std::shared_ptr<BreakPoint> bp)
 
 std::shared_ptr<BreakPoint> Debugger::FindBreakPoint(lua_Debug* ar)
 {
+	if (!currentL)
+	{
+		return nullptr;
+	}
+
+	auto L = currentL;
+
 	const int cl = getDebugCurrentLine(ar);
 	auto lineSet = manager->GetLineSet();
 
@@ -1454,7 +1545,7 @@ void Debugger::ExecuteWithSkipHook(const Executor& exec)
 {
 	const bool skip = skipHook;
 	skipHook = true;
-	exec(L);
+	exec(currentL);
 	skipHook = skip;
 }
 

@@ -21,12 +21,14 @@
 #include <queue>
 #include <functional>
 #include <memory>
+#include <set>
+
 #include "api/lua_api.h"
 #include "emmy_debugger/hook_state.h"
 #include "types.h"
 
 using StackAllocatorCB = std::shared_ptr<Stack> (*)();
-using Executor = std::function<void(lua_State* L)> ;
+using Executor = std::function<void(lua_State* L)>;
 class EmmyDebuggerManager;
 
 class Debugger : public std::enable_shared_from_this<Debugger>
@@ -39,13 +41,32 @@ public:
 	/*
 	 * @param isMainThread 代表是否是在主线程执行
 	 */
-	void Attach(bool isMainThread=true);
+	void Attach(bool isMainThread = true);
+	/*
+	 * 主lua state 销毁时，所做工作
+	 */
 	void Detach();
-	void Hook(lua_Debug* ar);
-	void Stop();
-	bool IsRunning() const;
 
-	bool IsMainCoroutine() const;
+	void SetCurrentState(lua_State* L);
+	/*
+	 * hook时调用
+	 */
+	void Hook(lua_Debug* ar, lua_State* L);
+	/*
+	 * 停止调试时调用
+	 */
+	void Stop();
+	/*
+	 * 调试器是否运行
+	 */
+	bool IsRunning() const;
+	/*
+	 * 判断当前使用的lua_state 是否是main state
+	 */
+	bool IsMainCoroutine(lua_State* L) const;
+	/*
+	 * 推迟到lua线程执行
+	 */
 	void AsyncDoString(const std::string& code);
 	bool Eval(std::shared_ptr<EvalContext> evalContext, bool force = false);
 	bool GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc);
@@ -57,9 +78,24 @@ public:
 	void ExecuteOnLuaThread(const Executor& exec);
 	void HandleBreak();
 	int GetStackLevel(bool skipC) const;
-	void UpdateHook(int mask);
+	/*
+	 * 更新hook
+	 */
+	void UpdateHook(int mask, lua_State* L);
+	/*
+	 * 设置初始化hook
+	 */
 	void SetInitHook();
 
+	/*
+	 * 该思路暂时未启用
+	 * 设置等待连接的hook
+	 */
+	void SetWaitConnectedHook(lua_State* L);
+
+	/*
+	 * 设置当前状态机
+	 */
 	void SetHookState(std::shared_ptr<HookState> newState);
 	std::shared_ptr<EmmyDebuggerManager> GetEmmyDebuggerManager();
 
@@ -69,7 +105,7 @@ private:
 	std::string GetFile(lua_Debug* ar) const;
 
 	void CheckDoString();
-	bool CreateEnv( int stackLevel);
+	bool CreateEnv(int stackLevel);
 	bool ProcessBreakPoint(std::shared_ptr<BreakPoint> bp);
 	bool DoEval(std::shared_ptr<EvalContext> evalContext);
 	void DoLogMessage(std::shared_ptr<BreakPoint> bp);
@@ -81,7 +117,11 @@ private:
 	// bool HasCacheValue(int valueIndex) const;
 	void ClearCache() const;
 
-	lua_State* L;
+	// std::mutex waitConnectedMtx;
+	
+	lua_State* currentL;
+	lua_State* mainL;
+
 	std::shared_ptr<EmmyDebuggerManager> manager;
 
 	// 取消递归锁的使用
@@ -103,6 +143,5 @@ private:
 	std::mutex evalMtx;
 	std::queue<std::shared_ptr<EvalContext>> evalQueue;
 
+	// std::set<lua_State*> states;
 };
-
-

@@ -18,7 +18,8 @@ EmmyDebuggerManager::~EmmyDebuggerManager()
 std::shared_ptr<Debugger> EmmyDebuggerManager::GetDebugger(lua_State* L)
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
-	auto it = debuggers.find(L);
+	auto mainState = GetMainState(L);
+	auto it = debuggers.find(mainState);
 	if (it != debuggers.end())
 	{
 		return it->second;
@@ -32,23 +33,29 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::GetDebugger(lua_State* L)
 std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
-	auto it = debuggers.find(L);
-	if (it != debuggers.end())
+	auto mainState = GetMainState(L);
+	std::shared_ptr<Debugger> debugger = nullptr;
+	auto it = debuggers.find(mainState);
+	// 如果没找到
+	if (it == debuggers.end())
 	{
-		return it->second;
+		debugger = std::make_shared<Debugger>(mainState, shared_from_this());
+		debuggers.insert({ mainState, debugger });
 	}
 	else
 	{
-		auto debugger = std::make_shared<Debugger>(L, shared_from_this());
-		debuggers.insert({L, debugger});
-		return debugger;
+		debugger = it->second;
 	}
+
+	debugger->SetCurrentState(L);
+	return debugger;
 }
 
 std::shared_ptr<Debugger> EmmyDebuggerManager::RemoveDebugger(lua_State* L)
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
-	auto it = debuggers.find(L);
+	auto mainL = GetMainState(L);
+	auto it = debuggers.find(mainL);
 	if (it != debuggers.end())
 	{
 		auto debugger = it->second;
@@ -158,7 +165,11 @@ void EmmyDebuggerManager::HandleBreak(lua_State* L)
 {
 	auto debugger = GetDebugger(L);
 
-	if (!debugger)
+	if (debugger)
+	{
+		debugger->SetCurrentState(L);
+	}
+	else
 	{
 		debugger = AddDebugger(L);
 	}

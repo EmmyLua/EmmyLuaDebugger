@@ -271,14 +271,18 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 		emmyDebuggerManager->extNames = extNames;
 	}
 
-	//TODO 这里有个线程安全问题，但是解决不了
+	//TODO 这里有个线程安全问题，消息线程和lua 执行线程不是相同线程，但是没有一个锁能让我做同步
+	// 所以我不能在这里访问lua state 指针的内部结构
 	// 
 	// 只能在消息线程设置hook
-
+	// 但是存在一个问题只能给主lua_state 设置hook，如果此后进程一直在协程中执行则无法触发该hook
+	// Attach函数内部设置了hook，存在一个线程问题，可能引发崩溃
+	// 方案：提前为主state 设置hook 利用hook 实现同步
 	auto debuggers = emmyDebuggerManager->GetDebuggers();
 	for (auto debugger : debuggers)
 	{
 		debugger->Start();
+
 		debugger->Attach(false);
 	}
 }
@@ -346,17 +350,14 @@ void FillStacks(rapidjson::Value& container, std::vector<std::shared_ptr<Stack>>
 	}
 }
 
-void EmmyFacade::OnBreak(lua_State* L)
+bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger)
 {
-	std::vector<std::shared_ptr<Stack>> stacks;
-
-	auto debugger = emmyDebuggerManager->GetDebugger(L);
-
 	if (!debugger)
 	{
-		return;
+		return false;
 	}
-
+	std::vector<std::shared_ptr<Stack>> stacks;
+	
 	emmyDebuggerManager->SetBreakedDebugger(debugger);
 
 	debugger->GetStacks(stacks, []()
@@ -374,6 +375,8 @@ void EmmyFacade::OnBreak(lua_State* L)
 	document.AddMember("stacks", stacksValue, allocator);
 
 	transporter->Send(int(MessageCMD::BreakNotify), document);
+
+	return true;
 }
 
 void ReadBreakPoint(const rapidjson::Value& value, std::shared_ptr<BreakPoint> bp)
@@ -543,18 +546,15 @@ void EmmyFacade::OnLuaStateGC(lua_State* L)
 
 void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 {
-	auto debugger = GetDebugger(L);
+	auto debugger = GetDebugger(L);	
 	if (debugger)
 	{
-		debugger->Hook(ar);
-	}
-	else
-	{
-		debugger = emmyDebuggerManager->AddDebugger(L);
-		debugger->Start();
-		debugger->Attach();
-
-		debugger->Hook(ar);
+		if (!debugger->IsRunning())
+		{
+			return;
+		}
+		
+		debugger->Hook(ar, L);
 	}
 }
 
@@ -630,7 +630,7 @@ void EmmyFacade::Attach(lua_State* L)
 
 		bool install = false;
 
-		if(!isAPIReady)
+		if (!isAPIReady)
 		{
 			install = install_emmy_core(L);
 			// 考虑到emmy_hook use lua source
@@ -638,7 +638,7 @@ void EmmyFacade::Attach(lua_State* L)
 		}
 
 
-		if(debugger->IsMainCoroutine() && !install)
+		if (debugger->IsMainCoroutine(L) && !install)
 		{
 			install = install_emmy_core(L);
 		}

@@ -58,7 +58,7 @@ public:
 	int OnDisconnect();
 	void WaitIDE(bool force = false, int timeout = 0);
 	void OnReceiveMessage(const rapidjson::Document& document);
-	void OnBreak(lua_State* L);
+	bool OnBreak(std::shared_ptr<Debugger> debugger);
 	void Destroy();
 	void OnEvalResult(std::shared_ptr<EvalContext> context);
 	void SendLog(LogType type, const char* fmt, ...);

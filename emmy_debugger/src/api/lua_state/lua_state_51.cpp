@@ -5,3 +5,8 @@ GCObjectGeneral* GetGCHead_lua51(lua_State* L)
 {
 	return reinterpret_cast<GCObjectGeneral*>(G(L)->rootgc);
 }
+
+lua_State* GetMainState_lua51(lua_State* L)
+{
+	return  G(L)->mainthread;
+}

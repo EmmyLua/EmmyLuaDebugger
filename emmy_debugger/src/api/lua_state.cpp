@@ -25,3 +25,29 @@ GCObjectGeneral* GetGCHead(lua_State* L)
 
 	return nullptr;
 }
+
+
+lua_State* GetMainState(lua_State* L)
+{
+	switch (luaVersion)
+	{
+	case LuaVersion::LUA_51:
+		{
+			return GetMainState_lua51(L);
+		}
+	case LuaVersion::LUA_52:
+		{
+			return GetMainState_lua52(L);
+		}
+	case LuaVersion::LUA_53:
+		{
+			return GetMainState_lua53(L);
+		}
+	case LuaVersion::LUA_54:
+		{
+			return GetMainState_lua54(L);
+		}
+	}
+
+	return nullptr;
+}

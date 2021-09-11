@@ -15,14 +15,29 @@ public:
 	EmmyDebuggerManager();
 	~EmmyDebuggerManager();
 
+	/*
+	 * 获得L 的main thread 所在的 debugger
+	 */
 	std::shared_ptr<Debugger> GetDebugger(lua_State* L);
 
+	/*
+	 * 如果L 是main thread 则添加一个新的debugger 否则返回他所在的main thread对应的debugger
+	 */
 	std::shared_ptr<Debugger> AddDebugger(lua_State* L);
 
+	/*
+	 * 从L 获取主lua state所在得debugger 移除并返回
+	 */
 	std::shared_ptr<Debugger> RemoveDebugger(lua_State* L);
 
+	/*
+	 * 获得所有得debugger
+	 */
 	std::vector<std::shared_ptr<Debugger>> GetDebuggers();
 
+	/*
+	 * 获得当前命中的debugger
+	 */
 	std::shared_ptr<Debugger> GetBreakedpoint();
 
 	void SetBreakedDebugger(std::shared_ptr<Debugger> debugger);

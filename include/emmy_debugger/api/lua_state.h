@@ -19,3 +19,13 @@ GCObjectGeneral* GetGCHead_lua53(lua_State* L);
 GCObjectGeneral* GetGCHead_lua52(lua_State* L);
 
 GCObjectGeneral* GetGCHead_lua51(lua_State* L);
+
+lua_State* GetMainState(lua_State* L);
+
+lua_State* GetMainState_lua54(lua_State* L);
+
+lua_State* GetMainState_lua53(lua_State* L);
+
+lua_State* GetMainState_lua52(lua_State* L);
+
+lua_State* GetMainState_lua51(lua_State* L);
