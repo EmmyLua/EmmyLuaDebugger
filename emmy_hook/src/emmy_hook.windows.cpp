@@ -87,7 +87,7 @@ int lua_error_worker(lua_State* L)
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
 	const auto error = (dll_lua_error)lp;
-	EmmyFacade::Get().BreakHere(L);
+	// EmmyFacade::Get().BreakHere(L);
 	return error(L);
 }
 

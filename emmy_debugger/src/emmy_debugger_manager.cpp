@@ -76,6 +76,12 @@ std::vector<std::shared_ptr<Debugger>> EmmyDebuggerManager::GetDebuggers()
 	return debuggerVector;
 }
 
+void EmmyDebuggerManager::RemoveAllDebugger()
+{
+	std::lock_guard<std::mutex> lock(debuggerMtx);
+	debuggers.clear();
+}
+
 std::shared_ptr<Debugger> EmmyDebuggerManager::GetBreakedpoint()
 {
 	std::lock_guard<std::mutex> lock(breakDebuggerMtx);
@@ -204,4 +210,5 @@ void EmmyDebuggerManager::OnDisconnect()
 	{
 		it.second->Stop();
 	}
+
 }

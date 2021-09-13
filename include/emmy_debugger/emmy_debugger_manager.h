@@ -35,6 +35,7 @@ public:
 	 */
 	std::vector<std::shared_ptr<Debugger>> GetDebuggers();
 
+	void RemoveAllDebugger();
 	/*
 	 * 获得当前命中的debugger
 	 */

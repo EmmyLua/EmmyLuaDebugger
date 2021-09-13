@@ -179,8 +179,9 @@ bool HookStateStop::Start(std::shared_ptr<Debugger> debugger, lua_State* current
 	if (current == nullptr)
 		return false;
 
-
-	debugger->UpdateHook(0, current);
+	// 停止调试时,不在更新hook,
+	// 因为lua_state* 可能已经失效了
+	// debugger->UpdateHook(0, current);
 	// 此处会引发递归加锁而报错，而如果使用递归锁对调试体验影响
 	// debugger->DoAction(DebugAction::Continue);
 	debugger->SetHookState(debugger->GetEmmyDebuggerManager()->stateContinue);

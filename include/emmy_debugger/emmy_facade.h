@@ -41,6 +41,10 @@ class EmmyFacade
 public:
 	static EmmyFacade& Get();
 
+	static void HookLua(lua_State* L, lua_Debug* ar);
+
+	static void InitHook(lua_State* L, lua_Debug* ar);
+
 	EmmyFacade();
 	~EmmyFacade();
 #ifndef EMMY_USE_LUA_SOURCE

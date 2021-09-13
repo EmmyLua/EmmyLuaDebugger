@@ -328,6 +328,15 @@ int gc(lua_State* L)
 
 void handleStateClose(lua_State* L)
 {
+	lua_getfield(L, LUA_REGISTRYINDEX, "__EMMY__GC__");
+	int isNil = lua_isnil(L, -1);
+	lua_pop(L, 1);
+
+	if(!isNil)
+	{
+		return;
+	}
+
 	lua_newtable(L);
 	lua_pushcfunction(L, gc);
 	lua_setfield(L, -2, "__gc");

@@ -30,13 +30,34 @@ EmmyFacade& EmmyFacade::Get()
 	return instance;
 }
 
-EmmyFacade::EmmyFacade():
-	transporter(nullptr),
-	isIDEReady(false),
-	isAPIReady(false),
-	isWaitingForIDE(false),
-	StartHook(nullptr),
-	emmyDebuggerManager(std::make_shared<EmmyDebuggerManager>())
+void EmmyFacade::HookLua(lua_State* L, lua_Debug* ar)
+{
+	EmmyFacade::Get().Hook(L, ar);
+}
+
+void EmmyFacade::InitHook(lua_State* L, lua_Debug* ar)
+{
+	auto mainL = GetMainState(L);
+
+	auto states = FindAllCoroutine(mainL);
+
+	for (auto state : states)
+	{
+		lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+	}
+
+	lua_sethook(L, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+
+	EmmyFacade::Get().Hook(L, ar);
+}
+
+EmmyFacade::EmmyFacade()
+	: transporter(nullptr),
+	  isIDEReady(false),
+	  isAPIReady(false),
+	  isWaitingForIDE(false),
+	  StartHook(nullptr),
+	  emmyDebuggerManager(std::make_shared<EmmyDebuggerManager>())
 {
 }
 
@@ -194,6 +215,11 @@ int EmmyFacade::OnDisconnect()
 	isWaitingForIDE = false;
 
 	emmyDebuggerManager->OnDisconnect();
+
+	if (workMode == WorkMode::Attach)
+	{
+		emmyDebuggerManager->RemoveAllDebugger();
+	}
 
 	return 0;
 }
@@ -561,6 +587,24 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 
 		debugger->Hook(ar, L);
 	}
+	else
+	{
+		debugger = emmyDebuggerManager->AddDebugger(L);
+		install_emmy_core(L);
+		debugger->Start();
+		debugger->Attach();
+
+		// send attached notify
+		rapidjson::Document rspDoc;
+		rspDoc.SetObject();
+		// fix macosx compiler error,
+		// repidjson 应该有重载决议的错误
+		int64_t state = reinterpret_cast<int64_t>(L);
+		rspDoc.AddMember("state", state, rspDoc.GetAllocator());
+		this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
+
+		debugger->Hook(ar, L);
+	}
 }
 
 std::shared_ptr<EmmyDebuggerManager> EmmyFacade::GetDebugManager() const
@@ -625,45 +669,34 @@ void EmmyFacade::Attach(lua_State* L)
 	if (!this->transporter->IsConnected())
 		return;
 
-	if (!isGlobalStateReady(L))
+	// 这里存在一个问题就是 hook 的时机太早了，globalstate 都还没初始化完毕
+
+	if (!isAPIReady)
 	{
-		return;
+		// 考虑到emmy_hook use lua source
+		isAPIReady = install_emmy_core(L);
 	}
 
-	auto debugger = emmyDebuggerManager->GetDebugger(L);
+	lua_sethook(L, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+	//
+	// auto mainState = GetMainState(L);
+	// auto debugger = emmyDebuggerManager->GetDebugger(L);
+	//
+	// if (!debugger)
+	// {
+	// 	debugger = emmyDebuggerManager->AddDebugger(L);
+	//
+	// 	debugger->Start();
+	//
+	// 	if (debugger->IsMainCoroutine(L) && !install)
+	// 	{
+	// 		install = install_emmy_core(L);
+	// 	}
+	//
+	// 	debugger->Attach();
+	//
 
-	if (!debugger)
-	{
-		debugger = emmyDebuggerManager->AddDebugger(L);
-
-		debugger->Start();
-
-		bool install = false;
-
-		if (!isAPIReady)
-		{
-			install = install_emmy_core(L);
-			// 考虑到emmy_hook use lua source
-			isAPIReady = install;
-		}
-
-
-		if (debugger->IsMainCoroutine(L) && !install)
-		{
-			install = install_emmy_core(L);
-		}
-
-		debugger->Attach();
-
-		// send attached notify
-		rapidjson::Document rspDoc;
-		rspDoc.SetObject();
-		// fix macosx compiler error,
-		// repidjson 应该有重载决议的错误
-		int64_t state = reinterpret_cast<int64_t>(L);
-		rspDoc.AddMember("state", state, rspDoc.GetAllocator());
-		this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
-	}
-
-	debugger->UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, L);
+	// }
+	//
+	// debugger->UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, L);
 }

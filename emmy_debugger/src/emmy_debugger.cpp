@@ -25,35 +25,11 @@
 
 int cacheId = 1;
 
-void HookLua(lua_State* L, lua_Debug* ar)
-{
-	EmmyFacade::Get().Hook(L, ar);
-}
-
-
 void WaitConnectedHook(lua_State* L, lua_Debug* ar)
 {
 	// EmmyFacade::Get()
 	// std::lock_guard<std::mutex> lock()
 }
-
-
-void InitHook(lua_State* L, lua_Debug* ar)
-{
-	auto mainL = GetMainState(L);
-
-	auto states = FindAllCoroutine(mainL);
-
-	for (auto state : states)
-	{
-		lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-	}
-
-	lua_sethook(L, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-
-	EmmyFacade::Get().Hook(L, ar);
-}
-
 
 Debugger::Debugger(lua_State* L, std::shared_ptr<EmmyDebuggerManager> manager):
 	currentL(L),
@@ -107,8 +83,7 @@ void Debugger::Attach(bool isMainThread)
 		});
 	}
 
-	// 这里存在一个问题就是 hook 的时机太早了，globalstate 都还没初始化完毕
-	if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore) 
+	if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore)
 	{
 		if (isMainThread)
 		{
@@ -116,10 +91,10 @@ void Debugger::Attach(bool isMainThread)
 
 			for (auto state : states)
 			{
-				lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+				lua_sethook(state, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 			}
 
-			lua_sethook(mainL, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+			lua_sethook(mainL, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 		}
 		else
 		{
@@ -610,12 +585,12 @@ void Debugger::UpdateHook(int mask, lua_State* L)
 	if (mask == 0)
 		lua_sethook(L, nullptr, mask, 0);
 	else
-		lua_sethook(L, HookLua, mask, 0);
+		lua_sethook(L, EmmyFacade::HookLua, mask, 0);
 }
 
 void Debugger::SetInitHook()
 {
-	lua_sethook(mainL, InitHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+	lua_sethook(mainL, EmmyFacade::InitHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 }
 
 void Debugger::SetWaitConnectedHook(lua_State* L)
