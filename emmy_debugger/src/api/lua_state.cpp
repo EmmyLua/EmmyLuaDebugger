@@ -51,3 +51,29 @@ lua_State* GetMainState(lua_State* L)
 
 	return nullptr;
 }
+
+
+bool isGlobalStateReady(lua_State* L) 
+{
+	switch (luaVersion)
+	{
+	case LuaVersion::LUA_51:
+	{
+		return isGlobalStateReady_lua51(L);
+	}
+	case LuaVersion::LUA_52:
+	{
+		return isGlobalStateReady_lua52(L);
+	}
+	case LuaVersion::LUA_53:
+	{
+		return isGlobalStateReady_lua53(L);
+	}
+	case LuaVersion::LUA_54:
+	{
+		return isGlobalStateReady_lua54(L);
+	}
+	}
+
+	return nullptr;
+}

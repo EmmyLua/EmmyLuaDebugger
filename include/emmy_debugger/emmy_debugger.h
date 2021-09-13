@@ -94,7 +94,7 @@ public:
 	void SetWaitConnectedHook(lua_State* L);
 
 	/*
-	 * 设置当前状态机
+	 * 设置当前状态机，他的锁由doAction负责
 	 */
 	void SetHookState(std::shared_ptr<HookState> newState);
 	std::shared_ptr<EmmyDebuggerManager> GetEmmyDebuggerManager();

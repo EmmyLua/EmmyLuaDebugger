@@ -10,3 +10,8 @@ lua_State* GetMainState_lua51(lua_State* L)
 {
 	return  G(L)->mainthread;
 }
+
+bool isGlobalStateReady_lua51(lua_State* L)
+{
+	return G(L) != nullptr;
+}

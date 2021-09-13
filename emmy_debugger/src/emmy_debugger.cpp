@@ -107,21 +107,24 @@ void Debugger::Attach(bool isMainThread)
 		});
 	}
 
-	if (isMainThread)
+	// 这里存在一个问题就是 hook 的时机太早了，globalstate 都还没初始化完毕
+	if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore) 
 	{
-		auto states = FindAllCoroutine(mainL);
-
-		for (auto state : states)
+		if (isMainThread)
 		{
-			lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-		}
+			auto states = FindAllCoroutine(mainL);
 
-		// todo: just set hook when break point added.
-		lua_sethook(mainL, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-	}
-	else
-	{
-		SetInitHook();
+			for (auto state : states)
+			{
+				lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+			}
+
+			lua_sethook(mainL, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+		}
+		else
+		{
+			SetInitHook();
+		}
 	}
 }
 
@@ -189,9 +192,15 @@ void Debugger::Stop()
 
 	// 停止main_state 的hook
 	// 但不停止coroutine的hook因为没有办法知道这个lua state 指针是否有效
-	UpdateHook(0, mainL);
+	// stop在交互线程，不应该设置hook
+	// 而且清理对lua_state 的 hook没有必要
+	// UpdateHook(0, mainL);
 
-	hookState = nullptr;
+	// 清理hook 状态
+	{
+		std::lock_guard<std::mutex> lock(hookStateMtx);
+		hookState = nullptr;
+	}
 
 	{
 		// clear lua thread executors

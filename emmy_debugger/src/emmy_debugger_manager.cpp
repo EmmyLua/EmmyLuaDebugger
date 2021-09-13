@@ -36,7 +36,7 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 	auto mainState = GetMainState(L);
 	std::shared_ptr<Debugger> debugger = nullptr;
 	auto it = debuggers.find(mainState);
-	// 如果没找到
+
 	if (it == debuggers.end())
 	{
 		debugger = std::make_shared<Debugger>(mainState, shared_from_this());

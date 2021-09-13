@@ -74,8 +74,9 @@ public:
 	// for hook
 	void StartupHookMode(int port);
 	void Attach(lua_State* L);
+
 	void SetWorkMode(WorkMode mode);
-	
+	WorkMode GetWorkMode();
 	// Start hook 作为成员存在
 	std::function<void()> StartHook;
 

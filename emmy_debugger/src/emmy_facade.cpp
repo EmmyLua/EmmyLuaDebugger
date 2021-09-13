@@ -213,6 +213,11 @@ void EmmyFacade::SetWorkMode(WorkMode mode)
 	workMode = mode;
 }
 
+WorkMode EmmyFacade::GetWorkMode()
+{
+	return workMode;
+}
+
 void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document)
 {
 	const auto cmd = static_cast<MessageCMD>(document["cmd"].GetInt());
@@ -357,7 +362,7 @@ bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger)
 		return false;
 	}
 	std::vector<std::shared_ptr<Stack>> stacks;
-	
+
 	emmyDebuggerManager->SetBreakedDebugger(debugger);
 
 	debugger->GetStacks(stacks, []()
@@ -546,14 +551,14 @@ void EmmyFacade::OnLuaStateGC(lua_State* L)
 
 void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 {
-	auto debugger = GetDebugger(L);	
+	auto debugger = GetDebugger(L);
 	if (debugger)
 	{
 		if (!debugger->IsRunning())
 		{
 			return;
 		}
-		
+
 		debugger->Hook(ar, L);
 	}
 }
@@ -620,6 +625,11 @@ void EmmyFacade::Attach(lua_State* L)
 	if (!this->transporter->IsConnected())
 		return;
 
+	if (!isGlobalStateReady(L))
+	{
+		return;
+	}
+
 	auto debugger = emmyDebuggerManager->GetDebugger(L);
 
 	if (!debugger)
@@ -654,4 +664,6 @@ void EmmyFacade::Attach(lua_State* L)
 		rspDoc.AddMember("state", state, rspDoc.GetAllocator());
 		this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
 	}
+
+	debugger->UpdateHook(LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, L);
 }
