@@ -162,27 +162,32 @@ bool query_variable(lua_State* L, std::shared_ptr<Variable> variable, const char
 	object = lua_absindex(L, object);
 	const int t = lua_gettop(L);
 	lua_getglobal(L, HELPER_NAME);
-	lua_getfield(L, -1, "queryVariable");
-	if (lua_isfunction(L, -1))
-	{
-		EmmyFacade::Get().AddVariableRef(variable);
 
-		lua_pushlightuserdata(L, variable.get());
-		setupMeta(L);
-		lua_pushvalue(L, object);
-		lua_pushstring(L, typeName);
-		lua_pushnumber(L, depth);
-		const auto r = lua_pcall(L, 4, 1, 0);
-		if (r == LUA_OK)
+	if (lua_istable(L, -1))
+	{
+		lua_getfield(L, -1, "queryVariable");
+		if (lua_isfunction(L, -1))
 		{
-			result = lua_toboolean(L, -1);
-		}
-		else
-		{
-			const auto err = lua_tostring(L, -1);
-			printf("query error: %s\n", err);
+			EmmyFacade::Get().AddVariableRef(variable);
+
+			lua_pushlightuserdata(L, variable.get());
+			setupMeta(L);
+			lua_pushvalue(L, object);
+			lua_pushstring(L, typeName);
+			lua_pushnumber(L, depth);
+			const auto r = lua_pcall(L, 4, 1, 0);
+			if (r == LUA_OK)
+			{
+				result = lua_toboolean(L, -1);
+			}
+			else
+			{
+				const auto err = lua_tostring(L, -1);
+				printf("query error: %s\n", err);
+			}
 		}
 	}
+
 	lua_settop(L, t);
 	return result;
 }
