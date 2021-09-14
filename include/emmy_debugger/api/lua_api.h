@@ -69,6 +69,7 @@ inline const char* getDebugName(lua_Debug* ar) {
 inline const char* getDebugSource(lua_Debug* ar) {
 	return ar->source;
 }
+#include "lua_state.h"
 ///////////////////////////EMMY_USE_LUA_SOURCE
 #else
 #include "lua_api_loader.h"

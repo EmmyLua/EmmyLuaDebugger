@@ -74,16 +74,30 @@ if(EMMY_USE_LUA_SOURCE)
             emmy_debugger
             PRIVATE lua51.lib
         )
+        target_sources(emmy_debugger
+            PRIVATE
+            ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_51.cpp
+        )
     else()
         target_link_libraries(
             emmy_debugger
             PRIVATE lua${EMMY_LUA_VERSION}
         )
+        target_sources(emmy_debugger
+            PRIVATE
+            ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
+        )
     endif()
+
+
 
 elseif(EMMY_COMPILE_AS_LIB)
     message("emmy build as lib")
     target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
+    target_sources(emmy_debugger
+        PRIVATE
+        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
+    )
 else()
     target_include_directories(emmy_debugger PRIVATE
         ${emmy_SOURCE_DIR}/third-party
