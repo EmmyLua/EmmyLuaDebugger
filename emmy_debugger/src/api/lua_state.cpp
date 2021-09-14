@@ -2,18 +2,24 @@
 #include "emmy_debugger/lua_version.h"
 
 #ifdef EMMY_USE_LUA_SOURCE
-#if defined(EMMY_LUA_51)
-#define LuaSwitchDo(__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua51__
+#if defined(EMMY_LUA_JIT)
+#define LuaSwitchDo(__LuaJIT__,__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __LuaJIT__
+#elif defined(EMMY_LUA_51)
+#define LuaSwitchDo(__LuaJIT__,__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua51__
 #elif defined(EMMY_LUA_52)
-#define LuaSwitchDo(__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua52__
+#define LuaSwitchDo(__LuaJIT__,__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua52__
 #elif defined(EMMY_LUA_53)
-#define LuaSwitchDo(__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua53__
+#define LuaSwitchDo(__LuaJIT__,__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua53__
 #elif defined(EMMY_LUA_54)
-#define LuaSwitchDo(__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua54__
+#define LuaSwitchDo(__LuaJIT__,__Lua51__, __Lua52__ , __Lua53__, __Lua54__) return __Lua54__
 #endif
 #else
-#define LuaSwitchDo(__Lua51__, __Lua52__ , __Lua53__, __Lua54__)\
+#define LuaSwitchDo(__LuaJIT__,__Lua51__, __Lua52__ , __Lua53__, __Lua54__)\
 switch(luaVersion){ \
+	case LuaVersion::LUA_JIT:\
+	{\
+		return __LuaJIT__;\
+	}\
 	case LuaVersion::LUA_51:\
 	{  \
 		return __Lua51__;\
@@ -30,28 +36,29 @@ switch(luaVersion){ \
 	{\
 		return __Lua54__;\
 	}\
-	default:return nullptr;\
+	default:return {};\
 }
 #endif
-
-
-GCObjectGeneral* GetGCHead(lua_State* L)
-{
-	LuaSwitchDo(
-		GetGCHead_lua51(L),
-		GetGCHead_lua52(L),
-		GetGCHead_lua53(L),
-		GetGCHead_lua54(L)
-	);
-}
 
 
 lua_State* GetMainState(lua_State* L)
 {
 	LuaSwitchDo(
+		GetMainState_luaJIT(L),
 		GetMainState_lua51(L),
 		GetMainState_lua52(L),
 		GetMainState_lua53(L),
 		GetMainState_lua54(L)
+	);
+}
+
+std::vector<lua_State*> FindAllCoroutine(lua_State* L)
+{
+	LuaSwitchDo(
+		FindAllCoroutine_luaJIT(L),
+		FindAllCoroutine_lua51(L),
+		FindAllCoroutine_lua52(L),
+		FindAllCoroutine_lua53(L),
+		FindAllCoroutine_lua54(L)
 	);
 }

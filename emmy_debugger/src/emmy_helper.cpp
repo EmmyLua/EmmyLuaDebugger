@@ -365,22 +365,6 @@ bool install_emmy_core(struct lua_State* L)
 	return true;
 }
 
-std::vector<lua_State*> FindAllCoroutine(lua_State* L)
-{
-	std::vector<lua_State*> result;
-	auto head = GetGCHead(L);
-
-	while (head)
-	{
-		if (head->tt == LUA_TTHREAD)
-		{
-			result.push_back(reinterpret_cast<lua_State*>(head));
-		}
-		head = head->next;
-	}
-
-	return result;
-}
 
 void ParsePathParts(const std::string& file, std::vector<std::string>& paths)
 {

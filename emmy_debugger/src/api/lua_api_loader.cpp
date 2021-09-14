@@ -15,7 +15,7 @@
 */
 
 #include "emmy_debugger/api/lua_api_loader.h"
-#include <cstdio> 
+#include <cstdio>
 #include <cassert>
 #include "emmy_debugger/lua_version.h"
 
@@ -127,10 +127,12 @@ IMP_LUA_API_E(lua_rotate);
 IMP_LUA_API_E(lua_newuserdata);
 //54
 IMP_LUA_API_E(lua_newuserdatauv);
+//jit
+IMP_LUA_API_E(luaopen_jit);
 
 int lua_setfenv(lua_State* L, int idx)
 {
-	if (luaVersion == LuaVersion::LUA_51)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_JIT)
 	{
 		return e_lua_setfenv(L, idx);
 	}
@@ -141,6 +143,7 @@ int getDebugEvent(lua_Debug* ar)
 {
 	switch (luaVersion)
 	{
+	case LuaVersion::LUA_JIT:
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.event;
 	case LuaVersion::LUA_52:
@@ -159,6 +162,7 @@ int getDebugCurrentLine(lua_Debug* ar)
 {
 	switch (luaVersion)
 	{
+	case LuaVersion::LUA_JIT:
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.currentline;
 	case LuaVersion::LUA_52:
@@ -177,6 +181,7 @@ int getDebugLineDefined(lua_Debug* ar)
 {
 	switch (luaVersion)
 	{
+	case LuaVersion::LUA_JIT:
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.linedefined;
 	case LuaVersion::LUA_52:
@@ -195,6 +200,7 @@ const char* getDebugSource(lua_Debug* ar)
 {
 	switch (luaVersion)
 	{
+	case LuaVersion::LUA_JIT:
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.source;
 	case LuaVersion::LUA_52:
@@ -213,6 +219,7 @@ const char* getDebugName(lua_Debug* ar)
 {
 	switch (luaVersion)
 	{
+	case LuaVersion::LUA_JIT:
 	case LuaVersion::LUA_51:
 		return ar->u.ar51.name;
 	case LuaVersion::LUA_52:
@@ -238,55 +245,52 @@ lua_Integer lua_tointeger(lua_State* L, int idx)
 
 lua_Number lua_tonumber(lua_State* L, int idx)
 {
-	if (luaVersion == LuaVersion::LUA_51)
+	if (luaVersion > LuaVersion::LUA_51)
 	{
-		return e_lua_tonumber(L, idx);
+		return e_lua_tonumberx(L, idx, nullptr);
 	}
-	return e_lua_tonumberx(L, idx, nullptr);
+	return e_lua_tonumber(L, idx);
 }
 
 int lua_getglobal(lua_State* L, const char* name)
 {
-	if (luaVersion == LuaVersion::LUA_51)
-	{
-		return lua_getfield(L, LUA_GLOBALSINDEX, name);
-	}
-	else
+	if (luaVersion > LuaVersion::LUA_51)
 	{
 		return e_lua_getglobal(L, name);
 	}
+	return lua_getfield(L, LUA_GLOBALSINDEX, name);
 }
 
 void lua_setglobal(lua_State* L, const char* name)
 {
-	if (luaVersion == LuaVersion::LUA_51)
-	{
-		return lua_setfield(L, LUA_GLOBALSINDEX, name);
-	}
-	else
+	if (luaVersion > LuaVersion::LUA_51)
 	{
 		return e_lua_setglobal(L, name);
 	}
+	return lua_setfield(L, LUA_GLOBALSINDEX, name);
 }
 
 void lua_call(lua_State* L, int nargs, int nresults)
 {
-	if (luaVersion == LuaVersion::LUA_51)
-		e_lua_call(L, nargs, nresults);
-	else
+	if (luaVersion > LuaVersion::LUA_51)
+	{
 		e_lua_callk(L, nargs, nresults, 0, nullptr);
+	}
+	e_lua_call(L, nargs, nresults);
 }
 
 int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc)
 {
-	if (luaVersion == LuaVersion::LUA_51)
-		return e_lua_pcall(L, nargs, nresults, errfunc);
-	return e_lua_pcallk(L, nargs, nresults, errfunc, 0, nullptr);
+	if (luaVersion > LuaVersion::LUA_51)
+	{
+		return e_lua_pcallk(L, nargs, nresults, errfunc, 0, nullptr);
+	}
+	return e_lua_pcall(L, nargs, nresults, errfunc);
 }
 
 void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup)
 {
-	if (luaVersion == LuaVersion::LUA_51)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_JIT)
 	{
 		for (; l->name != nullptr; l++)
 		{
@@ -312,7 +316,7 @@ int lua_upvalueindex(int i)
 
 int lua_absindex(lua_State* L, int idx)
 {
-	if (luaVersion == LuaVersion::LUA_51)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_JIT)
 	{
 		if (idx > 0)
 		{
@@ -325,7 +329,7 @@ int lua_absindex(lua_State* L, int idx)
 
 void lua_remove(lua_State* L, int idx)
 {
-	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_JIT)
 	{
 		e_lua_remove(L, idx);
 	}
@@ -338,7 +342,7 @@ void lua_remove(lua_State* L, int idx)
 
 void* lua_newuserdata(lua_State* L, int size)
 {
-	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_53)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_53 || luaVersion == LuaVersion::LUA_JIT)
 	{
 		return e_lua_newuserdata(L, size);
 	}
@@ -350,7 +354,7 @@ void* lua_newuserdata(lua_State* L, int size)
 
 void lua_pushglobaltable(lua_State* L)
 {
-	if (luaVersion == LuaVersion::LUA_51)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_JIT)
 	{
 		lua_pushvalue(L, LUA_GLOBALSINDEX);
 	}
@@ -362,9 +366,10 @@ void lua_pushglobaltable(lua_State* L)
 
 int lua_rawgetp(lua_State* L, int idx, const void* p)
 {
-	if(luaVersion == LuaVersion::LUA_51)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_JIT)
 	{
-		if (idx < 0) {
+		if (idx < 0)
+		{
 			idx += lua_gettop(L) + 1;
 		}
 		lua_pushlightuserdata(L, (void*)p);
@@ -378,9 +383,10 @@ int lua_rawgetp(lua_State* L, int idx, const void* p)
 
 void lua_rawsetp(lua_State* L, int idx, const void* p)
 {
-	if(luaVersion == LuaVersion::LUA_51)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_JIT)
 	{
-		if (idx < 0) {
+		if (idx < 0)
+		{
 			idx += lua_gettop(L) + 1;
 		}
 		lua_pushlightuserdata(L, (void*)p);
@@ -395,7 +401,7 @@ void lua_rawsetp(lua_State* L, int idx, const void* p)
 
 void lua_insert(lua_State* L, int idx)
 {
-	if(luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52)
+	if (luaVersion == LuaVersion::LUA_51 || luaVersion == LuaVersion::LUA_52 || luaVersion == LuaVersion::LUA_JIT)
 	{
 		return e_lua_insert(L, idx);
 	}
@@ -466,7 +472,6 @@ extern "C" bool SetupLuaAPI()
 	LOAD_LUA_API_E(lua_absindex);
 	LOAD_LUA_API_E(lua_rawgetp);
 	LOAD_LUA_API_E(lua_rawsetp);
-	
 
 
 	// 51 & 52 & 53
@@ -475,6 +480,10 @@ extern "C" bool SetupLuaAPI()
 	LOAD_LUA_API_E(lua_rotate);
 	//54
 	LOAD_LUA_API_E(lua_newuserdatauv);
+
+	//jit
+	LOAD_LUA_API_E(luaopen_jit);
+
 
 	if (e_lua_newuserdatauv)
 	{
@@ -495,12 +504,24 @@ extern "C" bool SetupLuaAPI()
 		LUA_REGISTRYINDEX = -1001000;
 		LUA_GLOBALSINDEX = 2;
 	}
+	else if (e_luaopen_jit)
+	{
+		luaVersion = LuaVersion::LUA_JIT;
+		LUA_REGISTRYINDEX = -10000;
+		LUA_GLOBALSINDEX = -10002;
+	}
 	else
 	{
 		luaVersion = LuaVersion::LUA_51;
 		LUA_REGISTRYINDEX = -10000;
 		LUA_GLOBALSINDEX = -10002;
 	}
-	printf("[EMMY] version: %s, lua version: %d\n", EMMY_CORE_VERSION, luaVersion);
+	if (luaVersion > LuaVersion::LUA_JIT) {
+		printf("[EMMY] version: %s, lua version: %d\n", EMMY_CORE_VERSION, luaVersion);
+	}
+	else
+	{
+		printf("[EMMY] version: %s, lua version: jit\n", EMMY_CORE_VERSION);
+	}
 	return true;
 }

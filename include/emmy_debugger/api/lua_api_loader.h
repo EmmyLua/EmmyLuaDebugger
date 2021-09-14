@@ -375,6 +375,10 @@ DEF_LUA_API_E(lua_rotate);
 typedef void* (*dll_e_lua_newuserdatauv)(lua_State* L, int size, int nuvalue);
 DEF_LUA_API_E(lua_newuserdatauv);
 
+//jit
+typedef int (*dll_e_luaopen_jit)(lua_State* L);
+DEF_LUA_API_E(luaopen_jit);
+
 lua_Integer lua_tointeger(lua_State* L, int idx);
 lua_Number lua_tonumber(lua_State* L, int idx);
 int lua_setfenv(lua_State* L, int idx);

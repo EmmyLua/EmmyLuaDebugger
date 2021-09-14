@@ -1,25 +1,18 @@
 
+#include <vector>
 typedef struct lua_State lua_State;
 
-typedef unsigned char lu_type_general;
+std::vector<lua_State*> FindAllCoroutine(lua_State* L);
 
-#define CommonHeaderGeneral	GCObjectGeneral *next; lu_type_general tt; lu_type_general marked
+std::vector<lua_State*> FindAllCoroutine_lua51(lua_State* L);
 
-struct GCObjectGeneral
-{
-	CommonHeaderGeneral;
-};
+std::vector<lua_State*> FindAllCoroutine_lua52(lua_State* L);
 
-GCObjectGeneral* GetGCHead(lua_State* L);
+std::vector<lua_State*> FindAllCoroutine_lua53(lua_State* L);
 
-GCObjectGeneral* GetGCHead_lua54(lua_State* L);
+std::vector<lua_State*> FindAllCoroutine_lua54(lua_State* L);
 
-GCObjectGeneral* GetGCHead_lua53(lua_State* L);
-
-GCObjectGeneral* GetGCHead_lua52(lua_State* L);
-
-GCObjectGeneral* GetGCHead_lua51(lua_State* L);
-
+std::vector<lua_State*> FindAllCoroutine_luaJIT(lua_State* L);
 
 lua_State* GetMainState(lua_State* L);
 
@@ -31,12 +24,4 @@ lua_State* GetMainState_lua52(lua_State* L);
 
 lua_State* GetMainState_lua51(lua_State* L);
 
-bool isGlobalStateReady(lua_State* L);
-
-bool isGlobalStateReady_lua54(lua_State* L);
-
-bool isGlobalStateReady_lua53(lua_State* L);
-
-bool isGlobalStateReady_lua52(lua_State* L);
-
-bool isGlobalStateReady_lua51(lua_State* L);
+lua_State* GetMainState_luaJIT(lua_State* L);

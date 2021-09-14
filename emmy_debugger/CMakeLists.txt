@@ -113,6 +113,7 @@ else()
         ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_53.cpp
         ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_52.cpp
         ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_51.cpp
+        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_JIT.cpp
     )
    
 
