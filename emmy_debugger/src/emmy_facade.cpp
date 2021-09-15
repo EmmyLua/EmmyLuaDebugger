@@ -23,6 +23,7 @@
 #include "emmy_debugger/emmy_debugger.h"
 #include "emmy_debugger/transporter.h"
 #include "emmy_debugger/emmy_helper.h"
+#include "emmy_debugger/lua_version.h"
 
 EmmyFacade& EmmyFacade::Get()
 {
@@ -57,6 +58,7 @@ EmmyFacade::EmmyFacade()
 	  isAPIReady(false),
 	  isWaitingForIDE(false),
 	  StartHook(nullptr),
+      workMode(WorkMode::EmmyCore),
 	  emmyDebuggerManager(std::make_shared<EmmyDebuggerManager>())
 {
 }

@@ -1,5 +1,6 @@
 #include "emmy_debugger/emmy_debugger_manager.h"
 #include "emmy_debugger/emmy_helper.h"
+#include "emmy_debugger/lua_version.h"
 
 EmmyDebuggerManager::EmmyDebuggerManager()
 	: stateBreak(std::make_shared<HookStateBreak>()),
@@ -33,6 +34,7 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::GetDebugger(lua_State* L)
 std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
+
 	auto mainState = GetMainState(L);
 	std::shared_ptr<Debugger> debugger = nullptr;
 	auto it = debuggers.find(mainState);
@@ -210,5 +212,8 @@ void EmmyDebuggerManager::OnDisconnect()
 	{
 		it.second->Stop();
 	}
-
+	if(luaVersion == LuaVersion::LUA_JIT)
+	{
+		debuggers.clear();
+	}
 }

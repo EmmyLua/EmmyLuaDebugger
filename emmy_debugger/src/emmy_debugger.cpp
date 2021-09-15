@@ -19,6 +19,7 @@
 #include "emmy_debugger/emmy_facade.h"
 #include "emmy_debugger/hook_state.h"
 #include "emmy_debugger/emmy_helper.h"
+#include "emmy_debugger/lua_version.h"
 
 #define CACHE_TABLE_NAME "_emmy_cache_table_"
 #define CACHE_QUERY_NAME "_emmy_query_table_"
@@ -85,6 +86,17 @@ void Debugger::Attach(bool isMainThread)
 
 	if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore)
 	{
+		// 对于luajit来讲，没有办法获得他的mainstate（因为luajit没有lua5.2以上的mainstate伪索引，而且头文件在不同平台上要重新生成）
+		// 很难正确的简单知道mainstate,所以mainL 这个变量对luajit并不指代mainState
+		
+		if(luaVersion == LuaVersion::LUA_JIT)
+		{
+			int ret = lua_pushthread(mainL);
+			if(ret != 1)
+			{
+				return;
+			}
+		}
 		if (isMainThread)
 		{
 			auto states = FindAllCoroutine(mainL);

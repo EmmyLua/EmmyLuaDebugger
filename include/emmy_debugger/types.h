@@ -37,8 +37,8 @@ public:
 	std::string hitCondition;
 	std::string logMessage;
 	// std::vector<std::string> pathParts;
-	int hitCount;
-	int line;
+	int hitCount = 0;
+	int line = 0;
 };
 
 class Variable

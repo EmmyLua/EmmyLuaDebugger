@@ -87,4 +87,5 @@ private:
 	std::mutex breakpointsMtx;
 	std::vector<std::shared_ptr<BreakPoint>> breakpoints;
 	std::set<int> lineSet;
+
 };
