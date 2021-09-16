@@ -16,6 +16,7 @@
 
 #include "emmy_debugger/emmy_facade.h"
 #include <cstdarg>
+#include <cstdint>
 #include "emmy_debugger/proto/socket_server_transporter.h"
 #include "emmy_debugger/proto/socket_client_transporter.h"
 #include "emmy_debugger/proto/pipeline_server_transporter.h"
@@ -58,7 +59,7 @@ EmmyFacade::EmmyFacade()
 	  isAPIReady(false),
 	  isWaitingForIDE(false),
 	  StartHook(nullptr),
-      workMode(WorkMode::EmmyCore),
+	  workMode(WorkMode::EmmyCore),
 	  emmyDebuggerManager(std::make_shared<EmmyDebuggerManager>())
 {
 }
@@ -102,6 +103,9 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 {
 	Destroy();
 
+	// 仅仅luajit需要
+	mainStates.insert(L);
+
 	emmyDebuggerManager->AddDebugger(L);
 
 	const auto s = std::make_shared<SocketServerTransporter>();
@@ -130,6 +134,9 @@ bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std
 {
 	Destroy();
 
+	// 仅仅luajit需要
+	mainStates.insert(L);
+
 	emmyDebuggerManager->AddDebugger(L);
 
 	const auto c = std::make_shared<SocketClientTransporter>();
@@ -153,6 +160,9 @@ bool EmmyFacade::PipeListen(lua_State* L, const std::string& name, std::string& 
 {
 	Destroy();
 
+	// 仅仅luajit需要
+	mainStates.insert(L);
+
 	emmyDebuggerManager->AddDebugger(L);
 
 	const auto p = std::make_shared<PipelineServerTransporter>();
@@ -165,6 +175,9 @@ bool EmmyFacade::PipeListen(lua_State* L, const std::string& name, std::string& 
 bool EmmyFacade::PipeConnect(lua_State* L, const std::string& name, std::string& err)
 {
 	Destroy();
+
+	// 仅仅luajit需要
+	mainStates.insert(L);
 
 	emmyDebuggerManager->AddDebugger(L);
 
@@ -229,6 +242,7 @@ int EmmyFacade::OnDisconnect()
 void EmmyFacade::Destroy()
 {
 	OnDisconnect();
+
 	if (transporter)
 	{
 		transporter->Stop();
@@ -315,8 +329,10 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 	for (auto debugger : debuggers)
 	{
 		debugger->Start();
-
-		debugger->Attach(false);
+		if (luaVersion != LuaVersion::LUA_JIT)
+		{
+			debugger->Attach(false);
+		}
 	}
 }
 
@@ -591,21 +607,25 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 	}
 	else
 	{
-		debugger = emmyDebuggerManager->AddDebugger(L);
-		install_emmy_core(L);
-		debugger->Start();
-		debugger->Attach();
+		if (workMode == WorkMode::Attach)
+		{
+			debugger = emmyDebuggerManager->AddDebugger(L);
+			install_emmy_core(L);
+			// attach的时候能进入这里必然是 connected，所以可以执行start
+			debugger->Start();
+			debugger->Attach();
 
-		// send attached notify
-		rapidjson::Document rspDoc;
-		rspDoc.SetObject();
-		// fix macosx compiler error,
-		// repidjson 应该有重载决议的错误
-		int64_t state = reinterpret_cast<int64_t>(L);
-		rspDoc.AddMember("state", state, rspDoc.GetAllocator());
-		this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
+			// send attached notify
+			rapidjson::Document rspDoc;
+			rspDoc.SetObject();
+			// fix macosx compiler error,
+			// repidjson 应该有重载决议的错误
+			int64_t state = reinterpret_cast<int64_t>(L);
+			rspDoc.AddMember("state", state, rspDoc.GetAllocator());
+			this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
 
-		debugger->Hook(ar, L);
+			debugger->Hook(ar, L);
+		}
 	}
 }
 

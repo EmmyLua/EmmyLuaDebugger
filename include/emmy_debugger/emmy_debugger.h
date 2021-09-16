@@ -143,5 +143,5 @@ private:
 	std::mutex evalMtx;
 	std::queue<std::shared_ptr<EvalContext>> evalQueue;
 
-	// std::set<lua_State*> states;
+
 };

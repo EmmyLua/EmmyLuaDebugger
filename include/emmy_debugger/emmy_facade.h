@@ -104,6 +104,9 @@ private:
 	WorkMode workMode;
 
 	std::shared_ptr<EmmyDebuggerManager> emmyDebuggerManager;
+
+	// 表示使用了tcplisten tcpConnect 的states
+	std::set<lua_State*> mainStates;
 };
 
 

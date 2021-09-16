@@ -59,7 +59,7 @@ elseif(${EMMY_LUA_VERSION} STREQUAL "51")
     add_definitions(-DEMMY_LUA_51)
 elseif(${EMMY_LUA_VERSION} STREQUAL "jit")
     set(EMMY_LUA_DIR "luajit")
-    add_definitions(-DEMMY_LUA_51)
+    add_definitions(-DEMMY_LUA_JIT)
     # if LUAJIT support lua_setfuncs use this macro define
     #add_definitions(-DEMMY_LUA_JIT_SUPPORT_LUA_SETFUNCS)
 endif()

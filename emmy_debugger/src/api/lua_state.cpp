@@ -56,7 +56,7 @@ lua_State* GetMainState(lua_State* L)
 std::vector<lua_State*> FindAllCoroutine(lua_State* L)
 {
 	LuaSwitchDo(
-		FindAllCoroutine_luaJIT(L),
+		std::vector<lua_State*>(),
 		FindAllCoroutine_lua51(L),
 		FindAllCoroutine_lua52(L),
 		FindAllCoroutine_lua53(L),

@@ -12,7 +12,7 @@ std::vector<lua_State*> FindAllCoroutine_lua53(lua_State* L);
 
 std::vector<lua_State*> FindAllCoroutine_lua54(lua_State* L);
 
-std::vector<lua_State*> FindAllCoroutine_luaJIT(lua_State* L);
+// std::vector<lua_State*> FindAllCoroutine_luaJIT(lua_State* L);
 
 lua_State* GetMainState(lua_State* L);
 

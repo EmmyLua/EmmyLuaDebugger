@@ -17,7 +17,7 @@
 
 
 
-#ifdef EMMY_LUA_51
+#if  defined(EMMY_LUA_51) || defined(EMMY_LUA_JIT)
 #include "emmy_debugger/api/lua_api.h"
 int lua_absindex(lua_State *L, int idx) {
 	if (idx > 0) {

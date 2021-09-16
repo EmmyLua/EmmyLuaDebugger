@@ -84,20 +84,8 @@ void Debugger::Attach(bool isMainThread)
 		});
 	}
 
-	if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore)
+	if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore && mainL)
 	{
-		// 对于luajit来讲，没有办法获得他的mainstate（因为luajit没有lua5.2以上的mainstate伪索引，而且头文件在不同平台上要重新生成）
-		// 很难正确的简单知道mainstate,所以mainL 这个变量对luajit并不指代mainState
-		
-		// if(luaVersion == LuaVersion::LUA_JIT)
-		// {
-		// 	int ret = lua_pushthread(mainL);
-		// 	lua_pop(mainL, 1);
-		// 	if(ret != 1)
-		// 	{
-		// 		return;
-		// 	}
-		// }
 		if (isMainThread)
 		{
 			auto states = FindAllCoroutine(mainL);

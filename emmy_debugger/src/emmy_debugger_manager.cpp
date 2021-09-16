@@ -19,8 +19,8 @@ EmmyDebuggerManager::~EmmyDebuggerManager()
 std::shared_ptr<Debugger> EmmyDebuggerManager::GetDebugger(lua_State* L)
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
-	auto mainState = GetMainState(L);
-	auto it = debuggers.find(mainState);
+	auto identify = GetUniqueIdentify(L);
+	auto it = debuggers.find(identify);
 	if (it != debuggers.end())
 	{
 		return it->second;
@@ -35,14 +35,23 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
 
-	auto mainState = GetMainState(L);
+	auto identify = GetUniqueIdentify(L);
+
 	std::shared_ptr<Debugger> debugger = nullptr;
-	auto it = debuggers.find(mainState);
+
+	auto it = debuggers.find(identify);
 
 	if (it == debuggers.end())
 	{
-		debugger = std::make_shared<Debugger>(mainState, shared_from_this());
-		debuggers.insert({ mainState, debugger });
+		if (luaVersion != LuaVersion::LUA_JIT)
+		{
+			debugger = std::make_shared<Debugger>(reinterpret_cast<lua_State*>(identify), shared_from_this());
+		}
+		else
+		{
+			debugger = std::make_shared<Debugger>(nullptr, shared_from_this());
+		}
+		debuggers.insert({identify, debugger});
 	}
 	else
 	{
@@ -53,11 +62,12 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 	return debugger;
 }
 
+
 std::shared_ptr<Debugger> EmmyDebuggerManager::RemoveDebugger(lua_State* L)
 {
 	std::lock_guard<std::mutex> lock(debuggerMtx);
-	auto mainL = GetMainState(L);
-	auto it = debuggers.find(mainL);
+	auto identify = GetUniqueIdentify(L);
+	auto it = debuggers.find(identify);
 	if (it != debuggers.end())
 	{
 		auto debugger = it->second;
@@ -106,16 +116,16 @@ void EmmyDebuggerManager::AddBreakpoint(std::shared_ptr<BreakPoint> breakpoint)
 {
 	std::lock_guard<std::mutex> lock(breakpointsMtx);
 	bool isAdd = false;
-	for(std::shared_ptr<BreakPoint>& bp: breakpoints)
+	for (std::shared_ptr<BreakPoint>& bp : breakpoints)
 	{
-		if(bp->line == breakpoint->line  && CompareIgnoreCase(bp->file,breakpoint->file) == 0)
+		if (bp->line == breakpoint->line && CompareIgnoreCase(bp->file, breakpoint->file) == 0)
 		{
 			bp = breakpoint;
 			isAdd = true;
 		}
 	}
-	
-	if(!isAdd)
+
+	if (!isAdd)
 	{
 		breakpoints.push_back(breakpoint);
 	}
@@ -135,7 +145,6 @@ void EmmyDebuggerManager::RemoveBreakpoint(const std::string& file, int line)
 	auto it = breakpoints.begin();
 	while (it != breakpoints.end())
 	{
-	
 		const auto bp = *it;
 		if (bp->line == line && CompareIgnoreCase(bp->file, file) == 0)
 		{
@@ -212,8 +221,21 @@ void EmmyDebuggerManager::OnDisconnect()
 	{
 		it.second->Stop();
 	}
-	if(luaVersion == LuaVersion::LUA_JIT)
+	if (luaVersion == LuaVersion::LUA_JIT)
 	{
 		debuggers.clear();
+	}
+}
+
+EmmyDebuggerManager::UniqueIdentifyType EmmyDebuggerManager::GetUniqueIdentify(lua_State* L)
+{
+	if (luaVersion != LuaVersion::LUA_JIT)
+	{
+		// 我们认为luajit只会有一个debugger
+		return 0;
+	}
+	else
+	{
+		return reinterpret_cast<UniqueIdentifyType>(GetMainState(L));
 	}
 }

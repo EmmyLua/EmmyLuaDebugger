@@ -31,7 +31,7 @@ typedef ptrdiff_t lua_KContext;
 typedef int(*lua_KFunction) (lua_State *L, int status, lua_KContext ctx);
 #endif
 
-#ifdef EMMY_LUA_51
+#if defined(EMMY_LUA_51) || defined(EMMY_LUA_JIT)
 #define LUA_OK 0
 
 int lua_absindex(lua_State *L, int idx);
