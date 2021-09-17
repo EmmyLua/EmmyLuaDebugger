@@ -318,6 +318,8 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 		emmyDebuggerManager->extNames = extNames;
 	}
 
+	emmyDebuggerManager->SetRunning(true);
+
 	//TODO 这里有个线程安全问题，消息线程和lua 执行线程不是相同线程，但是没有一个锁能让我做同步
 	// 所以我不能在这里访问lua state 指针的内部结构
 	// 
@@ -328,11 +330,7 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 	auto debuggers = emmyDebuggerManager->GetDebuggers();
 	for (auto debugger : debuggers)
 	{
-		debugger->Start();
-		if (luaVersion != LuaVersion::LUA_JIT)
-		{
-			debugger->Attach(false);
-		}
+		debugger->Attach(false);
 	}
 }
 
@@ -611,10 +609,10 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 		{
 			debugger = emmyDebuggerManager->AddDebugger(L);
 			install_emmy_core(L);
-			// attach的时候能进入这里必然是 connected，所以可以执行start
-			debugger->Start();
-			debugger->Attach();
-
+			if (emmyDebuggerManager->IsRunning()) {
+				debugger->Start();
+				debugger->Attach();
+			}
 			// send attached notify
 			rapidjson::Document rspDoc;
 			rspDoc.SetObject();

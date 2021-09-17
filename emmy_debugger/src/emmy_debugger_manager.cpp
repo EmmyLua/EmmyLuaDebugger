@@ -8,7 +8,8 @@ EmmyDebuggerManager::EmmyDebuggerManager()
 	  stateStepOver(std::make_shared<HookStateStepOver>()),
 	  stateStop(std::make_shared<HookStateStop>()),
 	  stateStepIn(std::make_shared<HookStateStepIn>()),
-	  stateStepOut(std::make_shared<HookStateStepOut>())
+	  stateStepOut(std::make_shared<HookStateStepOut>()),
+	  isRunning(false)
 {
 }
 
@@ -49,7 +50,18 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 		}
 		else
 		{
-			debugger = std::make_shared<Debugger>(nullptr, shared_from_this());
+			// 如果首次add 的state不是main state，则main state视为空指针
+			// 但不影响luajit附加调试和远程调试
+			lua_State* mainState = nullptr;
+
+			int ret = lua_pushthread(L);
+			lua_pop(L, 1);
+			if (ret == 1)
+			{
+				mainState = L;
+			}
+
+			debugger = std::make_shared<Debugger>(mainState, shared_from_this());
 		}
 		debuggers.insert({identify, debugger});
 	}
@@ -216,20 +228,36 @@ void EmmyDebuggerManager::Eval(std::shared_ptr<EvalContext> ctx)
 
 void EmmyDebuggerManager::OnDisconnect()
 {
+	SetRunning(false);
 	std::lock_guard<std::mutex> lock(debuggerMtx);
 	for (auto it : debuggers)
 	{
 		it.second->Stop();
 	}
-	if (luaVersion == LuaVersion::LUA_JIT)
+}
+
+void EmmyDebuggerManager::SetRunning(bool value)
+{
+	std::lock_guard<std::mutex> lock(isRuningMtx);
+	isRunning = value;
+	if(isRunning)
 	{
-		debuggers.clear();
+		for(auto debugger: GetDebuggers())
+		{
+			debugger->Start();
+		}
 	}
+}
+
+bool EmmyDebuggerManager::IsRunning()
+{
+	std::lock_guard<std::mutex> lock(isRuningMtx);
+	return isRunning;
 }
 
 EmmyDebuggerManager::UniqueIdentifyType EmmyDebuggerManager::GetUniqueIdentify(lua_State* L)
 {
-	if (luaVersion != LuaVersion::LUA_JIT)
+	if (luaVersion == LuaVersion::LUA_JIT)
 	{
 		// 我们认为luajit只会有一个debugger
 		return 0;

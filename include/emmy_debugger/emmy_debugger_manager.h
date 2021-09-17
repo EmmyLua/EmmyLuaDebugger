@@ -66,6 +66,10 @@ public:
 
 	void OnDisconnect();
 
+	void SetRunning(bool value);
+
+	bool IsRunning();
+
 	// public 成员放下面
 	std::shared_ptr<HookStateBreak> stateBreak;
 	std::shared_ptr<HookStateStepOver> stateStepOver;
@@ -93,4 +97,7 @@ private:
 	std::vector<std::shared_ptr<BreakPoint>> breakpoints;
 
 	std::set<int> lineSet;
+
+	std::mutex isRuningMtx;
+	bool isRunning;
 };
