@@ -14,7 +14,7 @@ jobs:
         mkdir x86
         cd x86
         cmake ../
-        cmake --build . --config Debug --target install
+        cmake --build . --config RelWithDebInfo --target install
     
     - name: Upload x86
       uses: actions/upload-artifact@v1.0.0
@@ -27,7 +27,7 @@ jobs:
         mkdir x64
         cd x64
         cmake ../ -G "Visual Studio 15 2017 Win64"
-        cmake --build . --config Debug --target install
+        cmake --build . --config RelWithDebInfo --target install
     
     - name: Upload x64
       uses: actions/upload-artifact@v1.0.0
