@@ -37,11 +37,18 @@ void EmmyFacade::HookLua(lua_State* L, lua_Debug* ar)
 	EmmyFacade::Get().Hook(L, ar);
 }
 
-void EmmyFacade::InitHook(lua_State* L, lua_Debug* ar)
+void EmmyFacade::ReadyLuaHook(lua_State* L, lua_Debug* ar)
 {
-	auto mainL = GetMainState(L);
+	{
+		std::lock_guard<std::mutex> lock(EmmyFacade::Get().readyHookMtx);
+		if (!EmmyFacade::Get().readyHook)
+		{
+			return;
+		}
+		EmmyFacade::Get().readyHook = false;
+	}
 
-	auto states = FindAllCoroutine(mainL);
+	auto states = FindAllCoroutine(L);
 
 	for (auto state : states)
 	{
@@ -49,6 +56,12 @@ void EmmyFacade::InitHook(lua_State* L, lua_Debug* ar)
 	}
 
 	lua_sethook(L, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+
+	auto debugger = EmmyFacade::Get().GetDebugger(L);
+	if (debugger)
+	{
+		debugger->Attach();
+	}
 
 	EmmyFacade::Get().Hook(L, ar);
 }
@@ -60,7 +73,8 @@ EmmyFacade::EmmyFacade()
 	  isWaitingForIDE(false),
 	  StartHook(nullptr),
 	  workMode(WorkMode::EmmyCore),
-	  emmyDebuggerManager(std::make_shared<EmmyDebuggerManager>())
+	  emmyDebuggerManager(std::make_shared<EmmyDebuggerManager>()),
+	  readyHook(false)
 {
 }
 
@@ -103,10 +117,9 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 {
 	Destroy();
 
-	// 仅仅luajit需要
-	mainStates.insert(L);
-
 	emmyDebuggerManager->AddDebugger(L);
+
+	SetReadyHook(L);
 
 	const auto s = std::make_shared<SocketServerTransporter>();
 	transporter = s;
@@ -134,10 +147,9 @@ bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std
 {
 	Destroy();
 
-	// 仅仅luajit需要
-	mainStates.insert(L);
-
 	emmyDebuggerManager->AddDebugger(L);
+
+	SetReadyHook(L);
 
 	const auto c = std::make_shared<SocketClientTransporter>();
 	transporter = c;
@@ -160,10 +172,9 @@ bool EmmyFacade::PipeListen(lua_State* L, const std::string& name, std::string& 
 {
 	Destroy();
 
-	// 仅仅luajit需要
-	mainStates.insert(L);
-
 	emmyDebuggerManager->AddDebugger(L);
+
+	SetReadyHook(L);
 
 	const auto p = std::make_shared<PipelineServerTransporter>();
 	transporter = p;
@@ -176,10 +187,9 @@ bool EmmyFacade::PipeConnect(lua_State* L, const std::string& name, std::string&
 {
 	Destroy();
 
-	// 仅仅luajit需要
-	mainStates.insert(L);
-
 	emmyDebuggerManager->AddDebugger(L);
+
+	SetReadyHook(L);
 
 	const auto p = std::make_shared<PipelineClientTransporter>();
 	transporter = p;
@@ -318,20 +328,13 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 		emmyDebuggerManager->extNames = extNames;
 	}
 
-	emmyDebuggerManager->SetRunning(true);
-
-	//TODO 这里有个线程安全问题，消息线程和lua 执行线程不是相同线程，但是没有一个锁能让我做同步
+	// 这里有个线程安全问题，消息线程和lua 执行线程不是相同线程，但是没有一个锁能让我做同步
 	// 所以我不能在这里访问lua state 指针的内部结构
 	// 
-	// 只能在消息线程设置hook
-	// 但是存在一个问题只能给主lua_state 设置hook，如果此后进程一直在协程中执行则无法触发该hook
-	// Attach函数内部设置了hook，存在一个线程问题，可能引发崩溃
 	// 方案：提前为主state 设置hook 利用hook 实现同步
-	auto debuggers = emmyDebuggerManager->GetDebuggers();
-	for (auto debugger : debuggers)
-	{
-		debugger->Attach(false);
-	}
+
+	// fix 以上安全问题
+	StartDebug();
 }
 
 void EmmyFacade::OnReadyReq(const rapidjson::Document& document)
@@ -598,6 +601,20 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 	{
 		if (!debugger->IsRunning())
 		{
+			if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore)
+			{
+				if (luaVersion != LuaVersion::LUA_JIT)
+				{
+					if (debugger->IsMainCoroutine(L))
+					{
+						SetReadyHook(L);
+					}
+				}
+				else
+				{
+					SetReadyHook(L);
+				}
+			}
 			return;
 		}
 
@@ -609,7 +626,8 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 		{
 			debugger = emmyDebuggerManager->AddDebugger(L);
 			install_emmy_core(L);
-			if (emmyDebuggerManager->IsRunning()) {
+			if (emmyDebuggerManager->IsRunning())
+			{
 				debugger->Start();
 				debugger->Attach();
 			}
@@ -664,6 +682,18 @@ void EmmyFacade::RemoveVariableRef(Variable* variable)
 std::shared_ptr<Debugger> EmmyFacade::GetDebugger(lua_State* L)
 {
 	return emmyDebuggerManager->GetDebugger(L);
+}
+
+void EmmyFacade::SetReadyHook(lua_State* L)
+{
+	lua_sethook(L, ReadyLuaHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+}
+
+void EmmyFacade::StartDebug()
+{
+	emmyDebuggerManager->SetRunning(true);
+	std::lock_guard<std::mutex> lock(EmmyFacade::Get().readyHookMtx);
+	EmmyFacade::Get().readyHook = true;
 }
 
 void EmmyFacade::StartupHookMode(int port)
