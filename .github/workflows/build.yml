@@ -14,25 +14,7 @@ jobs:
         mkdir x86
         cd x86
         cmake ../
-        cmake --build . --config RelWithDebInfo --target install
-    
-    - name: Build x86.51
-      run: |
-        cd x86
-        cmake ../ -DEMMY_LUA_VERSION=51 -DEMMY_USE_LUA_SOURCE=true
-        cmake --build . --config RelWithDebInfo --target install
-    
-    - name: Build x86.52
-      run: |
-        cd x86
-        cmake ../ -DEMMY_LUA_VERSION=52 -DEMMY_USE_LUA_SOURCE=true
-        cmake --build . --config RelWithDebInfo --target install
-    
-    - name: Build x86.53
-      run: |
-        cd x86
-        cmake ../ -DEMMY_LUA_VERSION=53 -DEMMY_USE_LUA_SOURCE=true
-        cmake --build . --config RelWithDebInfo --target install
+        cmake --build . --config Debug --target install
     
     - name: Upload x86
       uses: actions/upload-artifact@v1.0.0
@@ -45,25 +27,7 @@ jobs:
         mkdir x64
         cd x64
         cmake ../ -G "Visual Studio 15 2017 Win64"
-        cmake --build . --config RelWithDebInfo --target install
-
-    - name: Build x64.51
-      run: |
-        cd x64
-        cmake ../ -G "Visual Studio 15 2017 Win64" -DEMMY_LUA_VERSION=51 -DEMMY_USE_LUA_SOURCE=true
-        cmake --build . --config RelWithDebInfo --target install
-
-    - name: Build x64.52
-      run: |
-        cd x64
-        cmake ../ -G "Visual Studio 15 2017 Win64" -DEMMY_LUA_VERSION=52 -DEMMY_USE_LUA_SOURCE=true
-        cmake --build . --config RelWithDebInfo --target install
-
-    - name: Build x64.53
-      run: |
-        cd x64
-        cmake ../ -G "Visual Studio 15 2017 Win64" -DEMMY_LUA_VERSION=53 -DEMMY_USE_LUA_SOURCE=true
-        cmake --build . --config RelWithDebInfo --target install
+        cmake --build . --config Debug --target install
     
     - name: Upload x64
       uses: actions/upload-artifact@v1.0.0
