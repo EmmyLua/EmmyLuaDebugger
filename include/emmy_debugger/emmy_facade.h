@@ -43,7 +43,7 @@ public:
 
 	static void HookLua(lua_State* L, lua_Debug* ar);
 
-	static void InitHook(lua_State* L, lua_Debug* ar);
+	static void ReadyLuaHook(lua_State* L, lua_Debug* ar);
 
 	EmmyFacade();
 	~EmmyFacade();
@@ -74,6 +74,10 @@ public:
 	void AddVariableRef(std::shared_ptr<Variable> variable);
 	void RemoveVariableRef(Variable* variable);
 	std::shared_ptr<Debugger> GetDebugger(lua_State* L);
+
+	void SetReadyHook(lua_State* L);
+
+	void StartDebug();
 
 	// for hook
 	void StartupHookMode(int port);
@@ -107,6 +111,11 @@ private:
 
 	// 表示使用了tcplisten tcpConnect 的states
 	std::set<lua_State*> mainStates;
+
+	std::mutex readyHookMtx;
+	bool readyHook;
 };
+
+
 
 

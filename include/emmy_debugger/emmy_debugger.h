@@ -38,10 +38,8 @@ public:
 	~Debugger();
 
 	void Start();
-	/*
-	 * @param isMainThread 代表是否是在主线程执行
-	 */
-	void Attach(bool isMainThread = true);
+
+	void Attach();
 	/*
 	 * 主lua state 销毁时，所做工作
 	 */
@@ -52,6 +50,7 @@ public:
 	 * hook时调用
 	 */
 	void Hook(lua_Debug* ar, lua_State* L);
+
 	/*
 	 * 停止调试时调用
 	 */
@@ -82,16 +81,6 @@ public:
 	 * 更新hook
 	 */
 	void UpdateHook(int mask, lua_State* L);
-	/*
-	 * 设置初始化hook
-	 */
-	void SetInitHook();
-
-	/*
-	 * 该思路暂时未启用
-	 * 设置等待连接的hook
-	 */
-	void SetWaitConnectedHook(lua_State* L);
 
 	/*
 	 * 设置当前状态机，他的锁由doAction负责
@@ -117,8 +106,6 @@ private:
 	// bool HasCacheValue(int valueIndex) const;
 	void ClearCache() const;
 
-	// std::mutex waitConnectedMtx;
-	
 	lua_State* currentL;
 	lua_State* mainL;
 

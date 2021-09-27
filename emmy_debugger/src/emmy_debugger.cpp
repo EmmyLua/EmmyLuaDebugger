@@ -55,7 +55,7 @@ void Debugger::Start()
 	doStringList.clear();
 }
 
-void Debugger::Attach(bool isMainThread)
+void Debugger::Attach()
 {
 	if (!running)
 		return;
@@ -83,25 +83,25 @@ void Debugger::Attach(bool isMainThread)
 			lua_settop(L, t);
 		});
 	}
-
-	if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore && mainL)
-	{
-		if (isMainThread)
-		{
-			auto states = FindAllCoroutine(mainL);
-
-			for (auto state : states)
-			{
-				lua_sethook(state, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-			}
-
-			lua_sethook(mainL, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-		}
-		else
-		{
-			SetInitHook();
-		}
-	}
+	//
+	// if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore && mainL)
+	// {
+	// 	if (isMainThread)
+	// 	{
+	// 		auto states = FindAllCoroutine(mainL);
+	//
+	// 		for (auto state : states)
+	// 		{
+	// 			lua_sethook(state, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+	// 		}
+	//
+	// 		lua_sethook(mainL, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
+	// 	}
+	// 	else
+	// 	{
+	// 		SetInitHook();
+	// 	}
+	// }
 }
 
 void Debugger::Detach()
@@ -159,6 +159,7 @@ void Debugger::Hook(lua_Debug* ar, lua_State* L)
 		}
 	}
 }
+
 
 void Debugger::Stop()
 {
@@ -589,15 +590,6 @@ void Debugger::UpdateHook(int mask, lua_State* L)
 		lua_sethook(L, EmmyFacade::HookLua, mask, 0);
 }
 
-void Debugger::SetInitHook()
-{
-	lua_sethook(mainL, EmmyFacade::InitHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-}
-
-void Debugger::SetWaitConnectedHook(lua_State* L)
-{
-	lua_sethook(L, WaitConnectedHook,LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-}
 
 // _G.emmy.fixPath = function(path) return (newPath) end
 int FixPath(lua_State* L)
