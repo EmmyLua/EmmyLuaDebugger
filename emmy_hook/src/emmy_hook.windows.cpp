@@ -14,6 +14,7 @@
 #include "emmy_debugger/proto/socket_server_transporter.h"
 #include "shared/shme.h"
 
+
 typedef TRACED_HOOK_HANDLE HOOK_HANDLE;
 typedef NTSTATUS HOOK_STATUS;
 
@@ -28,7 +29,11 @@ typedef int (*_lua_pcall)(lua_State* L, int nargs, int nresults, int errfunc);
 
 typedef int (*_lua_pcallk)(lua_State* L, int nargs, int nresults, int errfunc, lua_KContext ctx, lua_KFunction k);
 
-typedef int (*_lua_resume)(lua_State* L, lua_State* from, int nargs, int* nresults);
+typedef int (*_lua_resume_54)(lua_State* L, lua_State* from, int nargs, int* nresults);
+
+typedef int (*_lua_resume_53_52)(lua_State* L, lua_State* from, int narg);
+
+typedef int (*_lua_resume_51)(lua_State* L, int narg);
 
 typedef HMODULE (WINAPI *LoadLibraryExW_t)(LPCWSTR lpFileName, HANDLE hFile, DWORD dwFlags);
 
@@ -91,13 +96,31 @@ int lua_error_worker(lua_State* L)
 	return error(L);
 }
 
-int lua_resume_worker(lua_State* L, lua_State* from, int nargs, int* nresults)
+int lua_resume_worker_54(lua_State* L, lua_State* from, int nargs, int* nresults)
 {
 	LPVOID lp;
 	LhBarrierGetCallback(&lp);
-	const auto luaResume = (_lua_resume)lp;
+	const auto luaResume = (_lua_resume_54)lp;
 	EmmyFacade::Get().Attach(L);
 	return luaResume(L, from, nargs, nresults);
+}
+
+int lua_resume_worker_53_52(lua_State* L, lua_State* from, int nargs)
+{
+	LPVOID lp;
+	LhBarrierGetCallback(&lp);
+	const auto luaResume = (_lua_resume_53_52)lp;
+	EmmyFacade::Get().Attach(L);
+	return luaResume(L, from, nargs);
+}
+
+int lua_resume_worker_51(lua_State* L, int nargs)
+{
+	LPVOID lp;
+	LhBarrierGetCallback(&lp);
+	const auto luaResume = (_lua_resume_51)lp;
+	EmmyFacade::Get().Attach(L);
+	return luaResume(L, nargs);
 }
 
 #define HOOK(FN, WORKER, REQUIRED) {\
@@ -112,6 +135,8 @@ int lua_resume_worker(lua_State* L, lua_State* from, int nargs, int* nresults)
 	}\
 }
 
+#define EXIST_SYMBOL(FN) (symbols.find(""#FN"") != symbols.end())
+
 void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols)
 {
 	if (symbols.empty())
@@ -121,7 +146,20 @@ void HookLuaFunctions(std::unordered_map<std::string, DWORD64>& symbols)
 	// lua 5.2
 	HOOK(lua_pcallk, lua_pcallk_worker, false);
 	// HOOK(lua_error, lua_error_worker, true);
-	HOOK(lua_resume, lua_resume_worker, false);
+
+	// lua5.4
+	if (EXIST_SYMBOL(lua_newuserdatauv)) 
+	{
+		HOOK(lua_resume, lua_resume_worker_54, false);
+	}
+	else if(EXIST_SYMBOL(lua_rotate) || EXIST_SYMBOL(lua_callk)) //lua5.3 lua5.2
+	{
+		HOOK(lua_resume, lua_resume_worker_53_52, false);
+	}
+	else // lua5.1 or luajit
+	{
+		HOOK(lua_resume, lua_resume_worker_51, false);
+	}
 }
 
 void LoadSymbolsRecursively(HANDLE hProcess, HMODULE hModule)
