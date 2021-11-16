@@ -21,6 +21,17 @@ int doAttach(CommandLine& commandLine)
 	return 0;
 }
 
+void translateText(std::string& text)
+{
+	for(auto& c: text)
+	{
+		if(c == '\n')
+		{
+			c = ' ';
+		}
+	}
+}
+
 int doListProcesses()
 {
 	std::vector<Process> list;
@@ -29,7 +40,13 @@ int doListProcesses()
 	for (auto& value : list)
 	{
 		printf("%d\n", value.id);
+		// title 中可能出现\n 所以title中的\n全部转为' '
+		translateText(value.title);
+
 		printf("%s\n", value.title.c_str());
+
+		translateText(value.path);
+
 		printf("%s\n", value.path.c_str());
 		printf("----\n");
 	}
