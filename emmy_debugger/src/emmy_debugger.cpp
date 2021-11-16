@@ -969,7 +969,7 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	// setup env
 #ifndef EMMY_USE_LUA_SOURCE
 	lua_setfenv(L, fIdx);
-#elif EMMY_LUA_51
+#elif defined(EMMY_LUA_51) || defined(EMMY_LUA_JIT)
     lua_setfenv(L, fIdx);
 #else //52 & 53
     lua_setupvalue(L, fIdx, 1);
