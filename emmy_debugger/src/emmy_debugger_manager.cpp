@@ -1,4 +1,4 @@
-#include "emmy_debugger/emmy_debugger_manager.h"
+﻿#include "emmy_debugger/emmy_debugger_manager.h"
 #include "emmy_debugger/emmy_helper.h"
 #include "emmy_debugger/lua_version.h"
 

@@ -1,4 +1,4 @@
-#include "emmy_debugger/api/lua_state.h"
+﻿#include "emmy_debugger/api/lua_state.h"
 #ifdef EMMY_USE_LUA_SOURCE
 #include "lstate.h"
 #else

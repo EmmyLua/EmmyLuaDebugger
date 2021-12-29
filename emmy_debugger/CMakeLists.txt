@@ -57,6 +57,11 @@ target_sources(emmy_debugger PUBLIC
 
 target_compile_definitions(emmy_debugger PUBLIC -DRAPIDJSON_HAS_STDSTRING)
 
+if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+	target_compile_options(emmy_debugger PUBLIC /utf-8)
+endif ()
+
+
 if(NOT WIN32)
     target_compile_options(emmy_debugger PUBLIC -fPIC)
 endif()
