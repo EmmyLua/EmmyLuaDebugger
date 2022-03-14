@@ -1,4 +1,4 @@
-version: 1.0.{build}
+version: 1.2.0.{build}
 image: Visual Studio 2017
 build_script:
 - cmd: >-
@@ -25,10 +25,3 @@ artifacts:
   name: emmy_core@x64
 - path: x86/install/bin
   name: emmy_core@x86
-deploy:
-- provider: GitHub
-  auth_token:
-    secure: U8373EzCEIi+fvS6fuw52T7Uvwylslbz5OglnKfScYXUs7Acn7v4Kns+T0aqzOcK
-  on:
-    # branch: master
-    APPVEYOR_REPO_TAG: true 
