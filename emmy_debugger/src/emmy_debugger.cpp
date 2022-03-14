@@ -83,25 +83,6 @@ void Debugger::Attach()
 			lua_settop(L, t);
 		});
 	}
-	//
-	// if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore && mainL)
-	// {
-	// 	if (isMainThread)
-	// 	{
-	// 		auto states = FindAllCoroutine(mainL);
-	//
-	// 		for (auto state : states)
-	// 		{
-	// 			lua_sethook(state, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-	// 		}
-	//
-	// 		lua_sethook(mainL, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
-	// 	}
-	// 	else
-	// 	{
-	// 		SetInitHook();
-	// 	}
-	// }
 }
 
 void Debugger::Detach()

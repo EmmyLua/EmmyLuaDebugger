@@ -3,6 +3,7 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <atomic>
 #include "emmy_debugger/hook_state.h"
 #include "emmy_debugger/emmy_debugger.h"
 #include "emmy_debugger/emmy_helper.h"
@@ -98,6 +99,5 @@ private:
 
 	std::set<int> lineSet;
 
-	std::mutex isRuningMtx;
-	bool isRunning;
+	std::atomic<bool> isRunning;
 };

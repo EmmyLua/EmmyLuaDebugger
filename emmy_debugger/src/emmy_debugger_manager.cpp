@@ -238,7 +238,6 @@ void EmmyDebuggerManager::OnDisconnect()
 
 void EmmyDebuggerManager::SetRunning(bool value)
 {
-	std::lock_guard<std::mutex> lock(isRuningMtx);
 	isRunning = value;
 	if(isRunning)
 	{
@@ -251,7 +250,6 @@ void EmmyDebuggerManager::SetRunning(bool value)
 
 bool EmmyDebuggerManager::IsRunning()
 {
-	std::lock_guard<std::mutex> lock(isRuningMtx);
 	return isRunning;
 }
 

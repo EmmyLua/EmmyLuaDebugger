@@ -112,8 +112,7 @@ private:
 	// 表示使用了tcplisten tcpConnect 的states
 	std::set<lua_State*> mainStates;
 
-	std::mutex readyHookMtx;
-	bool readyHook;
+	std::atomic<bool> readyHook;
 };
 
 

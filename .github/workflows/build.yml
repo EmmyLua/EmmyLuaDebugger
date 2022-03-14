@@ -5,7 +5,7 @@ on: [push]
 jobs:
   build-windows:
     name: Build Windows
-    runs-on: windows-2016
+    runs-on: windows-latest
     steps:
     - uses: actions/checkout@v1
     
@@ -35,9 +35,15 @@ jobs:
         name: x64
         path: x64/install/bin
 
-  build-darwin:
-    name: Build Darwin
-    runs-on: macos-latest
+  build-other:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest, target: linux, platform: linux-x64}
+          - { os: macos-latest, target: darwin, platform: darwin-x64}
+          - { os: macos-latest, target: darwin, platform: darwin-arm64}
     steps:
     - uses: actions/checkout@v1
 
@@ -45,42 +51,19 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake -DCMAKE_BUILD_TYPE=Release ../
-        make install
-    
+        cmake ..
+        cmake --build . --config Release
+        cmake --install . --config Release --prefix ${{ github.workspace }}/artifact/
     - name: Upload
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v2
       with:
-        name: emmy_core.dylib
-        path: build/install/bin/emmy_core.dylib
-
-  build-linux:
-    name: Build Linux
-    runs-on: ubuntu-18.04
-    steps:
-    - uses: actions/checkout@v1
-
-    - name: Install
-      run: |
-        sudo apt-get install libreadline-dev
-
-    - name: Build
-      run: |
-        mkdir build
-        cd build
-        cmake -DCMAKE_BUILD_TYPE=Release ../
-        make install
-    
-    - name: Upload
-      uses: actions/upload-artifact@v1.0.0
-      with:
-        name: emmy_core.so
-        path: build/install/bin/emmy_core.so
-
+        name: ${{ matrix.platform }}
+        path: ${{ github.workspace }}/artifact/
+ 
   upload-release:
     name: Upload Release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build-windows, build-darwin, build-linux]
+    needs: [build-windows, build]
     runs-on: [ubuntu-18.04]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -162,3 +145,16 @@ jobs:
           asset_path: artifact/emmy_core.dylib
           asset_name: emmy_core.dylib
           asset_content_type: application/gzip
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: EmmyLuaDebugger
+          draft: false
+          generate_release_notes: true
+          files: |
+            linux-x64.zip
+            darwin-x64.zip
+            darwin-arm64.zip
+            win32-x64.zip
+          token: ${{ secrets.RELEASE }}
