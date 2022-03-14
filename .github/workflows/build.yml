@@ -63,7 +63,7 @@ jobs:
   upload-release:
     name: Upload Release
     if: startsWith(github.ref, 'refs/tags/')
-    needs: [build-windows, build]
+    needs: [build-windows, build-other]
     runs-on: [ubuntu-18.04]
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
