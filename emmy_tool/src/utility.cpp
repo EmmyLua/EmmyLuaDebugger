@@ -1,4 +1,4 @@
-#include "utility.h"
+﻿#include "utility.h"
 #include <ImageHlp.h>
 #include <TlHelp32.h>
 #include <Psapi.h>

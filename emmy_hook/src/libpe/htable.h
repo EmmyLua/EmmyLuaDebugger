@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of the libpe portable executable parsing library.
  *
  * Copyleft of Simone Margaritelli aka evilsocket <evilsocket@gmail.com>

@@ -1,4 +1,4 @@
-#include "command_line.h"
+﻿#include "command_line.h"
 
 void CommandLine::AddTarget(const std::string& name, bool isParse)
 {

@@ -1,4 +1,4 @@
-#include "shared/shme.h"
+﻿#include "shared/shme.h"
 
 bool CreateMemFile(SharedFile* file) {
 	// Get a handle to our file map

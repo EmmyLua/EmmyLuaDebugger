@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Copyright (c) 2019. tangzx(love.tangzx@qq.com)
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -112,8 +112,7 @@ private:
 	// 表示使用了tcplisten tcpConnect 的states
 	std::set<lua_State*> mainStates;
 
-	std::mutex readyHookMtx;
-	bool readyHook;
+	std::atomic<bool> readyHook;
 };
 
 

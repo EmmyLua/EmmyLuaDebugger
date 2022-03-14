@@ -1,4 +1,4 @@
-#ifndef _SHME_H_
+﻿#ifndef _SHME_H_
 #define _SHME_H_
 
 #include <Windows.h>

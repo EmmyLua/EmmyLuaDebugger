@@ -1,4 +1,4 @@
-#include "emmy_debugger/lua_version.h"
+﻿#include "emmy_debugger/lua_version.h"
 
 
 #if EMMY_LUA_51

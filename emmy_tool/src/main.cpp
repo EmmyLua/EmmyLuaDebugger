@@ -1,4 +1,4 @@
-#include <Windows.h>
+ï»¿#include <Windows.h>
 #include <cstdio>
 #include <iostream>
 #include <Psapi.h>
@@ -40,7 +40,7 @@ int doListProcesses()
 	for (auto& value : list)
 	{
 		printf("%d\n", value.id);
-		// title ÖĞ¿ÉÄÜ³öÏÖ\n ËùÒÔtitleÖĞµÄ\nÈ«²¿×ªÎª' '
+		// title ä¸­å¯èƒ½å‡ºç°\n æ‰€ä»¥titleä¸­çš„\nå…¨éƒ¨è½¬ä¸º' '
 		translateText(value.title);
 
 		printf("%s\n", value.title.c_str());
