@@ -13,7 +13,7 @@ jobs:
       run: |
         mkdir x86
         cd x86
-        cmake ..  -A Win32 -G "Visual Studio 17 2022"
+        cmake ..  -A Win32 -G "Visual Studio 16 2019"
         cmake --build . --config RelWithDebInfo --target install
     
     - name: Upload x86
@@ -26,7 +26,7 @@ jobs:
       run: |
         mkdir x64
         cd x64
-        cmake ../ -A Win64 -G "Visual Studio 17 2022"
+        cmake ../ -G "Visual Studio 16 2019"
         cmake --build . --config RelWithDebInfo --target install
     
     - name: Upload x64
