@@ -76,27 +76,28 @@ jobs:
         uses: TheDoctor0/zip-release@v0.2.1
         with:
           filename: win32-x64.zip
-          directory: win32-x64
+          path: win32-x64/*
+
       - name: zip win32-x86
         uses: TheDoctor0/zip-release@v0.2.1
         with:
           filename: win32-x86.zip
-          directory: win32-x86 
+          path: win32-x86/*
       - name: zip linux-x64
         uses: TheDoctor0/zip-release@v0.2.1
         with:
           filename: linux-x64.zip
-          directory: linux-x64
+          path: linux-x64/*
       - name: zip darwin-x64
         uses: TheDoctor0/zip-release@v0.2.1
         with:
           filename: darwin-x64.zip
-          directory: darwin-x64   
+          path: darwin-x64/*   
       - name: zip darwin-arm64
         uses: TheDoctor0/zip-release@v0.2.1
         with:
           filename: darwin-arm64.zip
-          directory: darwin-arm64 
+          path: darwin-arm64/* 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
