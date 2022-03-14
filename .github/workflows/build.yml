@@ -73,31 +73,41 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -R   
       - name: zip win32-x64
-        uses: TheDoctor0/zip-release@v0.2.1
+        uses: TheDoctor0/zip-release@v0.6.1
         with:
           filename: win32-x64.zip
-          path: win32-x64/*
+          directory: win32-x64
+          path: |
+            EasyHook.dll
+            emmy_core.dll
+            emmy_hook.dll
+            emmy_tool.exe
 
       - name: zip win32-x86
-        uses: TheDoctor0/zip-release@v0.2.1
+        uses: TheDoctor0/zip-release@v0.6.1
         with:
           filename: win32-x86.zip
-          path: win32-x86/*
+          directory: win32-x86
+          path: |
+            EasyHook.dll
+            emmy_core.dll
+            emmy_hook.dll
+            emmy_tool.exe
       - name: zip linux-x64
-        uses: TheDoctor0/zip-release@v0.2.1
+        uses: TheDoctor0/zip-release@v0.6.1
         with:
           filename: linux-x64.zip
-          path: linux-x64/*
+          path: linux-x64/emmy_core.so
       - name: zip darwin-x64
-        uses: TheDoctor0/zip-release@v0.2.1
+        uses: TheDoctor0/zip-release@v0.6.1
         with:
           filename: darwin-x64.zip
-          path: darwin-x64/*   
+          path: darwin-x64/emmy_core.dylib   
       - name: zip darwin-arm64
-        uses: TheDoctor0/zip-release@v0.2.1
+        uses: TheDoctor0/zip-release@v0.6.1
         with:
           filename: darwin-arm64.zip
-          path: darwin-arm64/* 
+          path: darwin-arm64/emmy_core.dylib
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
