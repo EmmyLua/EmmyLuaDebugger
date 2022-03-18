@@ -274,9 +274,9 @@ void lua_call(lua_State* L, int nargs, int nresults)
 {
 	if (luaVersion > LuaVersion::LUA_51)
 	{
-		e_lua_callk(L, nargs, nresults, 0, nullptr);
+		return e_lua_callk(L, nargs, nresults, 0, nullptr);
 	}
-	e_lua_call(L, nargs, nresults);
+	return (void)e_lua_call(L, nargs, nresults);
 }
 
 int lua_pcall(lua_State* L, int nargs, int nresults, int errfunc)
