@@ -58,7 +58,7 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ${{ matrix.platform }}
-        path: ${{ github.workspace }}/artifact/
+        path: ${{ github.workspace }}/artifact/bin
  
   upload-release:
     name: Upload Release
@@ -71,7 +71,46 @@ jobs:
       - name: Download
         uses: actions/download-artifact@v2
       - name: Display structure of downloaded files
-        run: ls -R      
+        run: ls -R   
+      - name: zip win32-x64
+        uses: TheDoctor0/zip-release@master
+        with:
+          filename: win32-x64.zip
+          directory: win32-x64
+          path: |
+            EasyHook.dll
+            emmy_core.dll
+            emmy_hook.dll
+            emmy_tool.exe
+
+      - name: zip win32-x86
+        uses: TheDoctor0/zip-release@master
+        with:
+          filename: win32-x86.zip
+          directory: win32-x86
+          path: |
+            EasyHook.dll
+            emmy_core.dll
+            emmy_hook.dll
+            emmy_tool.exe
+      - name: zip linux-x64
+        uses: TheDoctor0/zip-release@master
+        with:
+          filename: linux-x64.zip
+          directory: linux-x64
+          path: emmy_core.so
+      - name: zip darwin-x64
+        uses: TheDoctor0/zip-release@master
+        with:
+          filename: darwin-x64.zip
+          directory: darwin-x64
+          path: emmy_core.dylib   
+      - name: zip darwin-arm64
+        uses: TheDoctor0/zip-release@master
+        with:
+          filename: darwin-arm64.zip
+          directory: darwin-arm64
+          path: emmy_core.dylib
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
@@ -80,9 +119,9 @@ jobs:
           draft: false
           generate_release_notes: true
           files: |
-            win32-x64.zip
-            win32-x86.zip
-            darwin-arm64.zip
-            darwin-x64.zip
-            linux-x64.zip
+            win32-x64/win32-x64.zip
+            win32-x86/win32-x86.zip
+            darwin-arm64/darwin-arm64.zip
+            darwin-x64/darwin-x64.zip
+            linux-x64/linux-x64.zip
           token: ${{ secrets.RELEASE }}
