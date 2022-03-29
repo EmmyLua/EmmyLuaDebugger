@@ -96,12 +96,18 @@ bool HookStateStepIn::Start(std::shared_ptr<Debugger> debugger, lua_State* curre
 void HookStateStepIn::ProcessHook(std::shared_ptr<Debugger> debugger, lua_State* L, lua_Debug* ar)
 {
 	UpdateStackLevel(debugger, L, ar);
-	if (getDebugEvent(ar) == LUA_HOOKLINE && getDebugCurrentLine(ar) != line)
+	if (getDebugEvent(ar) == LUA_HOOKLINE)
 	{
-		// todo : && file != ar->source
-		debugger->HandleBreak();
+		auto currentLine = getDebugCurrentLine(ar);
+		auto source = getDebugSource(ar);
+		if(currentLine != line || file != source)
+		{
+			debugger->HandleBreak();
+		}
+		return;
 	}
-	else StackLevelBasedState::ProcessHook(debugger, L, ar);
+
+	StackLevelBasedState::ProcessHook(debugger, L, ar);
 }
 
 bool HookStateStepOut::Start(std::shared_ptr<Debugger> debugger, lua_State* current)
