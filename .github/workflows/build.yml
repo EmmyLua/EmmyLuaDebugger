@@ -3,57 +3,50 @@ name: Emmy Debugger Core
 on: [push]
 
 jobs:
-  build-windows:
-    name: Build Windows
-    runs-on: windows-latest
-    steps:
-    - uses: actions/checkout@v1
-    
-    - name: Build x86
-      run: |
-        mkdir x86
-        cd x86
-        cmake ..  -A Win32 -G "Visual Studio 17 2022"
-        cmake --build . --config RelWithDebInfo --target install
-    
-    - name: Upload x86
-      uses: actions/upload-artifact@v1.0.0
-      with:
-        name: win32-x86
-        path: x86/install/bin
-
-    - name: Build x64
-      run: |
-        mkdir x64
-        cd x64
-        cmake ../ -G "Visual Studio 17 2022"
-        cmake --build . --config RelWithDebInfo --target install
-    
-    - name: Upload x64
-      uses: actions/upload-artifact@v1.0.0
-      with:
-        name: win32-x64
-        path: x64/install/bin
-
-  build-other:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          - { os: windows-latest, target: windows, platform: win32-x64}
+          - { os: windows-latest, target: windows, platform: win32-x86, cmake_arch: "-A Win32"}
           - { os: ubuntu-latest, target: linux, platform: linux-x64}
           - { os: macos-latest, target: darwin, platform: darwin-x64}
           - { os: macos-latest, target: darwin, platform: darwin-arm64}
     steps:
     - uses: actions/checkout@v1
 
-    - name: Build
+    - name: Build-windows
+      if: startsWith(matrix.os, 'windows')
+      run: |
+        mkdir build
+        cd build
+        cmake .. ${{ matrix.cmake_arch }} -G "Visual Studio 17 2022" 
+        cmake --build . --config Release
+        cmake --install . --config Release --prefix ${{ github.workspace }}/artifact/
+    - name: Build-linux
+      if: startsWith(matrix.os, 'ubuntu')
       run: |
         mkdir build
         cd build
         cmake ..
         cmake --build . --config Release
         cmake --install . --config Release --prefix ${{ github.workspace }}/artifact/
+    - name: Build-macosx
+      if: startsWith(matrix.os, 'macos')
+      run: |
+        mkdir build
+        cd build
+        if [[ "${{ matrix.platform }}" = darwin-arm64 ]]; then
+          cmake .. -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+        else
+          cmake ..
+        fi
+        cmake --build . --config Release
+        cmake --install . --config Release --prefix ${{ github.workspace }}/artifact/
+
+
     - name: Upload
       uses: actions/upload-artifact@v2
       with:
