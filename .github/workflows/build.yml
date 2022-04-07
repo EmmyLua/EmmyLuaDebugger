@@ -39,7 +39,7 @@ jobs:
         mkdir build
         cd build
         if [[ "${{ matrix.platform }}" = darwin-arm64 ]]; then
-          cmake .. -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+          cmake .. -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_SYSTEM_PROCESSOR=arm64
         else
           cmake ..
         fi
