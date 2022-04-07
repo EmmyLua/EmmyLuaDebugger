@@ -39,9 +39,9 @@ jobs:
         mkdir build
         cd build
         if [[ "${{ matrix.platform }}" = darwin-arm64 ]]; then
-          cmake .. -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_SYSTEM_PROCESSOR=arm64
+          cmake .. -DCMAKE_OSX_ARCHITECTURES=arm64
         else
-          cmake ..
+          cmake .. -DCMAKE_OSX_ARCHITECTURES=x86_64
         fi
         cmake --build . --config Release
         cmake --install . --config Release --prefix ${{ github.workspace }}/artifact/
