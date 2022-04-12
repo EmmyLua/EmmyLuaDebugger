@@ -22,7 +22,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake .. ${{ matrix.cmake_arch }} -G "Visual Studio 17 2022" 
+        cmake .. ${{ matrix.cmake_arch }} -G "Visual Studio 17 2022" -DCMAKE_USER_MAKE_RULES_OVERRIDE="${{ github.workspace }}/cmake/flags_override.cmake"
         cmake --build . --config RelWithDebInfo
         cmake --install . --config RelWithDebInfo --prefix ${{ github.workspace }}/artifact/
     - name: Build-linux
