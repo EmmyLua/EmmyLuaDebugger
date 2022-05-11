@@ -418,29 +418,23 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 				// metatable
 				auto metatable = std::make_shared<Variable>();
 				metatable->name = "(metatable)";
-				metatable->nameType = LUA_TSTRING;
+				metatable->nameType = lua_type(L, -1);
 
 				GetVariable(metatable, -1, depth - 1);
 				variable->children.push_back(metatable);
 
 				//__index
-				{
-					lua_getfield(L, -1, "__index");
+				if(lua_istable(L, -1)){
+					// fix BUG 导致涉及到FGUI的框架崩溃
+					lua_pushstring(L, "__index");
+					lua_rawget(L, -2);
 					if (!lua_isnil(L, -1))
 					{
 						auto v = std::make_shared<Variable>();
 						v->name = "(metatable.__index)";
-						v->nameType = LUA_TSTRING;
+						v->nameType = lua_type(L, -1);
 						GetVariable(v, -1, depth - 1);
 						variable->children.push_back(v);
-						// if (depth > 1)
-						// {
-						// 	for (auto child : v->children)
-						// 	{
-						// 		variable->children.push_back(child->Clone());
-						// 	}
-						// }
-						// tableSize += v->children.size();
 					}
 					lua_pop(L, 1);
 				}
