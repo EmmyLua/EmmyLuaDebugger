@@ -20,7 +20,9 @@ else()
 endif()
 
 if(WIN32)
-    target_compile_definitions(lua53 PUBLIC -DLUA_BUILD_AS_DLL)
+    target_compile_definitions(lua51 PUBLIC -DLUA_BUILD_AS_DLL)
+else()
+    target_compile_options(lua51 PUBLIC -fPIC)
 endif(WIN32)
 
 target_sources(lua53 PRIVATE
