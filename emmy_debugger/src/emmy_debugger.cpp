@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cassert>
 #include <sstream>
+#include <cstring>
 #include "emmy_debugger/emmy_facade.h"
 #include "emmy_debugger/hook_state.h"
 #include "emmy_debugger/emmy_helper.h"
