@@ -43,7 +43,7 @@ Transporter::~Transporter()
 
 void Transporter::Send(int cmd, const nlohmann::json document)
 {
-	std::string documentText = document.dump();
+	std::string documentText = document.dump(-1, ' ', false, nlohmann::detail::error_handler_t::ignore);
 	Send(cmd, documentText.data(), documentText.size());
 }
 
@@ -219,7 +219,7 @@ void Transporter::Send(uv_stream_t* handler, const char* data, size_t len)
 	auto* writeReq = new write_req_t();
 	char* newData = static_cast<char*>(malloc(len));
 
-	memcpy(newData , data, len);
+	memcpy(newData, data, len);
 	writeReq->buf = uv_buf_init(newData, len);
 	writeReq->handler = handler;
 
