@@ -17,7 +17,8 @@
 
 #include <thread>
 #include "uv.h"
-#include "rapidjson/document.h"
+#include "nlohmann/json_fwd.hpp"
+
 class EmmyFacade;
 
 enum class MessageCMD {
@@ -69,7 +70,7 @@ public:
 	virtual int Stop();
 	bool IsConnected() const;
 	bool IsServerMode() const;
-	void Send(int cmd, const rapidjson::Document& document);
+	void Send(int cmd, const nlohmann::json document);
 	// void SetHandler(std::shared_ptr<EmmyFacade> facade);
 	void OnAfterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf);
 protected:
@@ -78,7 +79,7 @@ protected:
 	// send raw data
 	void Send(uv_stream_t* handler, const char* data, size_t len);
 	void Receive(const char* data, size_t len);
-	void OnReceiveMessage(const rapidjson::Document& document);
+	void OnReceiveMessage(const nlohmann::json document);
 	void StartEventLoop();
 	void Run();
 	virtual void OnDisconnect();

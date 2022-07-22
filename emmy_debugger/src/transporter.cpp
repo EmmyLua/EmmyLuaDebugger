@@ -16,10 +16,7 @@
 #include "emmy_debugger/transporter.h"
 #include <functional>
 #include "emmy_debugger/emmy_facade.h"
-#include "rapidjson/document.h"
-#include "rapidjson/writer.h"
-#include "rapidjson/stringbuffer.h"
-
+#include "nlohmann/json.hpp"
 
 Transporter::Transporter(bool server):
 	receiveSize(0),
@@ -44,12 +41,10 @@ Transporter::~Transporter()
 		thread.join();
 }
 
-void Transporter::Send(int cmd, const rapidjson::Document& document)
+void Transporter::Send(int cmd, const nlohmann::json document)
 {
-	rapidjson::StringBuffer buffer;
-	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-	document.Accept(writer);
-	Send(cmd, buffer.GetString(), buffer.GetSize());
+	std::string documentText = document.dump();
+	Send(cmd, documentText.data(), documentText.size());
 }
 
 // void Transporter::SetHandler(std::shared_ptr<EmmyFacade> facade) {
@@ -109,8 +104,8 @@ void Transporter::Receive(const char* data, size_t len)
 			}
 			else
 			{
-				rapidjson::Document document;
-				document.Parse(buf + start, pos - start);
+				std::string text(buf + start, pos - start);
+				auto document = nlohmann::json::parse(text);
 				OnReceiveMessage(document);
 			}
 			readHead = !readHead;
@@ -125,7 +120,7 @@ void Transporter::Receive(const char* data, size_t len)
 	}
 }
 
-void Transporter::OnReceiveMessage(const rapidjson::Document& document)
+void Transporter::OnReceiveMessage(const nlohmann::json document)
 {
 	EmmyFacade::Get().OnReceiveMessage(document);
 }

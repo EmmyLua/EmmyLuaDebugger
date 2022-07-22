@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 #include "emmy_debugger/proto/pipeline_server_transporter.h"
+#include <cassert>
 
 static void echo_alloc(uv_handle_t* handle,
                        size_t suggested_size,

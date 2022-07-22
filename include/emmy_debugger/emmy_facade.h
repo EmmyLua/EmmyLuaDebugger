@@ -15,10 +15,10 @@
 */
 #pragma once
 
-#include <rapidjson/document.h>
 #include <mutex>
 #include <condition_variable>
 #include <map>
+#include "nlohmann/json_fwd.hpp"
 #include "emmy_debugger/transporter.h"
 #include "emmy_debugger/api/lua_api.h"
 #include "emmy_debugger/emmy_debugger_manager.h"
@@ -61,7 +61,7 @@ public:
 	int OnConnect(bool suc);
 	int OnDisconnect();
 	void WaitIDE(bool force = false, int timeout = 0);
-	void OnReceiveMessage(const rapidjson::Document& document);
+	void OnReceiveMessage(const nlohmann::json document);
 	bool OnBreak(std::shared_ptr<Debugger> debugger);
 	void Destroy();
 	void OnEvalResult(std::shared_ptr<EvalContext> context);
@@ -89,12 +89,12 @@ public:
 	std::function<void()> StartHook;
 
 private:
-	void OnInitReq(const rapidjson::Document& document);
-	void OnReadyReq(const rapidjson::Document& document);
-	void OnAddBreakPointReq(const rapidjson::Document& document);
-	void OnRemoveBreakPointReq(const rapidjson::Document& document);
-	void OnActionReq(const rapidjson::Document& document);
-	void OnEvalReq(const rapidjson::Document& document);
+	void OnInitReq(const nlohmann::json document);
+	void OnReadyReq(const nlohmann::json document);
+	void OnAddBreakPointReq(const nlohmann::json document);
+	void OnRemoveBreakPointReq(const nlohmann::json document);
+	void OnActionReq(const nlohmann::json document);
+	void OnEvalReq(const nlohmann::json document);
 
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;

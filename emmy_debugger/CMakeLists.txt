@@ -11,7 +11,7 @@ add_dependencies(
 
 target_include_directories(emmy_debugger PUBLIC 
     ${emmy_SOURCE_DIR}/include
-    ${emmy_SOURCE_DIR}/third-party/rapidjson-1.1.0/include
+    ${emmy_SOURCE_DIR}/third-party/nlohmann/include
     ${emmy_SOURCE_DIR}/third-party/libuv-1.29.0/include
     PRIVATE src
 )
@@ -55,7 +55,6 @@ target_sources(emmy_debugger PUBLIC
     ${emmy_debugger_SOURCE_DIR}/src/lua_version.cpp
 )
 
-target_compile_definitions(emmy_debugger PUBLIC -DRAPIDJSON_HAS_STDSTRING)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 	target_compile_options(emmy_debugger PUBLIC /utf-8)
@@ -121,8 +120,6 @@ else()
         ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_jit.cpp
     )
    
-
-
 endif(EMMY_USE_LUA_SOURCE)
 
 

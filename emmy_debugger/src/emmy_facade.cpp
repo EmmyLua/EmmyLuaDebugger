@@ -17,6 +17,7 @@
 #include "emmy_debugger/emmy_facade.h"
 #include <cstdarg>
 #include <cstdint>
+#include "nlohmann/json.hpp"
 #include "emmy_debugger/proto/socket_server_transporter.h"
 #include "emmy_debugger/proto/socket_client_transporter.h"
 #include "emmy_debugger/proto/pipeline_server_transporter.h"
@@ -267,62 +268,58 @@ WorkMode EmmyFacade::GetWorkMode()
 	return workMode;
 }
 
-void EmmyFacade::OnReceiveMessage(const rapidjson::Document& document)
+void EmmyFacade::OnReceiveMessage(const nlohmann::json document)
 {
-	const auto cmd = static_cast<MessageCMD>(document["cmd"].GetInt());
-	switch (cmd)
+	if (document["cmd"].is_number_integer())
 	{
-	case MessageCMD::InitReq:
-		OnInitReq(document);
-		break;
-	case MessageCMD::ReadyReq:
-		OnReadyReq(document);
-		break;
-	case MessageCMD::AddBreakPointReq:
-		OnAddBreakPointReq(document);
-		break;
-	case MessageCMD::RemoveBreakPointReq:
-		OnRemoveBreakPointReq(document);
-		break;
-	case MessageCMD::ActionReq:
-		//assert(isIDEReady);
-		OnActionReq(document);
-		break;
-	case MessageCMD::EvalReq:
-		//assert(isIDEReady);
-		OnEvalReq(document);
-		break;
-	default:
-		break;
+		switch (document["cmd"].get<MessageCMD>())
+		{
+		case MessageCMD::InitReq:
+			OnInitReq(document);
+			break;
+		case MessageCMD::ReadyReq:
+			OnReadyReq(document);
+			break;
+		case MessageCMD::AddBreakPointReq:
+			OnAddBreakPointReq(document);
+			break;
+		case MessageCMD::RemoveBreakPointReq:
+			OnRemoveBreakPointReq(document);
+			break;
+		case MessageCMD::ActionReq:
+			//assert(isIDEReady);
+			OnActionReq(document);
+			break;
+		case MessageCMD::EvalReq:
+			//assert(isIDEReady);
+			OnEvalReq(document);
+			break;
+		default:
+			break;
+		}
 	}
 }
 
-void EmmyFacade::OnInitReq(const rapidjson::Document& document)
+void EmmyFacade::OnInitReq(const nlohmann::json document)
 {
 	if (StartHook)
 	{
 		StartHook();
 	}
 
-	if (document.HasMember("emmyHelper"))
+	if (document["emmyHelper"].is_string())
 	{
-		emmyDebuggerManager->helperCode = document["emmyHelper"].GetString();
+		emmyDebuggerManager->helperCode = document["emmyHelper"];
 	}
 
 	//file extension names: .lua, .txt, .lua.txt ...
-	if (document.HasMember("ext"))
+	if (document["ext"].is_array())
 	{
-		std::vector<std::string> extNames;
-		const auto ext = document["ext"].GetArray();
-		auto it = ext.begin();
-		while (it != ext.end())
+		emmyDebuggerManager->extNames.clear();
+		for (auto& ext : document["ext"])
 		{
-			const auto extName = (*it).GetString();
-			extNames.emplace_back(extName);
-			++it;
+			emmyDebuggerManager->extNames.emplace_back(ext);
 		}
-
-		emmyDebuggerManager->extNames = extNames;
 	}
 
 	// 这里有个线程安全问题，消息线程和lua 执行线程不是相同线程，但是没有一个锁能让我做同步
@@ -334,67 +331,58 @@ void EmmyFacade::OnInitReq(const rapidjson::Document& document)
 	StartDebug();
 }
 
-void EmmyFacade::OnReadyReq(const rapidjson::Document& document)
+void EmmyFacade::OnReadyReq(const nlohmann::json document)
 {
 	isIDEReady = true;
 	waitIDECV.notify_all();
 }
 
-void FillVariables(rapidjson::Value& container, const std::vector<std::shared_ptr<Variable>>& variables,
-                   rapidjson::MemoryPoolAllocator<>& allocator);
+nlohmann::json FillVariables(std::vector<std::shared_ptr<Variable>>& variables);
 
-void FillVariable(rapidjson::Value& container, const std::shared_ptr<Variable> variable,
-                  rapidjson::MemoryPoolAllocator<>& allocator)
+nlohmann::json FillVariable(const std::shared_ptr<Variable> variable)
 {
-	container.AddMember("name", variable->name, allocator);
-	container.AddMember("nameType", variable->nameType, allocator);
-	container.AddMember("value", variable->value, allocator);
-	container.AddMember("valueType", variable->valueType, allocator);
-	container.AddMember("valueTypeName", variable->valueTypeName, allocator);
-	container.AddMember("cacheId", variable->cacheId, allocator);
+	auto obj = nlohmann::json::object();
+	obj["name"] = variable->name;
+	obj["nameType"] = variable->nameType;
+	obj["value"] = variable->value;
+	obj["valueType"] = variable->valueType;
+	obj["valueTypeName"] = variable->valueTypeName;
+	obj["cacheId"] = variable->cacheId;
+
 	// children
 	if (!variable->children.empty())
 	{
-		rapidjson::Value childrenValue(rapidjson::kArrayType);
-		FillVariables(childrenValue, variable->children, allocator);
-		container.AddMember("children", childrenValue, allocator);
+		obj["children"] = FillVariables(variable->children);
 	}
+	return obj;
 }
 
-void FillVariables(rapidjson::Value& container, const std::vector<std::shared_ptr<Variable>>& variables,
-                   rapidjson::MemoryPoolAllocator<>& allocator)
+nlohmann::json FillVariables(std::vector<std::shared_ptr<Variable>>& variables)
 {
-	std::vector<std::shared_ptr<Variable>> tmp = variables;
-	for (auto variable : tmp)
+	auto arr = nlohmann::json::array();
+	for (auto& child : variables)
 	{
-		rapidjson::Value variableValue(rapidjson::kObjectType);
-		FillVariable(variableValue, variable, allocator);
-		container.PushBack(variableValue, allocator);
+		arr.push_back(FillVariable(child));
 	}
+	return arr;
 }
 
-void FillStacks(rapidjson::Value& container, std::vector<std::shared_ptr<Stack>>& stacks,
-                rapidjson::MemoryPoolAllocator<>& allocator)
+nlohmann::json FillStacks(std::vector<std::shared_ptr<Stack>>& stacks)
 {
+	auto stacksJson = nlohmann::json::array();
 	for (auto stack : stacks)
 	{
-		rapidjson::Value stackValue(rapidjson::kObjectType);
-		stackValue.AddMember("file", stack->file, allocator);
-		stackValue.AddMember("functionName", stack->functionName, allocator);
-		stackValue.AddMember("line", stack->line, allocator);
-		stackValue.AddMember("level", stack->level, allocator);
+		auto stackJson = nlohmann::json::object();
+		stackJson["file"] = stack->file;
+		stackJson["functionName"] = stack->functionName;
+		stackJson["line"] = stack->line;
+		stackJson["level"] = stack->level;
+		stackJson["localVariables"] = FillVariables(stack->localVariables);
+		stackJson["upvalueVariables"] = FillVariables(stack->localVariables);
 
-		// local variables
-		rapidjson::Value localVariables(rapidjson::kArrayType);
-		FillVariables(localVariables, stack->localVariables, allocator);
-		stackValue.AddMember("localVariables", localVariables, allocator);
-		// upvalue variables
-		rapidjson::Value upvalueVariables(rapidjson::kArrayType);
-		FillVariables(upvalueVariables, stack->upvalueVariables, allocator);
-		stackValue.AddMember("upvalueVariables", upvalueVariables, allocator);
-
-		container.PushBack(stackValue, allocator);
+		stacksJson.push_back(stackJson);
 	}
+	return stacksJson;
 }
 
 bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger)
@@ -412,117 +400,112 @@ bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger)
 		return std::make_shared<Stack>();
 	});
 
-	rapidjson::Document document;
-	document.SetObject();
-	auto& allocator = document.GetAllocator();
-	document.AddMember("cmd", static_cast<int>(MessageCMD::BreakNotify), allocator);
-	//stacks
-	rapidjson::Value stacksValue(rapidjson::kArrayType);
-	FillStacks(stacksValue, stacks, allocator);
-	document.AddMember("stacks", stacksValue, allocator);
+	auto obj = nlohmann::json::object();
+	obj["cmd"] = static_cast<int>(MessageCMD::BreakNotify);
+	obj["stacks"] = FillStacks(stacks);
 
-	transporter->Send(int(MessageCMD::BreakNotify), document);
+	transporter->Send(int(MessageCMD::BreakNotify), obj);
 
 	return true;
 }
 
-void ReadBreakPoint(const rapidjson::Value& value, std::shared_ptr<BreakPoint> bp)
+void ReadBreakPoint(const nlohmann::json value, std::shared_ptr<BreakPoint> bp)
 {
-	if (value.HasMember("file"))
+	if (value.count("file") != 0)
 	{
-		bp->file = value["file"].GetString();
+		bp->file = value["file"];
 	}
-	if (value.HasMember("line"))
+	if (value.count("line") != 0)
 	{
-		bp->line = value["line"].GetInt();
+		bp->line = value["line"];
 	}
-	if (value.HasMember("condition"))
+	if (value.count("condition") != 0)
 	{
-		bp->condition = value["condition"].GetString();
+		bp->condition = value["condition"];
 	}
-	if (value.HasMember("hitCondition"))
+	if (value.count("hitCondition") != 0)
 	{
-		bp->hitCondition = value["hitCondition"].GetString();
+		bp->hitCondition = value["hitCondition"];
 	}
-	if (value.HasMember("logMessage"))
+	if (value.count("logMessage") != 0)
 	{
-		bp->logMessage = value["logMessage"].GetString();
+		bp->logMessage = value["logMessage"];
 	}
 }
 
-void EmmyFacade::OnAddBreakPointReq(const rapidjson::Document& document)
+void EmmyFacade::OnAddBreakPointReq(const nlohmann::json document)
 {
-	if (document.HasMember("clear"))
+	if (document.count("clear") != 0 && document["clear"].is_boolean())
 	{
-		const auto all = document["clear"].GetBool();
+		bool all = document["clear"];
 		if (all)
 		{
 			emmyDebuggerManager->RemoveAllBreakPoints();
 		}
 	}
-	if (document.HasMember("breakPoints"))
+	if (document.count("breakPoints") != 0 && document["breakPoints"].is_array())
 	{
-		const auto docBreakPoints = document["breakPoints"].GetArray();
-		auto it = docBreakPoints.begin();
-		while (it != docBreakPoints.end())
+		for (auto docBreakPoints : document["breakPoints"])
 		{
 			auto bp = std::make_shared<BreakPoint>();
-			ReadBreakPoint(*it, bp);
-
 			bp->hitCount = 0;
-			// ParsePathParts(bp->file, bp->pathParts);
-
+			ReadBreakPoint(docBreakPoints, bp);
 			emmyDebuggerManager->AddBreakpoint(bp);
-
-			++it;
 		}
 	}
 	// todo: response
 }
 
-void EmmyFacade::OnRemoveBreakPointReq(const rapidjson::Document& document)
+void EmmyFacade::OnRemoveBreakPointReq(const nlohmann::json document)
 {
-	if (document.HasMember("breakPoints"))
+	if (document.count("breakPoints") != 0 && document["breakPoints"].is_array())
 	{
-		const auto breakPoints = document["breakPoints"].GetArray();
-		auto it = breakPoints.begin();
-		while (it != breakPoints.end())
+		for (auto& breakpoint : document["breakPoints"])
 		{
 			auto bp = std::make_shared<BreakPoint>();
-			ReadBreakPoint(*it, bp);
+			ReadBreakPoint(breakpoint, bp);
 			emmyDebuggerManager->RemoveBreakpoint(bp->file, bp->line);
-			++it;
 		}
 	}
 	// todo: response
 }
 
-void EmmyFacade::OnActionReq(const rapidjson::Document& document)
+void EmmyFacade::OnActionReq(const nlohmann::json document)
 {
-	const auto action = static_cast<DebugAction>(document["action"].GetInt());
+	if (document.count("action") != 0 && document["action"].is_number_integer())
+	{
+		const auto action = document["action"].get<DebugAction>();
 
-	emmyDebuggerManager->DoAction(action);
+		emmyDebuggerManager->DoAction(action);
+	}
 	// todo: response
 }
 
-void EmmyFacade::OnEvalReq(const rapidjson::Document& document)
+void EmmyFacade::OnEvalReq(const nlohmann::json document)
 {
-	const auto seq = document["seq"].GetInt();
-	const auto expr = document["expr"].GetString();
-	const auto stackLevel = document["stackLevel"].GetInt();
-	const auto depth = document["depth"].GetInt();
-	auto cacheId = 0;
-	if (document.HasMember("cacheId"))
+	auto context = std::make_shared<EvalContext>();
+	if (document.count("seq") != 0 && document["seq"].is_number_integer())
 	{
-		cacheId = document["cacheId"].GetInt();
+		context->seq = document["seq"];
+	}
+	if (document.count("expr") != 0 && document["expr"].is_string())
+	{
+		context->expr = document["expr"];
 	}
 
-	auto context = std::make_shared<EvalContext>();
-	context->seq = seq;
-	context->expr = expr;
-	context->stackLevel = stackLevel;
-	context->depth = depth;
-	context->cacheId = cacheId;
+	if (document.count("stackLevel") != 0 && document["stackLevel"].is_number_integer())
+	{
+		context->stackLevel = document["stackLevel"];
+	}
+	if (document.count("depth") != 0  && document["depth"].is_number_integer())
+	{
+		context->depth = document["depth"];
+	}
+	if (document.count("cacheId") != 0 && document["cacheId"].is_number_integer())
+	{
+		context->cacheId = document["cacheId"];
+	}
+
 	context->success = false;
 
 	emmyDebuggerManager->Eval(context);
@@ -530,25 +513,22 @@ void EmmyFacade::OnEvalReq(const rapidjson::Document& document)
 
 void EmmyFacade::OnEvalResult(std::shared_ptr<EvalContext> context)
 {
-	rapidjson::Document rspDoc;
-	rspDoc.SetObject();
-	auto& allocator = rspDoc.GetAllocator();
-	rspDoc.AddMember("seq", context->seq, allocator);
-	rspDoc.AddMember("success", context->success, allocator);
+	auto obj = nlohmann::json::object();
+	obj["seq"] = context->seq;
+	obj["success"] = context->success;
+
 	if (context->success)
 	{
-		rapidjson::Value v(rapidjson::kObjectType);
-		FillVariable(v, context->result, allocator);
-		rspDoc.AddMember("value", v, allocator);
+		obj["value"] = FillVariable(context->result);
 	}
 	else
 	{
-		rspDoc.AddMember("error", context->error, allocator);
+		obj["error"] = context->error;
 	}
 
 	if (transporter)
 	{
-		transporter->Send(int(MessageCMD::EvalRsp), rspDoc);
+		transporter->Send(int(MessageCMD::EvalRsp), obj);
 	}
 }
 
@@ -562,14 +542,13 @@ void EmmyFacade::SendLog(LogType type, const char* fmt, ...)
 
 	const std::string msg = buff;
 
-	rapidjson::Document rspDoc;
-	rspDoc.SetObject();
-	auto& allocator = rspDoc.GetAllocator();
-	rspDoc.AddMember("type", (int)type, allocator);
-	rspDoc.AddMember("message", msg, allocator);
+	auto obj = nlohmann::json::object();
+	obj["type"] = type;
+	obj["message"] = msg;
+
 	if (transporter)
 	{
-		transporter->Send(int(MessageCMD::LogNotify), rspDoc);
+		transporter->Send(int(MessageCMD::LogNotify), obj);
 	}
 }
 
@@ -629,13 +608,10 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 				debugger->Attach();
 			}
 			// send attached notify
-			rapidjson::Document rspDoc;
-			rspDoc.SetObject();
-			// fix macosx compiler error,
-			// repidjson 应该有重载决议的错误
-			int64_t state = reinterpret_cast<int64_t>(L);
-			rspDoc.AddMember("state", state, rspDoc.GetAllocator());
-			this->transporter->Send(int(MessageCMD::AttachedNotify), rspDoc);
+			auto obj = nlohmann::json::object();
+			obj["state"] = reinterpret_cast<int64_t>(L);
+
+			this->transporter->Send(int(MessageCMD::AttachedNotify), obj);
 
 			debugger->Hook(ar, L);
 		}

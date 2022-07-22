@@ -15,6 +15,7 @@
 */
 #include "emmy_debugger/emmy_debugger.h"
 #include <algorithm>
+#include <cassert>
 #include <sstream>
 #include "emmy_debugger/emmy_facade.h"
 #include "emmy_debugger/hook_state.h"
@@ -928,6 +929,9 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	}
 	// LOAD AS "return expr"
 	std::string statement = "return ";
+	// 如果是 aaa:bbbb 则纠正为aaa.bbbb
+
+
 	statement.append(evalContext->expr);
 	int r = luaL_loadstring(L, statement.c_str());
 	if (r == LUA_ERRSYNTAX)

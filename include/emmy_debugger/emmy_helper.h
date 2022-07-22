@@ -49,3 +49,6 @@ struct CaseInsensitiveLess final
 bool EndWith(const std::string& source, const std::string& end);
 
 std::string BaseName(const std::string& filePath);
+
+std::string prepareEvalExpr(const std::string& eval);
+

@@ -332,7 +332,7 @@ void handleStateClose(lua_State* L)
 	int isNil = lua_isnil(L, -1);
 	lua_pop(L, 1);
 
-	if(!isNil)
+	if (!isNil)
 	{
 		return;
 	}
@@ -466,4 +466,32 @@ std::string BaseName(const std::string& filePath)
 	{
 		return filePath.substr(sepIndex + 1);
 	}
+}
+
+std::string prepareEvalExpr(const std::string& eval)
+{
+	if (eval.empty())
+	{
+		return eval;
+	}
+
+	int lastIndex = static_cast<int>(eval.size() - 1);
+
+	for (int i = lastIndex; i >= 0; i--)
+	{
+		auto ch = eval[i];
+		if (ch > 0)
+		{
+			if (!isalnum(ch) && ch != '_')
+			{
+				if (ch == ':')
+				{
+					auto newString = eval;
+					newString[i] = '.';
+					return eval;
+				}
+			}
+		}
+	}
+	return eval;
 }
