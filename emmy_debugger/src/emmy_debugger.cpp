@@ -291,6 +291,94 @@ std::string ToPointer(lua_State* L, int index)
 	return ss.str();
 }
 
+
+void DisplayFunction54(std::shared_ptr<Variable> variable, lua_State* L, int index, lua_Debug_54& ar)
+{
+	if (ar.what == nullptr)
+	{
+		return;
+	}
+	std::string what = ar.what;
+	if (what == "Lua")
+	{
+		auto paramNum = ar.nparams > 10 ? 10 : ar.nparams;
+		std::string showValue = "function(";
+		lua_pushvalue(L, index);
+		for (auto i = 0; i != paramNum; i++)
+		{
+			auto paramIndex = i + 1;
+			auto paramName = lua_getlocal(L, nullptr, paramIndex);
+			if (paramName)
+			{
+				showValue.append(paramName);
+				if (paramIndex != paramNum)
+				{
+					showValue.append(", ");
+				}
+			}
+		}
+		showValue.push_back(')');
+		variable->value = showValue;
+		variable->valueType = 9;
+		variable->valueTypeName = "function";
+		// ptr
+		auto ptr = variable->CreateChildNode();
+		ptr->nameType = LUA_TSTRING;
+		ptr->valueType = LUA_TFUNCTION;
+		ptr->name = "pointer";
+		ptr->value = ToPointer(L, index);
+
+		// source
+		if (ar.source)
+		{
+			std::string sourceText = ar.source;
+			if (!sourceText.empty() && sourceText.front() == '@')
+			{
+				sourceText = sourceText.substr(1);
+			}
+			auto source = variable->CreateChildNode();
+			source->nameType = LUA_TSTRING;
+			source->valueType = LUA_TSTRING;
+			source->name = "source";
+			source->value = sourceText.append(":").append(std::to_string(ar.linedefined));
+		}
+	}
+	else if (what == "C")
+	{
+		variable->value = "C " + ToPointer(L, index);
+	}
+	else
+	{
+		variable->value = ToPointer(L, index);
+		return;
+	}
+}
+
+void DisplayFunction(std::shared_ptr<Variable> variable, lua_State* L, int index)
+{
+	lua_Debug ar{};
+	lua_pushvalue(L, index);
+	if (lua_getinfo(L, ">Snu", &ar) == 0)
+	{
+		variable->value = ToPointer(L, index);
+		return;
+	}
+	switch (luaVersion)
+	{
+	case LuaVersion::LUA_54:
+		{
+			DisplayFunction54(variable, L, index, ar.u.ar54);
+			break;
+		}
+	default:
+		{
+			variable->value = ToPointer(L, index);
+			break;
+		}
+	}
+	lua_settop(L, index);
+}
+
 // algorithm optimization
 void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
@@ -316,7 +404,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 	variable->valueType = type;
 
 
-	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA))
+	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA || type == LUA_TFUNCTION))
 	{
 		if (query_variable(L, variable, typeName, index, depth))
 		{
@@ -377,6 +465,10 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 			break;
 		}
 	case LUA_TFUNCTION:
+		{
+			DisplayFunction(variable, L, index);
+			break;
+		}
 	case LUA_TLIGHTUSERDATA:
 	case LUA_TTHREAD:
 		{
@@ -426,7 +518,8 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 				variable->children.push_back(metatable);
 
 				//__index
-				if(lua_istable(L, -1)){
+				if (lua_istable(L, -1))
+				{
 					// fix BUG 导致涉及到FGUI的框架崩溃
 					lua_pushstring(L, "__index");
 					lua_rawget(L, -2);

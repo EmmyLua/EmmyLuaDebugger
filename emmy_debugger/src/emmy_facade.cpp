@@ -378,7 +378,7 @@ nlohmann::json FillStacks(std::vector<std::shared_ptr<Stack>>& stacks)
 		stackJson["line"] = stack->line;
 		stackJson["level"] = stack->level;
 		stackJson["localVariables"] = FillVariables(stack->localVariables);
-		stackJson["upvalueVariables"] = FillVariables(stack->localVariables);
+		stackJson["upvalueVariables"] = FillVariables(stack->upvalueVariables);
 
 		stacksJson.push_back(stackJson);
 	}
