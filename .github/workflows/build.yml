@@ -31,7 +31,11 @@ jobs:
       run: |
         mkdir build
         cd build
-        cmake ..
+        if [[ "${{ matrix.platform }}" = linux-arm64 ]]; then
+          cmake .. -DCMAKE_ARCHITECTURES=arm64
+        else
+          cmake .. -DCMAKE_ARCHITECTURES=x86_64
+        fi
         cmake --build . --config RelWithDebInfo
         cmake --install . --config RelWithDebInfo --prefix ${{ github.workspace }}/artifact/
     - name: Build-macosx
@@ -93,6 +97,12 @@ jobs:
           filename: linux-x64.zip
           directory: linux-x64
           path: emmy_core.so
+      - name: zip linux-arm64
+        uses: TheDoctor0/zip-release@master
+        with:
+          filename: linux-arm64.zip
+          directory: linux-arm64
+          path: emmy_core.so
       - name: zip darwin-x64
         uses: TheDoctor0/zip-release@master
         with:
@@ -117,5 +127,6 @@ jobs:
             win32-x86/win32-x86.zip
             darwin-arm64/darwin-arm64.zip
             darwin-x64/darwin-x64.zip
+            linux-x64/linux-arm64.zip
             linux-x64/linux-x64.zip
           token: ${{ secrets.RELEASE }}
