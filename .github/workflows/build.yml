@@ -31,11 +31,7 @@ jobs:
       run: |
         mkdir build
         cd build
-        if [[ "${{ matrix.platform }}" = linux-arm64 ]]; then
-          cmake .. -DCMAKE_ARCHITECTURES=arm64
-        else
-          cmake .. -DCMAKE_ARCHITECTURES=x86_64
-        fi
+        cmake ..
         cmake --build . --config RelWithDebInfo
         cmake --install . --config RelWithDebInfo --prefix ${{ github.workspace }}/artifact/
     - name: Build-macosx
