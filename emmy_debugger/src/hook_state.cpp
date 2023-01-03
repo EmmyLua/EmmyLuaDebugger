@@ -66,18 +66,18 @@ void StackLevelBasedState::UpdateStackLevel(std::shared_ptr<Debugger> debugger, 
 	// have any other instructions to execute. it triggers three returns:
 	// "return, tail return, return", which needs to be accounted for.
 
-	newStackLevel = debugger->GetStackLevel(true);
+	newStackLevel = debugger->GetStackLevel(false);
 
 	// "cheap" version
-	lua_Debug ar2{};
-	for (int i = newStackLevel + 1; i >= 0; --i)
-	{
-		if (lua_getstack(L, i, &ar2))
-		{
-			newStackLevel = i + 1;
-			break;
-		}
-	}
+	// lua_Debug ar2{};
+	// for (int i = newStackLevel + 1; i >= 0; --i)
+	// {
+	// 	if (lua_getstack(L, i, &ar2))
+	// 	{
+	// 		newStackLevel = i + 1;
+	// 		break;
+	// 	}
+	// }
 }
 
 bool HookStateStepIn::Start(std::shared_ptr<Debugger> debugger, lua_State* current)
