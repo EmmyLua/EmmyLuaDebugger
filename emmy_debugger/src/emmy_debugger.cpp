@@ -648,6 +648,9 @@ void Debugger::DoAction(DebugAction action)
 	case DebugAction::Stop:
 		SetHookState(manager->stateStop);
 		break;
+	case DebugAction::StepOut:
+		SetHookState(manager->stateStepOut);
+		break;
 	default: break;
 	}
 }
