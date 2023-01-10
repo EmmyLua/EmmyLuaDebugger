@@ -69,7 +69,7 @@ public:
 	void AsyncDoString(const std::string& code);
 	bool Eval(std::shared_ptr<EvalContext> evalContext, bool force = false);
 	bool GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc);
-	void GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper = true);
+	void GetVariable(lua_State* L, std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper = true);
 	void DoAction(DebugAction action);
 	void EnterDebugMode();
 	void ExitDebugMode();

@@ -39,7 +39,7 @@ int metaQuery(lua_State* L)
 
 	if (debugger && variable)
 	{
-		debugger->GetVariable(variable, index, static_cast<int>(depth), queryHelper);
+		debugger->GetVariable(L, variable, index, static_cast<int>(depth), queryHelper);
 	}
 	return 0;
 }

@@ -257,6 +257,8 @@ typedef const char*(*dll_lua_tolstring)(lua_State* L, int idx, size_t* len);
 DEF_LUA_API(lua_tolstring);
 typedef int (*dll_lua_toboolean)(lua_State* L, int idx);
 DEF_LUA_API(lua_toboolean);
+typedef lua_State* (*dll_lua_tothread)(lua_State* L, int idx);
+DEF_LUA_API(lua_tothread);
 typedef void (*dll_lua_pushnil)(lua_State* L);
 DEF_LUA_API(lua_pushnil);
 typedef void (*dll_lua_pushnumber)(lua_State* L, lua_Number n);
