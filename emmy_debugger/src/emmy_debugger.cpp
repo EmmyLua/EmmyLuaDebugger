@@ -105,7 +105,7 @@ void Debugger::Hook(lua_Debug* ar, lua_State* L)
 		return;
 	}
 	// 设置当前协程
-	currentL = L;
+	SetCurrentState(L);
 
 	if (getDebugEvent(ar) == LUA_HOOKLINE)
 	{
@@ -180,6 +180,28 @@ bool Debugger::IsMainCoroutine(lua_State* L) const
 	return L == mainL;
 }
 
+lua_State* Debugger::queryParentThread(lua_State* L)
+{
+    lua_State* PL;
+    const int t = lua_gettop(L);
+    lua_getglobal(L, "emmyHelper");
+    if (lua_istable(L, -1))
+    {
+        lua_getfield(L, -1, "queryParentThread");
+        if (lua_isfunction(L, -1))
+        {
+            const auto r = lua_pcall(L, 0, 1, 0);
+            if (r == LUA_OK)
+            {
+                PL = lua_tothread(L, -1);
+            }
+        }
+    }
+    lua_settop(L, t);
+
+	return PL;
+}
+
 bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc)
 {
 	if (!currentL)
@@ -187,8 +209,10 @@ bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAlloc
 		return false;
 	}
 
+	auto prevCurrentL = currentL;
 	auto L = currentL;
 
+	int totalLevel = 0;
 	while(true)
 	{
 	    int level = 0;
@@ -206,7 +230,7 @@ bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAlloc
 		    auto stack = alloc();
 		    stack->file = GetFile(&ar);
 		    stack->functionName = getDebugName(&ar) == nullptr ? "" : getDebugName(&ar);
-		    stack->level = level;
+		    stack->level = totalLevel++;
 		    stack->line = getDebugCurrentLine(&ar);
 		    stacks.push_back(stack);
 		    // get variables
@@ -258,22 +282,7 @@ bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAlloc
 		    level++;
 	    }
 
-		lua_State* PL = nullptr;
-		const int t = lua_gettop(L);
-		lua_getglobal(L, "emmyHelper");
-		if (lua_istable(L, -1))
-		{
-			lua_getfield(L, -1, "queryParentThread");
-			if (lua_isfunction(L, -1))
-			{
-				const auto r = lua_pcall(L, 0, 1, 0);
-				if (r == LUA_OK)
-				{
-					PL = lua_tothread(L, -1);
-				}
-			}
-		}
-		lua_settop(L, t);
+		lua_State* PL = queryParentThread(L);
 
 		if (PL != nullptr)
 		{
@@ -284,6 +293,9 @@ bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAlloc
 			break;
 		}
 	}
+
+	SetCurrentState(prevCurrentL);
+
 	return false;
 }
 
@@ -838,14 +850,12 @@ int EnvIndexFunction(lua_State* L)
 	return 0;
 }
 
-bool Debugger::CreateEnv(int stackLevel)
+bool Debugger::CreateEnv(lua_State* L, int stackLevel)
 {
-	if (!currentL)
+	if (!L)
 	{
 		return false;
 	}
-
-	auto L = currentL;
 
 
 	//assert(L);
@@ -1035,6 +1045,19 @@ bool Debugger::Eval(std::shared_ptr<EvalContext> evalContext, bool force)
 	return true;
 }
 
+int lastlevel(lua_State* L)
+{
+	int level = 0;
+
+	lua_Debug ar;
+	while(lua_getstack(L, level, &ar))
+	{
+		level++;
+	}
+
+	return level;
+}
+
 // host thread
 bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 {
@@ -1044,6 +1067,27 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	}
 
 	auto L = currentL;
+
+	int innerLevel = evalContext->stackLevel;
+
+	while (L != nullptr)
+	{
+		int level = lastlevel(L);
+		if (innerLevel > level)
+		{
+			innerLevel -= level;
+			L = queryParentThread(L);
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if (L == nullptr)
+	{
+		return false;
+	}
 
 	//auto* const L = L;
 	// From "cacheId"
@@ -1075,7 +1119,7 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	// call
 	const int fIdx = lua_gettop(L);
 	// create env
-	if (!CreateEnv(evalContext->stackLevel))
+	if (!CreateEnv(L, innerLevel))
 		return false;
 	// setup env
 #ifndef EMMY_USE_LUA_SOURCE
