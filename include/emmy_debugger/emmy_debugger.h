@@ -63,7 +63,8 @@ public:
 	 * 判断当前使用的lua_state 是否是main state
 	 */
 	bool IsMainCoroutine(lua_State* L) const;
-	/*
+    lua_State* queryParentThread(lua_State* L);
+    /*
 	 * 推迟到lua线程执行
 	 */
 	void AsyncDoString(const std::string& code);
@@ -94,7 +95,7 @@ private:
 	std::string GetFile(lua_Debug* ar) const;
 
 	void CheckDoString();
-	bool CreateEnv(int stackLevel);
+	bool CreateEnv(lua_State* L, int stackLevel);
 	bool ProcessBreakPoint(std::shared_ptr<BreakPoint> bp);
 	bool DoEval(std::shared_ptr<EvalContext> evalContext);
 	void DoLogMessage(std::shared_ptr<BreakPoint> bp);
