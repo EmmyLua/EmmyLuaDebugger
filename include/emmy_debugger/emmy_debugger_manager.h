@@ -1,12 +1,13 @@
 ﻿#pragma once
 
+#include "extension_point.h"
+
 #include <memory>
 #include <map>
 #include <set>
 #include <atomic>
 #include "emmy_debugger/hook_state.h"
 #include "emmy_debugger/emmy_debugger.h"
-#include "emmy_debugger/emmy_helper.h"
 #include "api/lua_api.h"
 
 
@@ -42,18 +43,21 @@ public:
 	/*
 	 * 获得当前命中的debugger
 	 */
-	std::shared_ptr<Debugger> GetBreakedpoint();
+	std::shared_ptr<Debugger> GetHitBreakpoint();
 
-	void SetBreakedDebugger(std::shared_ptr<Debugger> debugger);
+	void SetHitDebugger(std::shared_ptr<Debugger> debugger);
 
 	bool IsDebuggerEmpty();
 
 	void AddBreakpoint(std::shared_ptr<BreakPoint> breakpoint);
 	// 返回拷贝后的断点列表
 	std::vector<std::shared_ptr<BreakPoint>> GetBreakpoints();
+
 	void RemoveBreakpoint(const std::string& file, int line);
-	void RemoveAllBreakPoints();
-	void RefreshLineSet();
+
+    void RemoveAllBreakpoints();
+
+    void RefreshLineSet();
 	// 返回拷贝后的断点行集
 	std::set<int> GetLineSet();
 
@@ -83,6 +87,8 @@ public:
 	// 暂时不加
 	std::string helperCode;
 	std::vector<std::string> extNames;
+
+	ExtensionPoint extension;
 private:
 	UniqueIdentifyType GetUniqueIdentify(lua_State* L);
 
@@ -92,7 +98,7 @@ private:
 	std::map<UniqueIdentifyType , std::shared_ptr<Debugger>> debuggers;
 
 	std::mutex breakDebuggerMtx;
-	std::shared_ptr<Debugger> breakedDebugger;
+	std::shared_ptr<Debugger> hitDebugger;
 
 	std::mutex breakpointsMtx;
 	std::vector<std::shared_ptr<BreakPoint>> breakpoints;

@@ -20,8 +20,8 @@
 #include <cstring>
 #include "emmy_debugger/emmy_facade.h"
 #include "emmy_debugger/hook_state.h"
-#include "emmy_debugger/emmy_helper.h"
 #include "emmy_debugger/lua_version.h"
+#include "emmy_debugger/util.h"
 
 #define CACHE_TABLE_NAME "_emmy_cache_table_"
 #define CACHE_QUERY_NAME "_emmy_query_table_"
@@ -180,29 +180,7 @@ bool Debugger::IsMainCoroutine(lua_State* L) const
 	return L == mainL;
 }
 
-lua_State* Debugger::queryParentThread(lua_State* L)
-{
-    lua_State* PL;
-    const int t = lua_gettop(L);
-    lua_getglobal(L, "emmyHelper");
-    if (lua_istable(L, -1))
-    {
-        lua_getfield(L, -1, "queryParentThread");
-        if (lua_isfunction(L, -1))
-        {
-            const auto r = lua_pcall(L, 0, 1, 0);
-            if (r == LUA_OK)
-            {
-                PL = lua_tothread(L, -1);
-            }
-        }
-    }
-    lua_settop(L, t);
-
-	return PL;
-}
-
-bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc)
+bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks)
 {
 	if (!currentL)
 	{
@@ -227,7 +205,7 @@ bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAlloc
 		    {
 			    continue;
 		    }
-		    auto stack = alloc();
+		    auto stack = std::make_shared<Stack>();
 		    stack->file = GetFile(&ar);
 		    stack->functionName = getDebugName(&ar) == nullptr ? "" : getDebugName(&ar);
 		    stack->level = totalLevel++;
@@ -282,7 +260,8 @@ bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAlloc
 		    level++;
 	    }
 
-		lua_State* PL = queryParentThread(L);
+		// TODO
+		lua_State* PL = manager->extension.QueryParentThread(L);
 
 		if (PL != nullptr)
 		{
@@ -453,7 +432,7 @@ void Debugger::GetVariable(lua_State* L, std::shared_ptr<Variable> variable, int
 
 	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA || type == LUA_TFUNCTION))
 	{
-		if (query_variable(L, variable, typeName, index, depth))
+		if (manager->extension.QueryVariable(L, variable, typeName, index, depth))
 		{
 			return;
 		}
@@ -1045,7 +1024,7 @@ bool Debugger::Eval(std::shared_ptr<EvalContext> evalContext, bool force)
 	return true;
 }
 
-int lastlevel(lua_State* L)
+int LastLevel(lua_State* L)
 {
 	int level = 0;
 
@@ -1072,11 +1051,11 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 
 	while (L != nullptr)
 	{
-		int level = lastlevel(L);
+		int level = LastLevel(L);
 		if (innerLevel > level)
 		{
 			innerLevel -= level;
-			L = queryParentThread(L);
+			L = manager->extension.QueryParentThread(L);
 		}
 		else
 		{

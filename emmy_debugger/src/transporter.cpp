@@ -47,10 +47,6 @@ void Transporter::Send(int cmd, const nlohmann::json document)
 	Send(cmd, documentText.data(), documentText.size());
 }
 
-// void Transporter::SetHandler(std::shared_ptr<EmmyFacade> facade) {
-// 	this->facade = facade;
-// }
-
 void Transporter::OnAfterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t* buf)
 {
 	if (nread < 0)
@@ -76,9 +72,9 @@ void Transporter::OnAfterRead(uv_stream_t* handle, ssize_t nread, const uv_buf_t
 
 void Transporter::Receive(const char* data, size_t len)
 {
-	const auto remain = bufSize - receiveSize;
-	if (remain < len)
+	if (bufSize < len + receiveSize)
 	{
+		// maybe a bug
 		buf = static_cast<char*>(realloc(buf, bufSize + len));
 	}
 	memcpy(buf + receiveSize, data, len);
@@ -130,10 +126,7 @@ void Transporter::OnDisconnect()
 	connected = false;
 	readHead = true;
 	receiveSize = 0;
-	// if (facade)
-	// {
 	EmmyFacade::Get().OnDisconnect();
-	// }
 }
 
 void Transporter::OnConnect(bool suc)

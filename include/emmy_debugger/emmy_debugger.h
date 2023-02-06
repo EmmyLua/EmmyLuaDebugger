@@ -63,13 +63,12 @@ public:
 	 * 判断当前使用的lua_state 是否是main state
 	 */
 	bool IsMainCoroutine(lua_State* L) const;
-    lua_State* queryParentThread(lua_State* L);
     /*
 	 * 推迟到lua线程执行
 	 */
 	void AsyncDoString(const std::string& code);
 	bool Eval(std::shared_ptr<EvalContext> evalContext, bool force = false);
-	bool GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc);
+	bool GetStacks(std::vector<std::shared_ptr<Stack>>& stacks);
 	void GetVariable(lua_State* L, std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper = true);
 	void DoAction(DebugAction action);
 	void EnterDebugMode();

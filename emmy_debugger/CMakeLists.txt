@@ -16,24 +16,8 @@ target_include_directories(emmy_debugger PUBLIC
     PRIVATE src
 )
 
-target_sources(emmy_debugger PUBLIC
-
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_debugger.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_debugger_manager.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_facade.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/hook_state.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/lua_version.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/transporter.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/types.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/emmy_helper.h
-    
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/api/lua_api.h
-
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/pipeline_client_transporter.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/pipeline_server_transporter.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/socket_client_transporter.h
-    ${emmy_SOURCE_DIR}/include/emmy_debugger/proto/socket_server_transporter.h
-
+target_sources(emmy_debugger 
+    PRIVATE
     #src/api
     ${emmy_debugger_SOURCE_DIR}/src/api/lua_api.cpp
     ${emmy_debugger_SOURCE_DIR}/src/api/lua_state.cpp
@@ -48,11 +32,13 @@ target_sources(emmy_debugger PUBLIC
     ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger.cpp
     ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger_manager.cpp
     ${emmy_debugger_SOURCE_DIR}/src/emmy_facade.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/emmy_helper.cpp
+    ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger_lib.cpp
     ${emmy_debugger_SOURCE_DIR}/src/hook_state.cpp
     ${emmy_debugger_SOURCE_DIR}/src/stack.cpp
     ${emmy_debugger_SOURCE_DIR}/src/transporter.cpp
     ${emmy_debugger_SOURCE_DIR}/src/lua_version.cpp
+    ${emmy_debugger_SOURCE_DIR}/src/extension_point.cpp
+    ${emmy_debugger_SOURCE_DIR}/src/util.cpp
 )
 
 

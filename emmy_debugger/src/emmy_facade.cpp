@@ -23,8 +23,8 @@
 #include "emmy_debugger/proto/pipeline_server_transporter.h"
 #include "emmy_debugger/proto/pipeline_client_transporter.h"
 #include "emmy_debugger/emmy_debugger.h"
+#include "emmy_debugger/emmy_debugger_lib.h"
 #include "emmy_debugger/transporter.h"
-#include "emmy_debugger/emmy_helper.h"
 #include "emmy_debugger/lua_version.h"
 
 EmmyFacade& EmmyFacade::Get()
@@ -393,12 +393,9 @@ bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger)
 	}
 	std::vector<std::shared_ptr<Stack>> stacks;
 
-	emmyDebuggerManager->SetBreakedDebugger(debugger);
+	emmyDebuggerManager->SetHitDebugger(debugger);
 
-	debugger->GetStacks(stacks, []()
-	{
-		return std::make_shared<Stack>();
-	});
+	debugger->GetStacks(stacks);
 
 	auto obj = nlohmann::json::object();
 	obj["cmd"] = static_cast<int>(MessageCMD::BreakNotify);
@@ -440,7 +437,7 @@ void EmmyFacade::OnAddBreakPointReq(const nlohmann::json document)
 		bool all = document["clear"];
 		if (all)
 		{
-			emmyDebuggerManager->RemoveAllBreakPoints();
+			emmyDebuggerManager->RemoveAllBreakpoints();
 		}
 	}
 	if (document.count("breakPoints") != 0 && document["breakPoints"].is_array())
@@ -601,7 +598,7 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 		if (workMode == WorkMode::Attach)
 		{
 			debugger = emmyDebuggerManager->AddDebugger(L);
-			install_emmy_core(L);
+			install_emmy_debugger(L);
 			if (emmyDebuggerManager->IsRunning())
 			{
 				debugger->Start();
@@ -696,7 +693,7 @@ void EmmyFacade::Attach(lua_State* L)
 	if (!isAPIReady)
 	{
 		// 考虑到emmy_hook use lua source
-		isAPIReady = install_emmy_core(L);
+		isAPIReady = install_emmy_debugger(L);
 	}
 
 	lua_sethook(L, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);

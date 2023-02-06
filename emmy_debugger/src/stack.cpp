@@ -21,46 +21,39 @@
 Variable::Variable()
 	: nameType(LUA_TSTRING),
 	  valueType(0),
-	  cacheId(0)
-{
+	  cacheId(0) {
 }
 
-Variable::~Variable()
-{
+Variable::~Variable() {
 }
 
-std::shared_ptr<Variable> Variable::Clone()
-{
+std::shared_ptr<Variable> Variable::Clone() {
 	auto to = std::make_shared<Variable>();
 	to->name = name;
 	to->nameType = nameType;
 	to->value = value;
 	to->valueType = valueType;
 	to->valueTypeName = valueTypeName;
-	for (auto child : children)
-	{
+	for (auto child: children) {
 		auto c = std::make_shared<Variable>();
 		to->children.push_back(child->Clone());
 	}
 	return to;
 }
 
-std::shared_ptr<Variable> Variable::CreateChildNode()
-{
+std::shared_ptr<Variable> Variable::CreateChildNode() {
 	auto child = std::make_shared<Variable>();
 	children.push_back(child);
 	return child;
 }
 
-Stack::Stack(): level(0), line(0)
-{
+Stack::Stack()
+	: level(0), line(0) {
 }
 
-Stack::~Stack()
-{
+Stack::~Stack() {
 }
 
-std::shared_ptr<Variable> Stack::CreateVariable()
-{
+std::shared_ptr<Variable> Stack::CreateVariable() {
 	return std::make_shared<Variable>();
 }

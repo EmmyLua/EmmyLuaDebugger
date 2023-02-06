@@ -1,6 +1,6 @@
 ﻿#include "emmy_debugger/emmy_debugger_manager.h"
-#include "emmy_debugger/emmy_helper.h"
 #include "emmy_debugger/lua_version.h"
+#include "emmy_debugger/util.h"
 
 EmmyDebuggerManager::EmmyDebuggerManager()
 	: stateBreak(std::make_shared<HookStateBreak>()),
@@ -106,16 +106,16 @@ void EmmyDebuggerManager::RemoveAllDebugger()
 	debuggers.clear();
 }
 
-std::shared_ptr<Debugger> EmmyDebuggerManager::GetBreakedpoint()
+std::shared_ptr<Debugger> EmmyDebuggerManager::GetHitBreakpoint()
 {
 	std::lock_guard<std::mutex> lock(breakDebuggerMtx);
-	return breakedDebugger;
+	return hitDebugger;
 }
 
-void EmmyDebuggerManager::SetBreakedDebugger(std::shared_ptr<Debugger> debugger)
+void EmmyDebuggerManager::SetHitDebugger(std::shared_ptr<Debugger> debugger)
 {
 	std::lock_guard<std::mutex> lock(breakDebuggerMtx);
-	breakedDebugger = debugger;
+	hitDebugger = debugger;
 }
 
 bool EmmyDebuggerManager::IsDebuggerEmpty()
@@ -168,7 +168,7 @@ void EmmyDebuggerManager::RemoveBreakpoint(const std::string& file, int line)
 	RefreshLineSet();
 }
 
-void EmmyDebuggerManager::RemoveAllBreakPoints()
+void EmmyDebuggerManager::RemoveAllBreakpoints()
 {
 	std::lock_guard<std::mutex> lock(breakpointsMtx);
 	breakpoints.clear();
@@ -203,14 +203,14 @@ void EmmyDebuggerManager::HandleBreak(lua_State* L)
 		debugger = AddDebugger(L);
 	}
 
-	SetBreakedDebugger(debugger);
+	SetHitDebugger(debugger);
 
 	debugger->HandleBreak();
 }
 
 void EmmyDebuggerManager::DoAction(DebugAction action)
 {
-	auto debugger = GetBreakedpoint();
+	auto debugger = GetHitBreakpoint();
 	if (debugger)
 	{
 		debugger->DoAction(action);
@@ -219,7 +219,7 @@ void EmmyDebuggerManager::DoAction(DebugAction action)
 
 void EmmyDebuggerManager::Eval(std::shared_ptr<EvalContext> ctx)
 {
-	auto debugger = GetBreakedpoint();
+	auto debugger = GetHitBreakpoint();
 	if (debugger)
 	{
 		debugger->Eval(ctx, false);
