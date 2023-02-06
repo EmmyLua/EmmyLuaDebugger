@@ -105,7 +105,7 @@ void Debugger::Hook(lua_Debug* ar, lua_State* L)
 		return;
 	}
 	// 设置当前协程
-	currentL = L;
+	SetCurrentState(L);
 
 	if (getDebugEvent(ar) == LUA_HOOKLINE)
 	{
@@ -180,6 +180,28 @@ bool Debugger::IsMainCoroutine(lua_State* L) const
 	return L == mainL;
 }
 
+lua_State* Debugger::queryParentThread(lua_State* L)
+{
+    lua_State* PL;
+    const int t = lua_gettop(L);
+    lua_getglobal(L, "emmyHelper");
+    if (lua_istable(L, -1))
+    {
+        lua_getfield(L, -1, "queryParentThread");
+        if (lua_isfunction(L, -1))
+        {
+            const auto r = lua_pcall(L, 0, 1, 0);
+            if (r == LUA_OK)
+            {
+                PL = lua_tothread(L, -1);
+            }
+        }
+    }
+    lua_settop(L, t);
+
+	return PL;
+}
+
 bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAllocatorCB alloc)
 {
 	if (!currentL)
@@ -187,74 +209,93 @@ bool Debugger::GetStacks(std::vector<std::shared_ptr<Stack>>& stacks, StackAlloc
 		return false;
 	}
 
+	auto prevCurrentL = currentL;
 	auto L = currentL;
 
-	int level = 0;
-	while (true)
+	int totalLevel = 0;
+	while(true)
 	{
-		lua_Debug ar{};
-		if (!lua_getstack(L, level, &ar))
+	    int level = 0;
+	    while (true)
+	    {
+		    lua_Debug ar{};
+		    if (!lua_getstack(L, level, &ar))
+		    {
+			    break;
+		    }
+		    if (!lua_getinfo(L, "nSlu", &ar))
+		    {
+			    continue;
+		    }
+		    auto stack = alloc();
+		    stack->file = GetFile(&ar);
+		    stack->functionName = getDebugName(&ar) == nullptr ? "" : getDebugName(&ar);
+		    stack->level = totalLevel++;
+		    stack->line = getDebugCurrentLine(&ar);
+		    stacks.push_back(stack);
+		    // get variables
+		    {
+			    for (int i = 1;; i++)
+			    {
+				    const char* name = lua_getlocal(L, &ar, i);
+				    if (name == nullptr)
+				    {
+					    break;
+				    }
+				    if (name[0] == '(')
+				    {
+					    lua_pop(L, 1);
+					    continue;
+				    }
+
+				    // add local variable
+				    auto var = stack->CreateVariable();
+				    var->name = name;
+				    GetVariable(L, var, -1, 1);
+				    lua_pop(L, 1);
+				    stack->localVariables.push_back(var);
+			    }
+
+			    if (lua_getinfo(L, "f", &ar))
+			    {
+				    const int fIdx = lua_gettop(L);
+				    for (int i = 1;; i++)
+				    {
+					    const char* name = lua_getupvalue(L, fIdx, i);
+					    if (!name)
+					    {
+						    break;
+					    }
+
+					    // add up variable
+					    auto var = stack->CreateVariable();
+					    var->name = name;
+					    GetVariable(L, var, -1, 1);
+					    lua_pop(L, 1);
+					    stack->upvalueVariables.push_back(var);
+				    }
+				    // pop function
+				    lua_pop(L, 1);
+			    }
+		    }
+
+		    level++;
+	    }
+
+		lua_State* PL = queryParentThread(L);
+
+		if (PL != nullptr)
+		{
+			L = PL;
+		}
+		else
 		{
 			break;
 		}
-		if (!lua_getinfo(L, "nSlu", &ar))
-		{
-			continue;
-		}
-		auto stack = alloc();
-		stack->file = GetFile(&ar);
-		stack->functionName = getDebugName(&ar) == nullptr ? "" : getDebugName(&ar);
-		stack->level = level;
-		stack->line = getDebugCurrentLine(&ar);
-		stacks.push_back(stack);
-		// get variables
-		{
-			for (int i = 1;; i++)
-			{
-				const char* name = lua_getlocal(L, &ar, i);
-				if (name == nullptr)
-				{
-					break;
-				}
-				if (name[0] == '(')
-				{
-					lua_pop(L, 1);
-					continue;
-				}
-
-				// add local variable
-				auto var = stack->CreateVariable();
-				var->name = name;
-				GetVariable(var, -1, 1);
-				lua_pop(L, 1);
-				stack->localVariables.push_back(var);
-			}
-
-			if (lua_getinfo(L, "f", &ar))
-			{
-				const int fIdx = lua_gettop(L);
-				for (int i = 1;; i++)
-				{
-					const char* name = lua_getupvalue(L, fIdx, i);
-					if (!name)
-					{
-						break;
-					}
-
-					// add up variable
-					auto var = stack->CreateVariable();
-					var->name = name;
-					GetVariable(var, -1, 1);
-					lua_pop(L, 1);
-					stack->upvalueVariables.push_back(var);
-				}
-				// pop function
-				lua_pop(L, 1);
-			}
-		}
-
-		level++;
 	}
+
+	SetCurrentState(prevCurrentL);
+
 	return false;
 }
 
@@ -380,14 +421,20 @@ void DisplayFunction(std::shared_ptr<Variable> variable, lua_State* L, int index
 }
 
 // algorithm optimization
-void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
+void Debugger::GetVariable(lua_State* L, std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
-	if (!currentL)
+	//if (!currentL)
+	//{
+	//	return;
+	//}
+
+	//auto L = currentL;
+	if (!L) L = currentL;
+
+	if (!L)
 	{
 		return;
 	}
-
-	auto L = currentL;
 
 	// 如果没有计算深度则不予计算
 	if (depth <= 0)
@@ -458,7 +505,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 			{
 				if (lua_getmetatable(L, index))
 				{
-					GetVariable(variable, -1, depth);
+					GetVariable(L, variable, -1, depth);
 					lua_pop(L, 1); //pop meta
 				}
 			}
@@ -499,7 +546,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 					{
 						v->name = ToPointer(L, -2);
 					}
-					GetVariable(v, -1, depth - 1);
+					GetVariable(L, v, -1, depth - 1);
 					variable->children.push_back(v);
 				}
 				lua_pop(L, 1);
@@ -514,7 +561,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 				metatable->name = "(metatable)";
 				metatable->nameType = lua_type(L, -1);
 
-				GetVariable(metatable, -1, depth - 1);
+				GetVariable(L, metatable, -1, depth - 1);
 				variable->children.push_back(metatable);
 
 				//__index
@@ -528,7 +575,7 @@ void Debugger::GetVariable(std::shared_ptr<Variable> variable, int index, int de
 						auto v = std::make_shared<Variable>();
 						v->name = "(metatable.__index)";
 						v->nameType = lua_type(L, -1);
-						GetVariable(v, -1, depth - 1);
+						GetVariable(L, v, -1, depth - 1);
 						variable->children.push_back(v);
 					}
 					lua_pop(L, 1);
@@ -803,14 +850,12 @@ int EnvIndexFunction(lua_State* L)
 	return 0;
 }
 
-bool Debugger::CreateEnv(int stackLevel)
+bool Debugger::CreateEnv(lua_State* L, int stackLevel)
 {
-	if (!currentL)
+	if (!L)
 	{
 		return false;
 	}
-
-	auto L = currentL;
 
 
 	//assert(L);
@@ -1000,6 +1045,19 @@ bool Debugger::Eval(std::shared_ptr<EvalContext> evalContext, bool force)
 	return true;
 }
 
+int lastlevel(lua_State* L)
+{
+	int level = 0;
+
+	lua_Debug ar;
+	while(lua_getstack(L, level, &ar))
+	{
+		level++;
+	}
+
+	return level;
+}
+
 // host thread
 bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 {
@@ -1010,6 +1068,27 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 
 	auto L = currentL;
 
+	int innerLevel = evalContext->stackLevel;
+
+	while (L != nullptr)
+	{
+		int level = lastlevel(L);
+		if (innerLevel > level)
+		{
+			innerLevel -= level;
+			L = queryParentThread(L);
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if (L == nullptr)
+	{
+		return false;
+	}
+
 	//auto* const L = L;
 	// From "cacheId"
 	if (evalContext->cacheId > 0)
@@ -1018,7 +1097,7 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 		if (lua_type(L, -1) == LUA_TTABLE)
 		{
 			lua_getfield(L, -1, std::to_string(evalContext->cacheId).c_str()); // 1: cacheTable, 2: value
-			GetVariable(evalContext->result, -1, evalContext->depth);
+			GetVariable(L, evalContext->result, -1, evalContext->depth);
 			lua_pop(L, 2);
 			return true;
 		}
@@ -1040,7 +1119,7 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	// call
 	const int fIdx = lua_gettop(L);
 	// create env
-	if (!CreateEnv(evalContext->stackLevel))
+	if (!CreateEnv(L, innerLevel))
 		return false;
 	// setup env
 #ifndef EMMY_USE_LUA_SOURCE
@@ -1056,7 +1135,7 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext)
 	if (r == LUA_OK)
 	{
 		evalContext->result->name = evalContext->expr;
-		GetVariable(evalContext->result, -1, evalContext->depth);
+		GetVariable(L, evalContext->result, -1, evalContext->depth);
 		lua_pop(L, 1);
 		return true;
 	}
