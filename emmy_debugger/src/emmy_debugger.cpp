@@ -182,7 +182,8 @@ bool Debugger::IsMainCoroutine(lua_State* L) const
 
 lua_State* Debugger::queryParentThread(lua_State* L)
 {
-    lua_State* PL;
+    lua_State* PL = nullptr;
+
     const int t = lua_gettop(L);
     lua_getglobal(L, "emmyHelper");
     if (lua_istable(L, -1))
