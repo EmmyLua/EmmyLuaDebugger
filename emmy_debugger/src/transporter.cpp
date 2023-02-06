@@ -102,6 +102,7 @@ void Transporter::Receive(const char* data, size_t len)
 			{
 				std::string text(buf + start, pos - start);
 				auto document = nlohmann::json::parse(text);
+				// bug 如果lua代码执行结束,这里行为未定义
 				OnReceiveMessage(document);
 			}
 			readHead = !readHead;
