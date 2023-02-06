@@ -1,5 +1,5 @@
 ﻿#include "emmy_debugger/util.h"
-
+#include <cstring>
 
 // glibc 函数
 int __strncasecmp(const char *s1, const char *s2, int n) {
