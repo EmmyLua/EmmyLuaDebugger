@@ -3,3 +3,6 @@ build
 .vs
 out
 build_script
+cmake-build-debug
+cmake-build-release
+.idea
