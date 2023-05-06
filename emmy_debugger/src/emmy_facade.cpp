@@ -239,6 +239,8 @@ int EmmyFacade::OnDisconnect()
 
 	emmyDebuggerManager->OnDisconnect();
 
+	emmyDebuggerManager->RemoveAllBreakpoints();
+
 	if (workMode == WorkMode::Attach)
 	{
 		emmyDebuggerManager->RemoveAllDebugger();
