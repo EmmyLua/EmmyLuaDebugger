@@ -311,7 +311,7 @@ std::string ToPointer(lua_State* L, int index)
 	return ss.str();
 }
 
-
+#ifndef EMMY_USE_LUA_SOURCE
 void DisplayFunction54(std::shared_ptr<Variable> variable, lua_State* L, int index, lua_Debug_54& ar)
 {
 	if (ar.what == nullptr)
@@ -398,7 +398,7 @@ void DisplayFunction(std::shared_ptr<Variable> variable, lua_State* L, int index
 	}
 	lua_settop(L, index);
 }
-
+#endif
 // algorithm optimization
 void Debugger::GetVariable(lua_State* L, std::shared_ptr<Variable> variable, int index, int depth, bool queryHelper)
 {
@@ -492,7 +492,12 @@ void Debugger::GetVariable(lua_State* L, std::shared_ptr<Variable> variable, int
 		}
 	case LUA_TFUNCTION:
 		{
+#ifndef EMMY_USE_LUA_SOURCE
 			DisplayFunction(variable, L, index);
+#else
+			variable->value = ToPointer(L, index);
+#endif
+
 			break;
 		}
 	case LUA_TLIGHTUSERDATA:

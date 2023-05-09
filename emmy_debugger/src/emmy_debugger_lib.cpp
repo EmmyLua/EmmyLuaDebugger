@@ -13,8 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
+#include "emmy_debugger/emmy_debugger_lib.h"
 #include <cstring>
-#include "emmy_debugger/types.h"
 #include "emmy_debugger/emmy_debugger.h"
 #include "emmy_debugger/emmy_facade.h"
 

@@ -24,7 +24,7 @@ typedef double lua_Number;
 typedef long long lua_Integer;
 typedef ptrdiff_t lua_KContext;
 
-#include "emmy_debugger/api/lua_state.h"
+#include "lua_state.h"
 
 /*
 @@ LUA_IDSIZE gives the maximum size for the description of the source

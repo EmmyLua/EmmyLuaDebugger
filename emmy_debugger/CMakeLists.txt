@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 project (emmy_debugger)
 
-add_library(emmy_debugger STATIC )
+add_library(emmy_debugger STATIC)
 
 add_dependencies(
     emmy_debugger
@@ -69,9 +69,10 @@ if(EMMY_USE_LUA_SOURCE)
             ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_jit.cpp
         )
     else()
+        add_dependencies(emmy_debugger lua${EMMY_LUA_VERSION})
         target_link_libraries(
             emmy_debugger
-            PRIVATE lua${EMMY_LUA_VERSION}
+            PUBLIC lua${EMMY_LUA_VERSION}
         )
         target_sources(emmy_debugger
             PRIVATE

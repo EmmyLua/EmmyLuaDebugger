@@ -26,7 +26,7 @@ elseif(${EMMY_LUA_VERSION} STREQUAL "jit")
     #add_definitions(-DEMMY_LUA_JIT_SUPPORT_LUA_SETFUNCS)
 endif()
 
-add_definitions(-DEMMY_CORE_VERSION="1.4.2")
+add_definitions(-DEMMY_CORE_VERSION="1.5.2")
 
 if(EMMY_USE_LUA_SOURCE)
     add_definitions(-DEMMY_USE_LUA_SOURCE)
