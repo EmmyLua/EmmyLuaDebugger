@@ -17,7 +17,7 @@
 #include "emmy_debugger/api/lua_api_loader.h"
 #include <cstdio>
 #include <cassert>
-#include "emmy_debugger/lua_version.h"
+#include "emmy_debugger/api/lua_version.h"
 
 
 #ifdef WIN32

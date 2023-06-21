@@ -18,46 +18,40 @@
 #include <cstdarg>
 #include <cstdint>
 #include "nlohmann/json.hpp"
-#include "emmy_debugger/proto/socket_server_transporter.h"
-#include "emmy_debugger/proto/socket_client_transporter.h"
-#include "emmy_debugger/proto/pipeline_server_transporter.h"
-#include "emmy_debugger/proto/pipeline_client_transporter.h"
-#include "emmy_debugger/emmy_debugger.h"
-#include "emmy_debugger/emmy_debugger_lib.h"
-#include "emmy_debugger/transporter.h"
-#include "emmy_debugger/lua_version.h"
+#include "emmy_debugger/transporter/socket_server_transporter.h"
+#include "emmy_debugger/transporter/socket_client_transporter.h"
+#include "emmy_debugger/transporter/pipeline_server_transporter.h"
+#include "emmy_debugger/transporter/pipeline_client_transporter.h"
+#include "emmy_debugger/debugger/emmy_debugger.h"
+#include "emmy_debugger/debugger/emmy_debugger_lib.h"
+#include "emmy_debugger/transporter/transporter.h"
+#include "emmy_debugger/api/lua_version.h"
 
-EmmyFacade& EmmyFacade::Get()
-{
+EmmyFacade &EmmyFacade::Get() {
 	static EmmyFacade instance;
 	return instance;
 }
 
-void EmmyFacade::HookLua(lua_State* L, lua_Debug* ar)
-{
-	EmmyFacade::Get().Hook(L, ar);
+void EmmyFacade::HookLua(lua_State *L, lua_Debug *ar) {
+	Get().Hook(L, ar);
 }
 
-void EmmyFacade::ReadyLuaHook(lua_State* L, lua_Debug* ar)
-{
-	if (!Get().readyHook)
-	{
+void EmmyFacade::ReadyLuaHook(lua_State *L, lua_Debug *ar) {
+	if (!Get().readyHook) {
 		return;
 	}
 	Get().readyHook = false;
 
 	auto states = FindAllCoroutine(L);
 
-	for (auto state : states)
-	{
+	for (auto state: states) {
 		lua_sethook(state, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 	}
 
 	lua_sethook(L, HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 
-	auto debugger = EmmyFacade::Get().GetDebugger(L);
-	if (debugger)
-	{
+	auto debugger = Get().GetDebugger(L);
+	if (debugger) {
 		debugger->Attach();
 	}
 
@@ -68,31 +62,27 @@ EmmyFacade::EmmyFacade()
 	: transporter(nullptr),
 	  isIDEReady(false),
 	  isAPIReady(false),
-	  isWaitingForIDE(false),
 	  StartHook(nullptr),
+	  isWaitingForIDE(false),
 	  workMode(WorkMode::EmmyCore),
 	  emmyDebuggerManager(std::make_shared<EmmyDebuggerManager>()),
-	  readyHook(false)
-{
+	  readyHook(false) {
 }
 
-EmmyFacade::~EmmyFacade()
-{
+EmmyFacade::~EmmyFacade() {
 }
 
 #ifndef EMMY_USE_LUA_SOURCE
 extern "C" bool SetupLuaAPI();
 
-bool EmmyFacade::SetupLuaAPI()
-{
+bool EmmyFacade::SetupLuaAPI() {
 	isAPIReady = ::SetupLuaAPI();
 	return isAPIReady;
 }
 
 #endif
 
-int LuaError(lua_State* L)
-{
+int LuaError(lua_State *L) {
 	std::string msg = lua_tostring(L, 1);
 	msg = "[Emmy]" + msg;
 	lua_getglobal(L, "error");
@@ -101,18 +91,7 @@ int LuaError(lua_State* L)
 	return 0;
 }
 
-int LuaPrint(lua_State* L)
-{
-	std::string msg = lua_tostring(L, 1);
-	msg = "[Emmy]" + msg;
-	lua_getglobal(L, "print");
-	lua_pushstring(L, msg.c_str());
-	lua_call(L, 1, 0);
-	return 0;
-}
-
-bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std::string& err)
-{
+bool EmmyFacade::TcpListen(lua_State *L, const std::string &host, int port, std::string &err) {
 	Destroy();
 
 	emmyDebuggerManager->AddDebugger(L);
@@ -123,8 +102,7 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 	transporter = s;
 	// s->SetHandler(shared_from_this());
 	const auto suc = s->Listen(host, port, err);
-	if (!suc)
-	{
+	if (!suc) {
 		lua_pushcfunction(L, LuaError);
 		lua_pushstring(L, err.c_str());
 		lua_call(L, 1, 0);
@@ -132,17 +110,14 @@ bool EmmyFacade::TcpListen(lua_State* L, const std::string& host, int port, std:
 	return suc;
 }
 
-bool EmmyFacade::TcpSharedListen(lua_State* L, const std::string& host, int port, std::string& err)
-{
-	if (transporter == nullptr)
-	{
+bool EmmyFacade::TcpSharedListen(lua_State *L, const std::string &host, int port, std::string &err) {
+	if (transporter == nullptr) {
 		return TcpListen(L, host, port, err);
 	}
 	return true;
 }
 
-bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std::string& err)
-{
+bool EmmyFacade::TcpConnect(lua_State *L, const std::string &host, int port, std::string &err) {
 	Destroy();
 
 	emmyDebuggerManager->AddDebugger(L);
@@ -153,12 +128,9 @@ bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std
 	transporter = c;
 	// c->SetHandler(shared_from_this());
 	const auto suc = c->Connect(host, port, err);
-	if (suc)
-	{
+	if (suc) {
 		WaitIDE(true);
-	}
-	else
-	{
+	} else {
 		lua_pushcfunction(L, LuaError);
 		lua_pushstring(L, err.c_str());
 		lua_call(L, 1, 0);
@@ -166,8 +138,7 @@ bool EmmyFacade::TcpConnect(lua_State* L, const std::string& host, int port, std
 	return suc;
 }
 
-bool EmmyFacade::PipeListen(lua_State* L, const std::string& name, std::string& err)
-{
+bool EmmyFacade::PipeListen(lua_State *L, const std::string &name, std::string &err) {
 	Destroy();
 
 	emmyDebuggerManager->AddDebugger(L);
@@ -181,8 +152,7 @@ bool EmmyFacade::PipeListen(lua_State* L, const std::string& name, std::string& 
 	return suc;
 }
 
-bool EmmyFacade::PipeConnect(lua_State* L, const std::string& name, std::string& err)
-{
+bool EmmyFacade::PipeConnect(lua_State *L, const std::string &name, std::string &err) {
 	Destroy();
 
 	emmyDebuggerManager->AddDebugger(L);
@@ -193,20 +163,17 @@ bool EmmyFacade::PipeConnect(lua_State* L, const std::string& name, std::string&
 	transporter = p;
 	// p->SetHandler(shared_from_this());
 	const auto suc = p->Connect(name, err);
-	if (suc)
-	{
+	if (suc) {
 		WaitIDE(true);
 	}
 	return suc;
 }
 
-void EmmyFacade::WaitIDE(bool force, int timeout)
-{
+void EmmyFacade::WaitIDE(bool force, int timeout) {
 	if (transporter != nullptr
-		&& (transporter->IsServerMode() || force)
-		&& !isWaitingForIDE
-		&& !isIDEReady)
-	{
+	    && (transporter->IsServerMode() || force)
+	    && !isWaitingForIDE
+	    && !isIDEReady) {
 		isWaitingForIDE = true;
 		std::unique_lock<std::mutex> lock(waitIDEMutex);
 		if (timeout > 0)
@@ -217,8 +184,7 @@ void EmmyFacade::WaitIDE(bool force, int timeout)
 	}
 }
 
-int EmmyFacade::BreakHere(lua_State* L)
-{
+int EmmyFacade::BreakHere(lua_State *L) {
 	if (!isIDEReady)
 		return 0;
 
@@ -227,13 +193,11 @@ int EmmyFacade::BreakHere(lua_State* L)
 	return 1;
 }
 
-int EmmyFacade::OnConnect(bool suc)
-{
+int EmmyFacade::OnConnect(bool suc) {
 	return 0;
 }
 
-int EmmyFacade::OnDisconnect()
-{
+int EmmyFacade::OnDisconnect() {
 	isIDEReady = false;
 	isWaitingForIDE = false;
 
@@ -241,85 +205,72 @@ int EmmyFacade::OnDisconnect()
 
 	emmyDebuggerManager->RemoveAllBreakpoints();
 
-	if (workMode == WorkMode::Attach)
-	{
+	if (workMode == WorkMode::Attach) {
 		emmyDebuggerManager->RemoveAllDebugger();
 	}
 
 	return 0;
 }
 
-void EmmyFacade::Destroy()
-{
+void EmmyFacade::Destroy() {
 	OnDisconnect();
 
-	if (transporter)
-	{
+	if (transporter) {
 		transporter->Stop();
 		transporter = nullptr;
 	}
 }
 
-void EmmyFacade::SetWorkMode(WorkMode mode)
-{
+void EmmyFacade::SetWorkMode(WorkMode mode) {
 	workMode = mode;
 }
 
-WorkMode EmmyFacade::GetWorkMode()
-{
+WorkMode EmmyFacade::GetWorkMode() {
 	return workMode;
 }
 
-void EmmyFacade::OnReceiveMessage(const nlohmann::json document)
-{
-	if (document["cmd"].is_number_integer())
-	{
-		switch (document["cmd"].get<MessageCMD>())
-		{
-		case MessageCMD::InitReq:
-			OnInitReq(document);
-			break;
-		case MessageCMD::ReadyReq:
-			OnReadyReq(document);
-			break;
-		case MessageCMD::AddBreakPointReq:
-			OnAddBreakPointReq(document);
-			break;
-		case MessageCMD::RemoveBreakPointReq:
-			OnRemoveBreakPointReq(document);
-			break;
-		case MessageCMD::ActionReq:
-			//assert(isIDEReady);
-			OnActionReq(document);
-			break;
-		case MessageCMD::EvalReq:
-			//assert(isIDEReady);
-			OnEvalReq(document);
-			break;
-		default:
-			break;
+void EmmyFacade::OnReceiveMessage(const nlohmann::json document) {
+	if (document["cmd"].is_number_integer()) {
+		switch (document["cmd"].get<MessageCMD>()) {
+			case MessageCMD::InitReq:
+				OnInitReq(document);
+				break;
+			case MessageCMD::ReadyReq:
+				OnReadyReq(document);
+				break;
+			case MessageCMD::AddBreakPointReq:
+				OnAddBreakPointReq(document);
+				break;
+			case MessageCMD::RemoveBreakPointReq:
+				OnRemoveBreakPointReq(document);
+				break;
+			case MessageCMD::ActionReq:
+				//assert(isIDEReady);
+				OnActionReq(document);
+				break;
+			case MessageCMD::EvalReq:
+				//assert(isIDEReady);
+				OnEvalReq(document);
+				break;
+			default:
+				break;
 		}
 	}
 }
 
-void EmmyFacade::OnInitReq(const nlohmann::json document)
-{
-	if (StartHook)
-	{
+void EmmyFacade::OnInitReq(const nlohmann::json document) {
+	if (StartHook) {
 		StartHook();
 	}
 
-	if (document["emmyHelper"].is_string())
-	{
+	if (document["emmyHelper"].is_string()) {
 		emmyDebuggerManager->helperCode = document["emmyHelper"];
 	}
 
 	//file extension names: .lua, .txt, .lua.txt ...
-	if (document["ext"].is_array())
-	{
+	if (document["ext"].is_array()) {
 		emmyDebuggerManager->extNames.clear();
-		for (auto& ext : document["ext"])
-		{
+		for (auto &ext: document["ext"]) {
 			emmyDebuggerManager->extNames.emplace_back(ext);
 		}
 	}
@@ -333,67 +284,16 @@ void EmmyFacade::OnInitReq(const nlohmann::json document)
 	StartDebug();
 }
 
-void EmmyFacade::OnReadyReq(const nlohmann::json document)
-{
+void EmmyFacade::OnReadyReq(const nlohmann::json document) {
 	isIDEReady = true;
 	waitIDECV.notify_all();
 }
 
-nlohmann::json FillVariables(std::vector<std::shared_ptr<Variable>>& variables);
-
-nlohmann::json FillVariable(const std::shared_ptr<Variable> variable)
-{
-	auto obj = nlohmann::json::object();
-	obj["name"] = variable->name;
-	obj["nameType"] = variable->nameType;
-	obj["value"] = variable->value;
-	obj["valueType"] = variable->valueType;
-	obj["valueTypeName"] = variable->valueTypeName;
-	obj["cacheId"] = variable->cacheId;
-
-	// children
-	if (!variable->children.empty())
-	{
-		obj["children"] = FillVariables(variable->children);
-	}
-	return obj;
-}
-
-nlohmann::json FillVariables(std::vector<std::shared_ptr<Variable>>& variables)
-{
-	auto arr = nlohmann::json::array();
-	for (auto& child : variables)
-	{
-		arr.push_back(FillVariable(child));
-	}
-	return arr;
-}
-
-nlohmann::json FillStacks(std::vector<std::shared_ptr<Stack>>& stacks)
-{
-	auto stacksJson = nlohmann::json::array();
-	for (auto stack : stacks)
-	{
-		auto stackJson = nlohmann::json::object();
-		stackJson["file"] = stack->file;
-		stackJson["functionName"] = stack->functionName;
-		stackJson["line"] = stack->line;
-		stackJson["level"] = stack->level;
-		stackJson["localVariables"] = FillVariables(stack->localVariables);
-		stackJson["upvalueVariables"] = FillVariables(stack->upvalueVariables);
-
-		stacksJson.push_back(stackJson);
-	}
-	return stacksJson;
-}
-
-bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger)
-{
-	if (!debugger)
-	{
+bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger) {
+	if (!debugger) {
 		return false;
 	}
-	std::vector<std::shared_ptr<Stack>> stacks;
+	std::vector<Stack> stacks;
 
 	emmyDebuggerManager->SetHitDebugger(debugger);
 
@@ -401,78 +301,44 @@ bool EmmyFacade::OnBreak(std::shared_ptr<Debugger> debugger)
 
 	auto obj = nlohmann::json::object();
 	obj["cmd"] = static_cast<int>(MessageCMD::BreakNotify);
-	obj["stacks"] = FillStacks(stacks);
+	obj["stacks"] = JsonProtocol::SerializeArray(stacks);
 
 	transporter->Send(int(MessageCMD::BreakNotify), obj);
 
 	return true;
 }
 
-void ReadBreakPoint(const nlohmann::json value, std::shared_ptr<BreakPoint> bp)
-{
-	if (value.count("file") != 0)
-	{
-		bp->file = value["file"];
-	}
-	if (value.count("line") != 0)
-	{
-		bp->line = value["line"];
-	}
-	if (value.count("condition") != 0)
-	{
-		bp->condition = value["condition"];
-	}
-	if (value.count("hitCondition") != 0)
-	{
-		bp->hitCondition = value["hitCondition"];
-	}
-	if (value.count("logMessage") != 0)
-	{
-		bp->logMessage = value["logMessage"];
-	}
-}
-
-void EmmyFacade::OnAddBreakPointReq(const nlohmann::json document)
-{
-	if (document.count("clear") != 0 && document["clear"].is_boolean())
-	{
-		bool all = document["clear"];
-		if (all)
-		{
+void EmmyFacade::OnAddBreakPointReq(const nlohmann::json document) {
+	if (document.count("clear") != 0 && document["clear"].is_boolean()) {
+		bool clear = document["clear"];
+		if (clear) {
 			emmyDebuggerManager->RemoveAllBreakpoints();
 		}
 	}
-	if (document.count("breakPoints") != 0 && document["breakPoints"].is_array())
-	{
-		for (auto docBreakPoints : document["breakPoints"])
-		{
+	if (document.count("breakPoints") != 0 && document["breakPoints"].is_array()) {
+		for (auto docBreakPoint: document["breakPoints"]) {
 			auto bp = std::make_shared<BreakPoint>();
 			bp->hitCount = 0;
-			ReadBreakPoint(docBreakPoints, bp);
+			bp->Deserialize(docBreakPoint);
 			emmyDebuggerManager->AddBreakpoint(bp);
 		}
 	}
 	// todo: response
 }
 
-void EmmyFacade::OnRemoveBreakPointReq(const nlohmann::json document)
-{
-	if (document.count("breakPoints") != 0 && document["breakPoints"].is_array())
-	{
-		for (auto& breakpoint : document["breakPoints"])
-		{
+void EmmyFacade::OnRemoveBreakPointReq(const nlohmann::json document) {
+	if (document.count("breakPoints") != 0 && document["breakPoints"].is_array()) {
+		for (auto &breakpoint: document["breakPoints"]) {
 			auto bp = std::make_shared<BreakPoint>();
-			ReadBreakPoint(breakpoint, bp);
+			bp->Deserialize(breakpoint);
 			emmyDebuggerManager->RemoveBreakpoint(bp->file, bp->line);
 		}
 	}
 	// todo: response
 }
 
-void EmmyFacade::OnActionReq(const nlohmann::json document)
-{
-	if (document.count("action") != 0 && document["action"].is_number_integer())
-	{
+void EmmyFacade::OnActionReq(const nlohmann::json document) {
+	if (document.count("action") != 0 && document["action"].is_number_integer()) {
 		const auto action = document["action"].get<DebugAction>();
 
 		emmyDebuggerManager->DoAction(action);
@@ -480,59 +346,19 @@ void EmmyFacade::OnActionReq(const nlohmann::json document)
 	// todo: response
 }
 
-void EmmyFacade::OnEvalReq(const nlohmann::json document)
-{
+void EmmyFacade::OnEvalReq(const nlohmann::json document) {
 	auto context = std::make_shared<EvalContext>();
-	if (document.count("seq") != 0 && document["seq"].is_number_integer())
-	{
-		context->seq = document["seq"];
-	}
-	if (document.count("expr") != 0 && document["expr"].is_string())
-	{
-		context->expr = document["expr"];
-	}
-
-	if (document.count("stackLevel") != 0 && document["stackLevel"].is_number_integer())
-	{
-		context->stackLevel = document["stackLevel"];
-	}
-	if (document.count("depth") != 0  && document["depth"].is_number_integer())
-	{
-		context->depth = document["depth"];
-	}
-	if (document.count("cacheId") != 0 && document["cacheId"].is_number_integer())
-	{
-		context->cacheId = document["cacheId"];
-	}
-
-	context->success = false;
-
+	context->Deserialize(document);
 	emmyDebuggerManager->Eval(context);
 }
 
-void EmmyFacade::OnEvalResult(std::shared_ptr<EvalContext> context)
-{
-	auto obj = nlohmann::json::object();
-	obj["seq"] = context->seq;
-	obj["success"] = context->success;
-
-	if (context->success)
-	{
-		obj["value"] = FillVariable(context->result);
-	}
-	else
-	{
-		obj["error"] = context->error;
-	}
-
-	if (transporter)
-	{
-		transporter->Send(int(MessageCMD::EvalRsp), obj);
+void EmmyFacade::OnEvalResult(std::shared_ptr<EvalContext> context) {
+	if (transporter) {
+		transporter->Send(int(MessageCMD::EvalRsp), context->Serialize());
 	}
 }
 
-void EmmyFacade::SendLog(LogType type, const char* fmt, ...)
-{
+void EmmyFacade::SendLog(LogType type, const char *fmt, ...) {
 	va_list args;
 	va_start(args, fmt);
 	char buff[1024] = {0};
@@ -545,48 +371,35 @@ void EmmyFacade::SendLog(LogType type, const char* fmt, ...)
 	obj["type"] = type;
 	obj["message"] = msg;
 
-	if (transporter)
-	{
+	if (transporter) {
 		transporter->Send(int(MessageCMD::LogNotify), obj);
 	}
 }
 
-void EmmyFacade::OnLuaStateGC(lua_State* L)
-{
+void EmmyFacade::OnLuaStateGC(lua_State *L) {
 	auto debugger = emmyDebuggerManager->RemoveDebugger(L);
 
-	if (debugger)
-	{
+	if (debugger) {
 		debugger->Detach();
 	}
 
-	if (workMode == WorkMode::EmmyCore)
-	{
-		if (emmyDebuggerManager->IsDebuggerEmpty())
-		{
+	if (workMode == WorkMode::EmmyCore) {
+		if (emmyDebuggerManager->IsDebuggerEmpty()) {
 			Destroy();
 		}
 	}
 }
 
-void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
-{
+void EmmyFacade::Hook(lua_State *L, lua_Debug *ar) {
 	auto debugger = GetDebugger(L);
-	if (debugger)
-	{
-		if (!debugger->IsRunning())
-		{
-			if (EmmyFacade::Get().GetWorkMode() == WorkMode::EmmyCore)
-			{
-				if (luaVersion != LuaVersion::LUA_JIT)
-				{
-					if (debugger->IsMainCoroutine(L))
-					{
+	if (debugger) {
+		if (!debugger->IsRunning()) {
+			if (GetWorkMode() == WorkMode::EmmyCore) {
+				if (luaVersion != LuaVersion::LUA_JIT) {
+					if (debugger->IsMainCoroutine(L)) {
 						SetReadyHook(L);
 					}
-				}
-				else
-				{
+				} else {
 					SetReadyHook(L);
 				}
 			}
@@ -594,15 +407,11 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 		}
 
 		debugger->Hook(ar, L);
-	}
-	else
-	{
-		if (workMode == WorkMode::Attach)
-		{
+	} else {
+		if (workMode == WorkMode::Attach) {
 			debugger = emmyDebuggerManager->AddDebugger(L);
 			install_emmy_debugger(L);
-			if (emmyDebuggerManager->IsRunning())
-			{
+			if (emmyDebuggerManager->IsRunning()) {
 				debugger->Start();
 				debugger->Attach();
 			}
@@ -617,58 +426,24 @@ void EmmyFacade::Hook(lua_State* L, lua_Debug* ar)
 	}
 }
 
-std::shared_ptr<EmmyDebuggerManager> EmmyFacade::GetDebugManager() const
-{
+std::shared_ptr<EmmyDebuggerManager> EmmyFacade::GetDebugManager() const {
 	return emmyDebuggerManager;
 }
 
-
-std::shared_ptr<Variable> EmmyFacade::GetVariableRef(Variable* variable)
-{
-	auto it = luaVariableRef.find(variable);
-
-	if (it != luaVariableRef.end())
-	{
-		return it->second;
-	}
-	else
-	{
-		return nullptr;
-	}
-}
-
-void EmmyFacade::AddVariableRef(std::shared_ptr<Variable> variable)
-{
-	luaVariableRef.insert({variable.get(), variable});
-}
-
-void EmmyFacade::RemoveVariableRef(Variable* variable)
-{
-	auto it = luaVariableRef.find(variable);
-	if (it != luaVariableRef.end())
-	{
-		luaVariableRef.erase(it);
-	}
-}
-
-std::shared_ptr<Debugger> EmmyFacade::GetDebugger(lua_State* L)
-{
+std::shared_ptr<Debugger> EmmyFacade::GetDebugger(lua_State *L) {
 	return emmyDebuggerManager->GetDebugger(L);
 }
 
-void EmmyFacade::SetReadyHook(lua_State* L)
-{
+void EmmyFacade::SetReadyHook(lua_State *L) {
 	lua_sethook(L, ReadyLuaHook, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 }
 
-void EmmyFacade::StartDebug()
-{
+void EmmyFacade::StartDebug() {
 	emmyDebuggerManager->SetRunning(true);
 	readyHook = true;
 }
 
-void EmmyFacade::StartupHookMode(int port)
-{
+void EmmyFacade::StartupHookMode(int port) {
 	Destroy();
 
 	// 1024 - 65535
@@ -678,22 +453,19 @@ void EmmyFacade::StartupHookMode(int port)
 	const auto s = std::make_shared<SocketServerTransporter>();
 	std::string err;
 	const auto suc = s->Listen("localhost", port, err);
-	if (suc)
-	{
+	if (suc) {
 		transporter = s;
 		// transporter->SetHandler(shared_from_this());
 	}
 }
 
-void EmmyFacade::Attach(lua_State* L)
-{
+void EmmyFacade::Attach(lua_State *L) {
 	if (!this->transporter->IsConnected())
 		return;
 
 	// 这里存在一个问题就是 hook 的时机太早了，globalstate 都还没初始化完毕
 
-	if (!isAPIReady)
-	{
+	if (!isAPIReady) {
 		// 考虑到emmy_hook use lua source
 		isAPIReady = install_emmy_debugger(L);
 	}

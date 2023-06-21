@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.14)
 
 project (emmy_debugger)
 
@@ -10,7 +10,7 @@ add_dependencies(
 )
 
 target_include_directories(emmy_debugger PUBLIC 
-    ${emmy_SOURCE_DIR}/include
+    ${emmy_debugger_SOURCE_DIR}/include
     ${emmy_SOURCE_DIR}/third-party/nlohmann/include
     ${emmy_SOURCE_DIR}/third-party/libuv-1.29.0/include
     PRIVATE src
@@ -19,26 +19,33 @@ target_include_directories(emmy_debugger PUBLIC
 target_sources(emmy_debugger 
     PRIVATE
     #src/api
-    ${emmy_debugger_SOURCE_DIR}/src/api/lua_api.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/api/lua_state.cpp
+    src/api/lua_api.cpp
+    src/api/lua_state.cpp
+    src/api/lua_version.cpp
+
+    #src/transporter
+    src/transporter/pipeline_client_transporter.cpp
+    src/transporter/pipeline_server_transporter.cpp
+    src/transporter/socket_client_transporter.cpp
+    src/transporter/socket_server_transporter.cpp
+    src/transporter/transporter.cpp
+
+    #src/debugger
+    src/debugger/emmy_debugger.cpp
+    src/debugger/emmy_debugger_manager.cpp
+    src/debugger/emmy_debugger_lib.cpp
+    src/debugger/hook_state.cpp 
+    src/debugger/extension_point.cpp
 
     #src/proto
-    ${emmy_debugger_SOURCE_DIR}/src/proto/pipeline_client_transporter.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/proto/pipeline_server_transporter.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/proto/socket_client_transporter.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/proto/socket_server_transporter.cpp
+    src/proto/proto.cpp   
+
+    #src/arena
+    src/arena/arena.cpp
 
     #src
-    ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger_manager.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/emmy_facade.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/emmy_debugger_lib.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/hook_state.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/stack.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/transporter.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/lua_version.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/extension_point.cpp
-    ${emmy_debugger_SOURCE_DIR}/src/util.cpp
+    src/emmy_facade.cpp
+    src/util.cpp
 )
 
 
@@ -66,7 +73,7 @@ if(EMMY_USE_LUA_SOURCE)
         )
         target_sources(emmy_debugger
             PRIVATE
-            ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_jit.cpp
+            src/api/lua_state/lua_state_jit.cpp
         )
     else()
         add_dependencies(emmy_debugger lua${EMMY_LUA_VERSION})
@@ -76,7 +83,7 @@ if(EMMY_USE_LUA_SOURCE)
         )
         target_sources(emmy_debugger
             PRIVATE
-            ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
+            src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
         )
     endif()
 
@@ -87,7 +94,7 @@ elseif(EMMY_COMPILE_AS_LIB)
     target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
     target_sources(emmy_debugger
         PRIVATE
-        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
+        src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
     )
 else()
     target_include_directories(emmy_debugger PRIVATE
@@ -96,15 +103,14 @@ else()
 
     target_sources(emmy_debugger
         PUBLIC
-        ${emmy_SOURCE_DIR}/include/emmy_debugger/api/lua_api_loader.h
-        ${emmy_debugger_SOURCE_DIR}/src/api/lua_api_loader.cpp
+        src/api/lua_api_loader.cpp
 
         PRIVATE
-        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_54.cpp
-        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_53.cpp
-        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_52.cpp
-        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_51.cpp
-        ${emmy_debugger_SOURCE_DIR}/src/api/lua_state/lua_state_jit.cpp
+        src/api/lua_state/lua_state_54.cpp
+        src/api/lua_state/lua_state_53.cpp
+        src/api/lua_state/lua_state_52.cpp
+        src/api/lua_state/lua_state_51.cpp
+        src/api/lua_state/lua_state_jit.cpp
     )
    
 endif(EMMY_USE_LUA_SOURCE)

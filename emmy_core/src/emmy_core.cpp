@@ -14,8 +14,7 @@
 * limitations under the License.
 */
 
-//#define EMMY_CORE_VERSION "1.0.0"
-#include "emmy_debugger/emmy_debugger_lib.h"
+#include "emmy_debugger/debugger/emmy_debugger_lib.h"
 #include "emmy_debugger/emmy_facade.h"
 #ifdef _MSC_VER
 #define EMMY_CORE_EXPORT __declspec(dllexport)
