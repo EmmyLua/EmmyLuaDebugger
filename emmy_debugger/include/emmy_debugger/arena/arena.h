@@ -3,6 +3,7 @@
 #include <cinttypes>
 #include <vector>
 #include <exception>
+#include <stdexcept>
 
 template<class T>
 class Arena;
@@ -48,7 +49,7 @@ public:
 		if (id.Raw < _data.size()) {
 			return _data[id.Raw];
 		}
-		throw std::exception("index out of range");
+		throw std::runtime_error("index out of range");
 	}
 
 	Idx<T> Alloc() {
