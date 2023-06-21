@@ -30,7 +30,8 @@ int metaAddChild(lua_State *L) {
 }
 
 int metaIndex(lua_State *L) {
-	const Variable *var = (Variable *) lua_touserdata(L, 1);
+	auto *pVar = (Idx<Variable> *) lua_touserdata(L, 1);
+	auto var = *pVar;
 	const std::string k = lua_tostring(L, 2);
 	if (k == "name") {
 		lua_pushstring(L, var->name.c_str());
@@ -51,7 +52,8 @@ int metaIndex(lua_State *L) {
 }
 
 int metaNewIndex(lua_State *L) {
-	auto var = (Variable *) lua_touserdata(L, 1);
+	auto *pVar = (Idx<Variable> *) lua_touserdata(L, 1);
+	auto var = *pVar;
 	const std::string k = lua_tostring(L, 2);
 	if (k == "name") {
 		const char *value = lua_tostring(L, 3);
