@@ -11,7 +11,7 @@
 #include "emmy_debugger/api/lua_api.h"
 
 
-class EmmyDebuggerManager : public std::enable_shared_from_this<EmmyDebuggerManager>
+class EmmyDebuggerManager
 {
 public:
 	using UniqueIdentifyType = unsigned long long;

@@ -22,7 +22,8 @@
 
 
 enum class DebugAction {
-	Break,
+	None = -1,
+	Break = 0,
 	Continue,
 	StepOver,
 	StepIn,
@@ -49,6 +50,16 @@ public:
 	virtual void Deserialize(nlohmann::json json);
 };
 
+class InitParams : public JsonProtocol {
+public:
+	std::string emmyHelper;
+	std::vector<std::string> ext;
+
+	virtual nlohmann::json Serialize();
+
+	virtual void Deserialize(nlohmann::json json);
+};
+
 class BreakPoint : public JsonProtocol {
 public:
 	std::string file;
@@ -62,6 +73,35 @@ public:
 
 	void Deserialize(nlohmann::json json) override;
 };
+
+class AddBreakpointParams : public JsonProtocol {
+public:
+	bool clear = false;
+	std::vector<std::shared_ptr<BreakPoint>> breakPoints;
+
+	nlohmann::json Serialize() override;
+
+	void Deserialize(nlohmann::json json) override;
+};
+
+class RemoveBreakpointParams : public JsonProtocol {
+public:
+	std::vector<std::shared_ptr<BreakPoint>> breakPoints;
+
+	nlohmann::json Serialize() override;
+
+	void Deserialize(nlohmann::json json) override;
+};
+
+class ActionParams : public JsonProtocol {
+public:
+	DebugAction action = DebugAction::None;
+
+	nlohmann::json Serialize() override;
+
+	void Deserialize(nlohmann::json json) override;
+};
+
 
 class Variable : public JsonProtocol {
 public:
@@ -103,6 +143,7 @@ public:
 	EvalContext();
 
 	std::string expr;
+	std::string value;
 	std::string error;
 	int seq = 0;
 	int stackLevel = 0;
@@ -110,7 +151,17 @@ public:
 	int cacheId = 0;
 	Idx<Variable> result;
 	bool success = false;
+	bool setValue = false;
 	std::shared_ptr<Arena<Variable>> variableArena;
+
+	nlohmann::json Serialize() override;
+
+	void Deserialize(nlohmann::json json) override;
+};
+
+class EvalParams : public JsonProtocol {
+public:
+	std::shared_ptr<EvalContext> ctx;
 
 	nlohmann::json Serialize() override;
 

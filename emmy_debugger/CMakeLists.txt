@@ -38,7 +38,8 @@ target_sources(emmy_debugger
     src/debugger/extension_point.cpp
 
     #src/proto
-    src/proto/proto.cpp   
+    src/proto/proto.cpp
+    src/proto/proto_handler.cpp
 
     #src/arena
     src/arena/arena.cpp

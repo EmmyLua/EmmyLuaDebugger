@@ -33,7 +33,7 @@ void WaitConnectedHook(lua_State *L, lua_Debug *ar) {
 	// std::lock_guard<std::mutex> lock()
 }
 
-Debugger::Debugger(lua_State *L, std::shared_ptr<EmmyDebuggerManager> manager)
+Debugger::Debugger(lua_State *L, EmmyDebuggerManager *manager)
 	: currentL(L),
 	  mainL(L),
 	  manager(manager),
@@ -179,7 +179,7 @@ bool Debugger::GetStacks(std::vector<Stack> &stacks) {
 			}
 			// C++ 17 only return T&
 			stacks.emplace_back();
-			auto& stack = stacks.back();
+			auto &stack = stacks.back();
 			stack.file = GetFile(&ar);
 			stack.functionName = getDebugName(&ar) == nullptr ? "" : getDebugName(&ar);
 			stack.level = totalLevel++;
@@ -789,7 +789,7 @@ void Debugger::SetHookState(std::shared_ptr<HookState> newState) {
 	}
 }
 
-std::shared_ptr<EmmyDebuggerManager> Debugger::GetEmmyDebuggerManager() {
+EmmyDebuggerManager* Debugger::GetEmmyDebuggerManager() {
 	return manager;
 }
 
@@ -906,10 +906,13 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext) {
 	}
 	// LOAD AS "return expr"
 	std::string statement = "return ";
+	if (evalContext->setValue) {
+		statement = evalContext->expr + " = " + evalContext->value + " return " + evalContext->expr;
+	} else {
+		statement.append(evalContext->expr);
+	}
+
 	// 如果是 aaa:bbbb 则纠正为aaa.bbbb
-
-
-	statement.append(evalContext->expr);
 	int r = luaL_loadstring(L, statement.c_str());
 	if (r == LUA_ERRSYNTAX) {
 		evalContext->error = "syntax err: ";

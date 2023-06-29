@@ -31,10 +31,10 @@
 using Executor = std::function<void(lua_State* L)>;
 class EmmyDebuggerManager;
 
-class Debugger : public std::enable_shared_from_this<Debugger>
+class Debugger: public std::enable_shared_from_this<Debugger>
 {
 public:
-	Debugger(lua_State* L, std::shared_ptr<EmmyDebuggerManager> manager);
+	Debugger(lua_State* L, EmmyDebuggerManager* manager);
 	~Debugger();
 
 	void Start();
@@ -86,7 +86,7 @@ public:
 	 * 设置当前状态机，他的锁由doAction负责
 	 */
 	void SetHookState(std::shared_ptr<HookState> newState);
-	std::shared_ptr<EmmyDebuggerManager> GetEmmyDebuggerManager();
+	EmmyDebuggerManager* GetEmmyDebuggerManager();
 
 private:
 	std::shared_ptr<BreakPoint> FindBreakPoint(lua_Debug* ar);
@@ -109,7 +109,7 @@ private:
 	lua_State* currentL;
 	lua_State* mainL;
 
-	std::shared_ptr<EmmyDebuggerManager> manager;
+	EmmyDebuggerManager* manager;
 
 	// 取消递归锁的使用
 	std::mutex hookStateMtx;

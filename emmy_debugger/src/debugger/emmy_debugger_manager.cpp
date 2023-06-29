@@ -4,11 +4,12 @@
 
 EmmyDebuggerManager::EmmyDebuggerManager()
 	: stateBreak(std::make_shared<HookStateBreak>()),
+      stateStepOver(std::make_shared<HookStateStepOver>()),
+      stateStepIn(std::make_shared<HookStateStepIn>()),
+      stateStepOut(std::make_shared<HookStateStepOut>()),
 	  stateContinue(std::make_shared<HookStateContinue>()),
-	  stateStepOver(std::make_shared<HookStateStepOver>()),
 	  stateStop(std::make_shared<HookStateStop>()),
-	  stateStepIn(std::make_shared<HookStateStepIn>()),
-	  stateStepOut(std::make_shared<HookStateStepOut>()),
+
 	  isRunning(false)
 {
 }
@@ -46,7 +47,7 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 	{
 		if (luaVersion != LuaVersion::LUA_JIT)
 		{
-			debugger = std::make_shared<Debugger>(reinterpret_cast<lua_State*>(identify), shared_from_this());
+			debugger = std::make_shared<Debugger>(reinterpret_cast<lua_State*>(identify), this);
 		}
 		else
 		{
@@ -61,7 +62,7 @@ std::shared_ptr<Debugger> EmmyDebuggerManager::AddDebugger(lua_State* L)
 				mainState = L;
 			}
 
-			debugger = std::make_shared<Debugger>(mainState, shared_from_this());
+			debugger = std::make_shared<Debugger>(mainState, this);
 		}
 		debuggers.insert({identify, debugger});
 	}

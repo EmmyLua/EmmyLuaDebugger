@@ -28,6 +28,24 @@ nlohmann::json JsonProtocol::Serialize() {
 void JsonProtocol::Deserialize(nlohmann::json json) {
 }
 
+nlohmann::json InitParams::Serialize() {
+	return JsonProtocol::Serialize();
+}
+
+void InitParams::Deserialize(nlohmann::json json) {
+	if (json["emmyHelper"].is_string()) {
+		emmyHelper = json["emmyHelper"];
+	}
+
+	if (json["ext"].is_array()) {
+		for (auto &e: json["ext"]) {
+			std::string ex(e);
+			// C++ can not use this only
+			ext.emplace_back(ex);
+		}
+	}
+}
+
 nlohmann::json BreakPoint::Serialize() {
 	return JsonProtocol::Serialize();
 }
@@ -47,6 +65,48 @@ void BreakPoint::Deserialize(nlohmann::json json) {
 	}
 	if (json.count("logMessage") != 0) {
 		logMessage = json["logMessage"];
+	}
+}
+
+nlohmann::json AddBreakpointParams::Serialize() {
+	return JsonProtocol::Serialize();
+}
+
+void AddBreakpointParams::Deserialize(nlohmann::json json) {
+	if (json["clear"].is_boolean()) {
+		clear = json["clear"];
+	}
+
+	if (json["breakPoints"].is_array()) {
+		for (auto breakPoint: json["breakPoints"]) {
+			auto bp = std::make_shared<BreakPoint>();
+			bp->Deserialize(breakPoint);
+			breakPoints.push_back(bp);
+		}
+	}
+}
+
+nlohmann::json RemoveBreakpointParams::Serialize() {
+	return JsonProtocol::Serialize();
+}
+
+void RemoveBreakpointParams::Deserialize(nlohmann::json json) {
+	if (json["breakPoints"].is_array()) {
+		for (auto breakPoint: json["breakPoints"]) {
+			auto bp = std::make_shared<BreakPoint>();
+			bp->Deserialize(breakPoint);
+			breakPoints.push_back(bp);
+		}
+	}
+}
+
+nlohmann::json ActionParams::Serialize() {
+	return JsonProtocol::Serialize();
+}
+
+void ActionParams::Deserialize(nlohmann::json json) {
+	if (json.count("action") != 0 && json["action"].is_number_integer()) {
+		action = json["action"].get<DebugAction>();
 	}
 }
 
@@ -140,6 +200,14 @@ void EvalContext::Deserialize(nlohmann::json json) {
 		expr = json["expr"];
 	}
 
+	if (json.count("value") != 0 && json["value"].is_string()) {
+		value = json["value"];
+	}
+
+	if (json.count("setValue") != 0 && json["setValue"].is_boolean()) {
+		setValue = json["setValue"];
+	}
+
 	if (json.count("stackLevel") != 0 && json["stackLevel"].is_number_integer()) {
 		stackLevel = json["stackLevel"];
 	}
@@ -150,4 +218,13 @@ void EvalContext::Deserialize(nlohmann::json json) {
 		cacheId = json["cacheId"];
 	}
 
+}
+
+nlohmann::json EvalParams::Serialize() {
+	return JsonProtocol::Serialize();
+}
+
+void EvalParams::Deserialize(nlohmann::json json) {
+	ctx = std::make_shared<EvalContext>();
+	ctx->Deserialize(json);
 }

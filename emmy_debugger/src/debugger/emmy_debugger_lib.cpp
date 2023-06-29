@@ -157,7 +157,7 @@ bool install_emmy_debugger(struct lua_State* L)
 	}
 #endif
 	// register helper lib
-	EmmyFacade::Get().GetDebugManager()->extension.Initialize(L);
+	EmmyFacade::Get().GetDebugManager().extension.Initialize(L);
 	handleStateClose(L);
 	return true;
 }

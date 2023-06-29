@@ -22,6 +22,7 @@
 #include "emmy_debugger/transporter/transporter.h"
 #include "emmy_debugger/api/lua_api.h"
 #include "emmy_debugger/debugger/emmy_debugger_manager.h"
+#include "proto/proto_handler.h"
 
 enum class LogType
 {
@@ -61,14 +62,13 @@ public:
 	int OnConnect(bool suc);
 	int OnDisconnect();
 	void WaitIDE(bool force = false, int timeout = 0);
-	void OnReceiveMessage(const nlohmann::json document);
 	bool OnBreak(std::shared_ptr<Debugger> debugger);
 	void Destroy();
 	void OnEvalResult(std::shared_ptr<EvalContext> context);
 	void SendLog(LogType type, const char* fmt, ...);
 	void OnLuaStateGC(lua_State* L);
 	void Hook(lua_State* L, lua_Debug* ar);
-	std::shared_ptr<EmmyDebuggerManager> GetDebugManager() const;
+	EmmyDebuggerManager& GetDebugManager();
 
 	std::shared_ptr<Debugger> GetDebugger(lua_State* L);
 
@@ -82,17 +82,19 @@ public:
 
 	void SetWorkMode(WorkMode mode);
 	WorkMode GetWorkMode();
+
+	void InitReq(InitParams &params);
+
+	void ReadyReq();
+
+	void OnReceiveMessage(nlohmann::json document);
+
+	// void Remove
+
 	// Start hook 作为成员存在
 	std::function<void()> StartHook;
 
 private:
-	void OnInitReq(const nlohmann::json document);
-	void OnReadyReq(const nlohmann::json document);
-	void OnAddBreakPointReq(const nlohmann::json document);
-	void OnRemoveBreakPointReq(const nlohmann::json document);
-	void OnActionReq(const nlohmann::json document);
-	void OnEvalReq(const nlohmann::json document);
-
 	std::mutex waitIDEMutex;
 	std::condition_variable waitIDECV;
 	
@@ -103,12 +105,14 @@ private:
 	bool isWaitingForIDE;
 	WorkMode workMode;
 
-	std::shared_ptr<EmmyDebuggerManager> emmyDebuggerManager;
-
 	// 表示使用了tcplisten tcpConnect 的states
 	std::set<lua_State*> mainStates;
 
 	std::atomic<bool> readyHook;
+
+	ProtoHandler _protoHandler;
+
+	EmmyDebuggerManager _emmyDebuggerManager;
 };
 
 
