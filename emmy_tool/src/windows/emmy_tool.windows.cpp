@@ -3,7 +3,6 @@
 #include "utility.h"
 #include "Psapi.h"
 #include <thread>
-#include <condition_variable>
 
 
 void translateText(std::string &text) {
