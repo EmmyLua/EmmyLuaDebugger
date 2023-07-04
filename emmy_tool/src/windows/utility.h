@@ -2,6 +2,10 @@
 #include <Windows.h>
 #include <string>
 #include <vector>
+#include <ImageHlp.h>
+#include <iomanip>
+#include <iostream>
+#include "shared/shme.h"
 
 struct ExeInfo {
 	size_t			entryPoint;
@@ -31,3 +35,12 @@ struct Process {
 void GetProcesses(std::vector<Process>& processes);
 
 int GetProcessByName(const char* name);
+
+void SetBreakpoint(HANDLE hProcess, LPVOID entryPoint, bool set, BYTE *data);
+
+bool InjectDllForProcess(HANDLE hProcess, const char *dllDir, const char *dllFileName);
+
+bool InjectDll(DWORD processId, const char *dllDir, const char *dllFileName, bool capture);
+
+void ReceiveLog(DWORD processId);
+

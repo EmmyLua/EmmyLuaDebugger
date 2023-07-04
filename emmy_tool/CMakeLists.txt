@@ -9,15 +9,16 @@ add_dependencies(
     shared
 )
 
-target_sources(emmy_tool PRIVATE
-    src/utility.h
-    src/emmy_tool.h
-    src/command_line.h
+target_include_directories(emmy_tool PRIVATE 
+    src
+)
 
-    src/utility.cpp
-    src/emmy_tool.windows.cpp
+target_sources(emmy_tool PRIVATE
+    src/windows/utility.cpp
+    src/windows/emmy_tool.windows.cpp
     src/command_line.cpp
     src/main.cpp
+    src/emmy_tool.cpp
 )
 
 target_link_libraries(
