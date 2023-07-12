@@ -24,7 +24,8 @@ jobs:
           else
             echo echo "TAG=DEV" >> $GITHUB_ENV
           fi
-
+      shell: bash
+      
     - uses: actions/checkout@v2
     - name: Build-windows
       if: startsWith(matrix.os, 'windows')
