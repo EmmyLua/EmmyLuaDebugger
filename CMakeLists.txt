@@ -6,6 +6,7 @@ set(CMAKE_INSTALL_PREFIX install)
 set(CMAKE_CXX_STANDARD 11)
 
 set(EMMY_LUA_VERSION "54" CACHE STRING "Lua version: jit/51/52/53/54")
+set(EMMY_CORE_VERSION "DEV" CACHE STRING "Emmy core version: DEV/version number")
 
 if(${EMMY_LUA_VERSION} STREQUAL "54")
     set(EMMY_LUA_DIR "lua-5.4.0")
@@ -26,7 +27,7 @@ elseif(${EMMY_LUA_VERSION} STREQUAL "jit")
     #add_definitions(-DEMMY_LUA_JIT_SUPPORT_LUA_SETFUNCS)
 endif()
 
-add_definitions(-DEMMY_CORE_VERSION="1.5.2")
+add_definitions(-DEMMY_CORE_VERSION="${EMMY_CORE_VERSION}")
 
 if(EMMY_USE_LUA_SOURCE)
     add_definitions(-DEMMY_USE_LUA_SOURCE)

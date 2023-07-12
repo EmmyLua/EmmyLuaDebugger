@@ -8,8 +8,6 @@ class ExtensionPoint {
 public:
 	static std::string ExtensionTable;
 
-	static Arena<Variable> *Arena;
-
 	ExtensionPoint();
 
 	void Initialize(lua_State *L);

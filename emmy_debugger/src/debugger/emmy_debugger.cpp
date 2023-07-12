@@ -40,7 +40,8 @@ Debugger::Debugger(lua_State *L, EmmyDebuggerManager *manager)
 	  hookState(nullptr),
 	  running(false),
 	  skipHook(false),
-	  blocking(false) {
+	  blocking(false),
+	  arenaRef(nullptr) {
 }
 
 Debugger::~Debugger() {
@@ -200,7 +201,9 @@ bool Debugger::GetStacks(std::vector<Stack> &stacks) {
 					// add local variable
 					auto var = stack.variableArena->Alloc();
 					var->name = name;
+					SetVariableArena(stack.variableArena.get());
 					GetVariable(L, var, -1, 1);
+					ClearVariableArenaRef();
 					lua_pop(L, 1);
 					stack.localVariables.push_back(var);
 				}
@@ -216,7 +219,9 @@ bool Debugger::GetStacks(std::vector<Stack> &stacks) {
 						// add up variable
 						auto var = stack.variableArena->Alloc();
 						var->name = name;
+						SetVariableArena(stack.variableArena.get());
 						GetVariable(L, var, -1, 1);
+						ClearVariableArenaRef();
 						lua_pop(L, 1);
 						stack.upvalueVariables.push_back(var);
 					}
@@ -793,6 +798,18 @@ EmmyDebuggerManager *Debugger::GetEmmyDebuggerManager() {
 	return manager;
 }
 
+void Debugger::SetVariableArena(Arena<Variable> *arena) {
+	arenaRef = arena;
+}
+
+Arena<Variable> * Debugger::GetVariableArena() {
+	return arenaRef;
+}
+
+void Debugger::ClearVariableArenaRef() {
+	arenaRef = nullptr;
+}
+
 int Debugger::GetStackLevel(bool skipC) const {
 	if (!currentL) {
 		return 0;
@@ -898,7 +915,9 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext) {
 		lua_getfield(L, LUA_REGISTRYINDEX, CACHE_TABLE_NAME);// 1: cacheTable|nil
 		if (lua_type(L, -1) == LUA_TTABLE) {
 			lua_getfield(L, -1, std::to_string(evalContext->cacheId).c_str());// 1: cacheTable, 2: value
+			SetVariableArena(evalContext->result.GetArena());
 			GetVariable(L, evalContext->result, -1, evalContext->depth);
+			ClearVariableArenaRef();
 			lua_pop(L, 2);
 			return true;
 		}
@@ -937,7 +956,9 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext) {
 	r = lua_pcall(L, 0, 1, 0);
 	if (r == LUA_OK) {
 		evalContext->result->name = evalContext->expr;
+		SetVariableArena(evalContext->result.GetArena());
 		GetVariable(L, evalContext->result, -1, evalContext->depth);
+		ClearVariableArenaRef();
 		lua_pop(L, 1);
 		return true;
 	}

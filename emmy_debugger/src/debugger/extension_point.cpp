@@ -2,7 +2,6 @@
 #include "emmy_debugger/emmy_facade.h"
 
 std::string ExtensionPoint::ExtensionTable = "emmyHelper";
-Arena<Variable> *ExtensionPoint::Arena = nullptr;
 
 int metaQuery(lua_State *L) {
 	const int argN = lua_gettop(L);
@@ -80,8 +79,9 @@ void pushVariable(lua_State *L, Idx<Variable> variable) {
 }
 
 int createNode(lua_State *L) {
-	if (ExtensionPoint::Arena) {
-		auto idx = ExtensionPoint::Arena->Alloc();
+	auto arenaRef = EmmyFacade::Get().GetDebugger(L)->GetVariableArena();
+	if (arenaRef) {
+		auto idx = arenaRef->Alloc();
 		pushVariable(L, idx);
 		return 1;
 	} else {
@@ -131,7 +131,6 @@ bool ExtensionPoint::QueryVariable(lua_State *L, Idx<Variable> variable, const c
 	if (lua_istable(L, -1)) {
 		lua_getfield(L, -1, "queryVariable");
 		if (lua_isfunction(L, -1)) {
-			ExtensionPoint::Arena = variable.GetArena();
 			pushVariable(L, variable);
 			lua_pushvalue(L, object);
 			lua_pushstring(L, typeName);

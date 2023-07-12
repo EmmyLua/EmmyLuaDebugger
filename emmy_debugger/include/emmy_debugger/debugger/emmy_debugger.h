@@ -88,6 +88,12 @@ public:
 	void SetHookState(std::shared_ptr<HookState> newState);
 	EmmyDebuggerManager* GetEmmyDebuggerManager();
 
+	void SetVariableArena(Arena<Variable> *arena);
+
+	Arena<Variable> *GetVariableArena();
+
+	void ClearVariableArenaRef();
+
 private:
 	std::shared_ptr<BreakPoint> FindBreakPoint(lua_Debug* ar);
 	std::shared_ptr<BreakPoint> FindBreakPoint(const std::string& file, int line);
@@ -129,4 +135,6 @@ private:
 
 	std::mutex evalMtx;
 	std::queue<std::shared_ptr<EvalContext>> evalQueue;
+
+	Arena<Variable> *arenaRef;
 };

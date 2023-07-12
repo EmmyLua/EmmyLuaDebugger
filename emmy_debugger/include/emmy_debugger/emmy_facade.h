@@ -89,8 +89,6 @@ public:
 
 	void OnReceiveMessage(nlohmann::json document);
 
-	// void Remove
-
 	// Start hook 作为成员存在
 	std::function<void()> StartHook;
 
