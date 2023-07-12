@@ -789,7 +789,7 @@ void Debugger::SetHookState(std::shared_ptr<HookState> newState) {
 	}
 }
 
-EmmyDebuggerManager* Debugger::GetEmmyDebuggerManager() {
+EmmyDebuggerManager *Debugger::GetEmmyDebuggerManager() {
 	return manager;
 }
 
@@ -963,6 +963,18 @@ public:
 	bool NeedEval;
 };
 
+std::string BaseName(const std::string &filePath) {
+	std::size_t sepIndex = filePath.find_last_of('/');
+	if (sepIndex == std::string::npos) {
+		sepIndex = filePath.find_last_of('\\');
+		if (sepIndex != std::string::npos) {
+			return filePath.substr(sepIndex + 1);
+		}
+		return filePath;
+	} else {
+		return filePath.substr(sepIndex + 1);
+	}
+}
 
 void Debugger::DoLogMessage(std::shared_ptr<BreakPoint> bp) {
 	std::string &logMessage = bp->logMessage;

@@ -152,11 +152,12 @@ public:
 	Idx<Variable> result;
 	bool success = false;
 	bool setValue = false;
-	std::shared_ptr<Arena<Variable>> variableArena;
 
 	nlohmann::json Serialize() override;
 
 	void Deserialize(nlohmann::json json) override;
+private:
+	Arena<Variable> _arena;
 };
 
 class EvalParams : public JsonProtocol {

@@ -174,9 +174,8 @@ void Stack::Deserialize(nlohmann::json json) {
 	JsonProtocol::Deserialize(json);
 }
 
-EvalContext::EvalContext()
-	: variableArena(std::make_shared<Arena<Variable>>()) {
-	result = variableArena->Alloc();
+EvalContext::EvalContext() {
+	result = _arena.Alloc();
 }
 
 nlohmann::json EvalContext::Serialize() {

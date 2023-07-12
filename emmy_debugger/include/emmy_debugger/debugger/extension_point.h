@@ -8,6 +8,8 @@ class ExtensionPoint {
 public:
 	static std::string ExtensionTable;
 
+	static Arena<Variable> *Arena;
+
 	ExtensionPoint();
 
 	void Initialize(lua_State *L);
@@ -15,5 +17,4 @@ public:
 	bool QueryVariable(lua_State *L, Idx<Variable> variable, const char *typeName, int object, int depth);
 
 	lua_State *QueryParentThread(lua_State *L);
-
 };

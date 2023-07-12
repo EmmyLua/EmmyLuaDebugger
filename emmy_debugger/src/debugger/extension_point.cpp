@@ -2,7 +2,7 @@
 #include "emmy_debugger/emmy_facade.h"
 
 std::string ExtensionPoint::ExtensionTable = "emmyHelper";
-
+Arena<Variable> *ExtensionPoint::Arena = nullptr;
 
 int metaQuery(lua_State *L) {
 	const int argN = lua_gettop(L);
@@ -79,20 +79,14 @@ void pushVariable(lua_State *L, Idx<Variable> variable) {
 	lua_setmetatable(L, -2);
 }
 
-void setArena(lua_State *L, Arena<Variable> *arena) {
-	lua_pushstring(L, "EMMY_ARENA");
-	lua_pushlightuserdata(L, arena);
-	lua_rawset(L, LUA_REGISTRYINDEX);
-}
-
 int createNode(lua_State *L) {
-	lua_pushstring(L, "EMMY_ARENA");
-	lua_rawget(L, LUA_REGISTRYINDEX);
-	auto arena = (Arena<Variable>*) lua_touserdata(L, -1);
-	lua_pop(L, 1);
-	auto idx = arena->Alloc();
-	pushVariable(L, idx);
-	return 1;
+	if (ExtensionPoint::Arena) {
+		auto idx = ExtensionPoint::Arena->Alloc();
+		pushVariable(L, idx);
+		return 1;
+	} else {
+		return 0;
+	}
 }
 
 ExtensionPoint::ExtensionPoint() {
@@ -137,6 +131,7 @@ bool ExtensionPoint::QueryVariable(lua_State *L, Idx<Variable> variable, const c
 	if (lua_istable(L, -1)) {
 		lua_getfield(L, -1, "queryVariable");
 		if (lua_isfunction(L, -1)) {
+			ExtensionPoint::Arena = variable.GetArena();
 			pushVariable(L, variable);
 			lua_pushvalue(L, object);
 			lua_pushstring(L, typeName);

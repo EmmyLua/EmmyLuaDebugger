@@ -49,16 +49,4 @@ bool EndWith(const std::string &source, const std::string &end) {
 	return strncmp(end.data(), source.data() + (sourceSize - endSize), endSize) == 0;
 }
 
-std::string BaseName(const std::string &filePath) {
-	std::size_t sepIndex = filePath.find_last_of('/');
-	if (sepIndex == std::string::npos) {
-		sepIndex = filePath.find_last_of('\\');
-		if (sepIndex != std::string::npos) {
-			return filePath.substr(sepIndex + 1);
-		}
-		return filePath;
-	} else {
-		return filePath.substr(sepIndex + 1);
-	}
-}
 

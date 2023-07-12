@@ -129,6 +129,4 @@ private:
 
 	std::mutex evalMtx;
 	std::queue<std::shared_ptr<EvalContext>> evalQueue;
-
-	Arena<Variable> _variableArena;
 };
