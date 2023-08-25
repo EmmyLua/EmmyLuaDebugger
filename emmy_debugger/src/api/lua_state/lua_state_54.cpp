@@ -2,7 +2,7 @@
 #ifdef EMMY_USE_LUA_SOURCE
 #include "lstate.h"
 #else
-#include "lua-5.4.0/src/lstate.h"
+#include "lua-5.4.6/src/lstate.h"
 #endif
 
 lua_State* GetMainState_lua54(lua_State* L)

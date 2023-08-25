@@ -1,15 +1,19 @@
 cmake_minimum_required(VERSION 3.11)
 
 project (emmy)
-set(CMAKE_INSTALL_PREFIX install)
+
+if (NOT CMAKE_INSTALL_PREFIX)
+    set(CMAKE_INSTALL_PREFIX install)
+endif()
 
 set(CMAKE_CXX_STANDARD 11)
 
 set(EMMY_LUA_VERSION "54" CACHE STRING "Lua version: jit/51/52/53/54")
 set(EMMY_CORE_VERSION "DEV" CACHE STRING "Emmy core version: DEV/version number")
+option(EMMY_USE_LUA_SOURCE "Build with lua source" OFF)
 
 if(${EMMY_LUA_VERSION} STREQUAL "54")
-    set(EMMY_LUA_DIR "lua-5.4.0")
+    set(EMMY_LUA_DIR "lua-5.4.6")
     add_definitions(-DEMMY_LUA_54)
 elseif(${EMMY_LUA_VERSION} STREQUAL "53")
     set(EMMY_LUA_DIR "lua-5.3.5")

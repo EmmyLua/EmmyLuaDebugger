@@ -9,8 +9,6 @@ add_dependencies(
     emmy_debugger
 )
 
-option(EMMY_USE_LUA_SOURCE "Build with lua source" OFF)
-
 set_target_properties(emmy_core PROPERTIES PREFIX "")
 
 target_include_directories(emmy_core
