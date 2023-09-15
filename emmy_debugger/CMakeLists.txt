@@ -6,7 +6,7 @@ add_library(emmy_debugger STATIC)
 
 add_dependencies(
     emmy_debugger
-    uv
+    uv_a
 )
 
 target_include_directories(emmy_debugger PUBLIC 
