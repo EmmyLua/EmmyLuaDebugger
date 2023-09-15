@@ -2,10 +2,6 @@ cmake_minimum_required(VERSION 3.11)
 
 project (emmy)
 
-if (NOT CMAKE_INSTALL_PREFIX)
-    set(CMAKE_INSTALL_PREFIX install)
-endif()
-
 set(CMAKE_CXX_STANDARD 11)
 
 set(EMMY_LUA_VERSION "54" CACHE STRING "Lua version: jit/51/52/53/54")
@@ -45,7 +41,7 @@ if(EMMY_USE_LUA_SOURCE)
     endif()
 endif()
 
-add_subdirectory(third-party/libuv-1.29.0)
+add_subdirectory(third-party/libuv-1.46.0)
 add_subdirectory(emmy_debugger)
 add_subdirectory(emmy_core)
 

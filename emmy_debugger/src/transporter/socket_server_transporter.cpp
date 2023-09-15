@@ -46,10 +46,15 @@ SocketServerTransporter::~SocketServerTransporter() {
 }
 
 bool SocketServerTransporter::Listen(const std::string& host, int port, std::string& err) {
-	sockaddr_in addr{};
 	uvServer.data = this;
 	uv_tcp_init(loop, &uvServer);
-	uv_ip4_addr(host.c_str(), port, &addr);
+	struct sockaddr_storage addr;
+	uv_ip6_addr(host.c_str(), port, (struct sockaddr_in6 *) &addr);// 尝试使用IPv6地址
+
+	if (addr.ss_family == AF_UNSPEC) {
+		uv_ip4_addr(host.c_str(), port, (struct sockaddr_in *) &addr);// 如果失败，改用IPv4地址
+	}
+
 	uv_tcp_bind(&uvServer, reinterpret_cast<const struct sockaddr*>(&addr), 0);
 	const int r = uv_listen(reinterpret_cast<uv_stream_t*>(&uvServer), SOMAXCONN, on_new_connection);
 	if (r) {
