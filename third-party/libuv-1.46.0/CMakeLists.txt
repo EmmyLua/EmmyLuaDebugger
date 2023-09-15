@@ -465,6 +465,11 @@ endif()
 add_library(uv_a STATIC ${uv_sources})
 target_compile_definitions(uv_a PRIVATE ${uv_defines})
 target_compile_options(uv_a PRIVATE ${uv_cflags})
+# add -fPIC by CPPCXY
+if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+  target_compile_options(uv_a PRIVATE -fPIC)
+endif()
+
 target_include_directories(uv_a
   PUBLIC
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
