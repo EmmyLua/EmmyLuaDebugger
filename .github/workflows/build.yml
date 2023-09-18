@@ -16,17 +16,20 @@ jobs:
           - { os: macos-latest, target: darwin, platform: darwin-arm64}
     steps:
     - name: Env
+      # set TAG=DEV if not a tag
       run: |
-          if [[ ${{ github.ref }} == refs/tags/* ]]; then
-            TAG=${{ github.ref }}
-            TAG=${TAG#refs/tags/}
-            echo echo "TAG=$TAG" >> $GITHUB_ENV
-          else
-            echo echo "TAG=DEV" >> $GITHUB_ENV
-          fi
+        if [[ "${{ github.ref }}" = refs/tags/* ]]; then
+          export TAG= ${GITHUB_REF:10}
+        else
+          export TAG=DEV
+        fi
+        echo "TAG=${{env.TAG}}" >> $GITHUB_ENV
       shell: bash
-      
-    - uses: actions/checkout@v2
+    - name: Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 16.x
+    - uses: actions/checkout@v3
     - name: Build-windows
       if: startsWith(matrix.os, 'windows')
       run: |
@@ -58,7 +61,7 @@ jobs:
 
 
     - name: Upload
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.platform }}
         path: ${{ github.workspace }}/artifact/bin
@@ -72,7 +75,7 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Download
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
       - name: Display structure of downloaded files
         run: ls -R   
       - name: zip win32-x64
