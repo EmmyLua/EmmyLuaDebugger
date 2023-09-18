@@ -18,8 +18,8 @@ jobs:
     - name: Env
       # set TAG=DEV if not a tag
       run: |
-          if [[ "refs/tags/1.7.0" = refs/tags/* ]]; then
-            export TAG=${GITHUB_REF:10}
+          if [[ ${{ github.ref }} = refs/tags/* ]]; then
+            export TAG=$(echo ${{ github.ref }} | sed -e "s/refs\/tags\///g")
           else
             export TAG=DEV
           fi
