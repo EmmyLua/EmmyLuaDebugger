@@ -1,4 +1,4 @@
-﻿#include "emmy_hook/emmy_hook.h"
+﻿#include "emmy_hook.h"
 #include <cassert>
 #include <mutex>
 #include <set>
@@ -11,7 +11,7 @@
 #include "easyhook.h"
 #include "libpe/libpe.h"
 #include "io.h"
-#include "emmy_debugger/proto/socket_server_transporter.h"
+#include "emmy_debugger/transporter/socket_server_transporter.h"
 #include "shared/shme.h"
 
 

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 
 project (emmy_hook)
 
-add_library(emmy_hook SHARED )
+add_library(emmy_hook SHARED)
 
 set_target_properties(emmy_hook PROPERTIES PREFIX "")
 
@@ -13,21 +13,19 @@ target_include_directories(emmy_hook PUBLIC
 )
 
 target_sources(emmy_hook PRIVATE
-    ${emmy_SOURCE_DIR}/include/emmy_hook/emmy_hook.h
-
     #src
-    ${emmy_hook_SOURCE_DIR}/src/dllmain.cpp
-    ${emmy_hook_SOURCE_DIR}/src/emmy_hook.cpp
-    ${emmy_hook_SOURCE_DIR}/src/emmy_hook.windows.cpp
+    src/dllmain.cpp
+    src/emmy_hook.cpp
+    src/emmy_hook.windows.cpp
     
 
     #src/libpe
-    ${emmy_hook_SOURCE_DIR}/src/libpe/htable.cpp
-    ${emmy_hook_SOURCE_DIR}/src/libpe/htable.h
-    ${emmy_hook_SOURCE_DIR}/src/libpe/libpe.cpp
-    ${emmy_hook_SOURCE_DIR}/src/libpe/libpe.h
-    ${emmy_hook_SOURCE_DIR}/src/libpe/llist.cpp
-    ${emmy_hook_SOURCE_DIR}/src/libpe/llist.h
+    src/libpe/htable.cpp
+    src/libpe/htable.h
+    src/libpe/libpe.cpp
+    src/libpe/libpe.h
+    src/libpe/llist.cpp
+    src/libpe/llist.h
 
 )
 

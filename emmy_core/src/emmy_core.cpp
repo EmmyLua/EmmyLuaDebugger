@@ -13,9 +13,14 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 */
-#include "emmy_core/emmy_core.h"
-#include "emmy_debugger/emmy_helper.h"
+
+#include "emmy_debugger/debugger/emmy_debugger_lib.h"
 #include "emmy_debugger/emmy_facade.h"
+#ifdef _MSC_VER
+#define EMMY_CORE_EXPORT __declspec(dllexport)
+#else
+#define EMMY_CORE_EXPORT extern
+#endif
 
 static const luaL_Reg lib[] = {
 	{"tcpListen", tcpListen},
@@ -32,7 +37,7 @@ static const luaL_Reg lib[] = {
 extern "C" {
 	EMMY_CORE_EXPORT int luaopen_emmy_core(struct lua_State* L) {
 		EmmyFacade::Get().SetWorkMode(WorkMode::EmmyCore);
-		if (!install_emmy_core(L))
+		if (!install_emmy_debugger(L))
 			return false;
 		luaL_newlibtable(L, lib);
 		luaL_setfuncs(L, lib, 0);

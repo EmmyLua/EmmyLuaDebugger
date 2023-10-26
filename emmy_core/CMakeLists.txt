@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.14)
 
 project (emmy_core)
 
@@ -9,18 +9,14 @@ add_dependencies(
     emmy_debugger
 )
 
-option(EMMY_USE_LUA_SOURCE "Build with lua source" OFF)
-
 set_target_properties(emmy_core PROPERTIES PREFIX "")
 
-target_include_directories(emmy_core PUBLIC 
-    ${emmy_SOURCE_DIR}/include
+target_include_directories(emmy_core
     PRIVATE src
 )
 
-target_sources(emmy_core PUBLIC
-    ${emmy_SOURCE_DIR}/include/emmy_core/emmy_core.h
-    ${emmy_core_SOURCE_DIR}/src/emmy_core.cpp
+target_sources(emmy_core PRIVATE
+    src/emmy_core.cpp
 )
 
 target_link_libraries(

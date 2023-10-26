@@ -15,7 +15,7 @@
 */
 
 #include "emmy_debugger/emmy_facade.h"
-#include "emmy_hook/emmy_hook.h"
+#include "emmy_hook.h"
 #if WIN32
 #include <Windows.h>
 #include "shared/shme.h"
@@ -37,8 +37,8 @@ BOOL WINAPI DllMain(HINSTANCE hModule, DWORD reason, LPVOID reserved) {
 		// Set shared memory to hold what our remote process needs
 		memset(file.lpMemFile, 0, SHMEMSIZE);
 		data.hModule = hModule;
-		data.lpInit = LPDWORD(StartupHookMode);
-		data.dwOffset = DWORD(data.lpInit) - DWORD(data.hModule);
+		data.lpInit = (LPDWORD)(StartupHookMode);
+		data.dwOffset = (DWORD)(data.lpInit) - (DWORD)(data.hModule);
 		memcpy(file.lpMemFile, &data, sizeof(TSharedData));
 	}
 	else if (reason == DLL_PROCESS_DETACH) {

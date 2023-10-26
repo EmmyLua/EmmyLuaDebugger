@@ -1,5 +1,5 @@
 ﻿#include "emmy_debugger/api/lua_state.h"
-#include "emmy_debugger/lua_version.h"
+#include "emmy_debugger/api/lua_version.h"
 
 #ifdef EMMY_USE_LUA_SOURCE
 #if defined(EMMY_LUA_JIT)

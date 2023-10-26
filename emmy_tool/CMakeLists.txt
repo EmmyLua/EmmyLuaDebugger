@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.14)
 
 project (emmy_tool)
 
@@ -9,22 +9,16 @@ add_dependencies(
     shared
 )
 
-target_include_directories(emmy_tool PUBLIC 
-    ${emmy_SOURCE_DIR}/include
-    ./
+target_include_directories(emmy_tool PRIVATE 
+    src
 )
 
 target_sources(emmy_tool PRIVATE
-    ${emmy_SOURCE_DIR}/include/shared/shme.h
-
-    ${emmy_tool_SOURCE_DIR}/src/utility.h
-    ${emmy_tool_SOURCE_DIR}/src/emmy_tool.h
-    ${emmy_tool_SOURCE_DIR}/src/command_line.h
-
-    ${emmy_tool_SOURCE_DIR}/src/utility.cpp
-    ${emmy_tool_SOURCE_DIR}/src/emmy_tool.windows.cpp
-    ${emmy_tool_SOURCE_DIR}/src/command_line.cpp
-    ${emmy_tool_SOURCE_DIR}/src/main.cpp
+    src/windows/utility.cpp
+    src/windows/emmy_tool.windows.cpp
+    src/command_line.cpp
+    src/main.cpp
+    src/emmy_tool.cpp
 )
 
 target_link_libraries(

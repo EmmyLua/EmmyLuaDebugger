@@ -16,7 +16,7 @@
 
 
 
-
+#ifdef EMMY_USE_LUA_SOURCE
 #if  defined(EMMY_LUA_51) || defined(EMMY_LUA_JIT)
 #include "emmy_debugger/api/lua_api.h"
 int lua_absindex(lua_State *L, int idx) {
@@ -41,4 +41,5 @@ void lua_pushglobaltable(lua_State* L)
 	lua_pushvalue(L, LUA_GLOBALSINDEX);
 }
 
+#endif
 #endif

@@ -17,7 +17,7 @@
 #include "emmy_debugger/api/lua_api_loader.h"
 #include <cstdio>
 #include <cassert>
-#include "emmy_debugger/lua_version.h"
+#include "emmy_debugger/api/lua_version.h"
 
 
 #ifdef WIN32
@@ -68,6 +68,7 @@ IMP_LUA_API(lua_type);
 IMP_LUA_API(lua_typename);
 IMP_LUA_API(lua_tolstring);
 IMP_LUA_API(lua_toboolean);
+IMP_LUA_API(lua_tothread);
 IMP_LUA_API(lua_pushnil);
 IMP_LUA_API(lua_pushnumber);
 IMP_LUA_API(lua_pushlstring);
@@ -420,6 +421,7 @@ extern "C" bool SetupLuaAPI()
 	LOAD_LUA_API(lua_typename);
 	LOAD_LUA_API(lua_tolstring);
 	LOAD_LUA_API(lua_toboolean);
+	LOAD_LUA_API(lua_tothread);
 	LOAD_LUA_API(lua_pushnil);
 	LOAD_LUA_API(lua_pushnumber);
 	LOAD_LUA_API(lua_pushlstring);
