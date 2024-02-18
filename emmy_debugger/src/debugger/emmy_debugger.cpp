@@ -371,9 +371,7 @@ void Debugger::GetVariable(lua_State *L, Idx<Variable> variable, int index, int 
 	variable->valueType = type;
 
 
-	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA || type == LUA_TFUNCTION
-		|| type == LUA_TSTRING || type == LUA_TNUMBER || type == LUA_TLIGHTUSERDATA || type == LUA_TTHREAD
-		|| type == LUA_TNONE  || type == LUA_TNIL  || type == LUA_TBOOLEAN)) {
+	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA || type == LUA_TFUNCTION)) {
 		if (manager->extension.QueryVariable(L, variable, typeName, index, depth)) {
 			return;
 		}
