@@ -122,14 +122,14 @@ void ExtensionPoint::Initialize(lua_State *L) {
 	lua_rawset(L, LUA_REGISTRYINDEX);
 }
 
-bool ExtensionPoint::QueryVariable(lua_State *L, Idx<Variable> variable, const char *typeName, int object, int depth) {
+bool ExtensionPoint::QueryVariableGeneric(lua_State *L, Idx<Variable> variable, const char *typeName, int object, int depth, const char* queryFunction) {
 	bool result = false;
 	object = lua_absindex(L, object);
 	const int t = lua_gettop(L);
 	lua_getglobal(L, ExtensionTable.c_str());
 
 	if (lua_istable(L, -1)) {
-		lua_getfield(L, -1, "queryVariable");
+		lua_getfield(L, -1, queryFunction);
 		if (lua_isfunction(L, -1)) {
 			pushVariable(L, variable);
 			lua_pushvalue(L, object);
@@ -140,13 +140,21 @@ bool ExtensionPoint::QueryVariable(lua_State *L, Idx<Variable> variable, const c
 				result = lua_toboolean(L, -1);
 			} else {
 				const auto err = lua_tostring(L, -1);
-				printf("query error: %s\n", err);
+                printf("query error in %s: %s\n", queryFunction, err);
 			}
 		}
 	}
 
 	lua_settop(L, t);
 	return result;
+}
+
+bool ExtensionPoint::QueryVariable(lua_State *L, Idx<Variable> variable, const char *typeName, int object, int depth) {
+    return QueryVariableGeneric(L, variable, typeName, object, depth, "queryVariable");
+}
+
+bool ExtensionPoint::QueryVariableCustom(lua_State *L, Idx<Variable> variable, const char *typeName, int object, int depth) {
+    return QueryVariableGeneric(L, variable, typeName, object, depth, "queryVariableCustom");
 }
 
 lua_State *ExtensionPoint::QueryParentThread(lua_State *L) {
