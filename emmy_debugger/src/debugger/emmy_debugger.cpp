@@ -370,9 +370,13 @@ void Debugger::GetVariable(lua_State *L, Idx<Variable> variable, int index, int 
 	variable->valueTypeName = typeName;
 	variable->valueType = type;
 
-
-	if (queryHelper && (type == LUA_TTABLE || type == LUA_TUSERDATA || type == LUA_TFUNCTION)) {
-		if (manager->extension.QueryVariable(L, variable, typeName, index, depth)) {
+	if (queryHelper) {
+		if (type >= 0 && type < registeredTypes.size() && registeredTypes.test(type)
+			&& manager->extension.QueryVariableCustom(L, variable, typeName, index, depth)) {
+			return;
+		}
+		else if ((type == LUA_TTABLE || type == LUA_TUSERDATA || type == LUA_TFUNCTION)
+			&& manager->extension.QueryVariable(L, variable, typeName, index, depth)) {
 			return;
 		}
 	}
@@ -1423,4 +1427,27 @@ void Debugger::ExecuteWithSkipHook(const Executor &exec) {
 void Debugger::ExecuteOnLuaThread(const Executor &exec) {
 	std::unique_lock<std::mutex> lock(luaThreadMtx);
 	luaThreadExecutors.push_back(exec);
+}
+
+int Debugger::GetTypeFromName(const char* typeName) {
+    if (strcmp(typeName, "nil") == 0) return LUA_TNIL;
+    if (strcmp(typeName, "boolean") == 0) return LUA_TBOOLEAN;
+    if (strcmp(typeName, "lightuserdata") == 0) return LUA_TLIGHTUSERDATA;
+    if (strcmp(typeName, "number") == 0) return LUA_TNUMBER;
+    if (strcmp(typeName, "string") == 0) return LUA_TSTRING;
+    if (strcmp(typeName, "table") == 0) return LUA_TTABLE;
+    if (strcmp(typeName, "function") == 0) return LUA_TFUNCTION;
+    if (strcmp(typeName, "userdata") == 0) return LUA_TUSERDATA;
+    if (strcmp(typeName, "thread") == 0) return LUA_TTHREAD;
+    return -1; // 未知类型
+}
+
+bool Debugger::RegisterTypeName(const std::string& typeName, std::string& err) {
+    int type = GetTypeFromName(typeName.c_str());
+    if (type == -1) {
+        err = "Unknown type name: " + typeName;
+        return false;
+    }
+    registeredTypes.set(type);
+    return true;
 }

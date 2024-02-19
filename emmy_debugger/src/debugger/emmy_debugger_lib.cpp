@@ -117,6 +117,19 @@ int stop(lua_State* L)
 	return 0;
 }
 
+// emmy.registerTypeName(typeName: string): bool
+int registerTypeName(lua_State* L)
+{
+	luaL_checkstring(L, 1);
+	std::string err;
+	const auto typeName = lua_tostring(L, 1);
+	const auto suc = EmmyFacade::Get().RegisterTypeName(L, typeName, err);
+	lua_pushboolean(L, suc);
+	if (suc) return 1;
+	lua_pushstring(L, err.c_str());
+	return 2;
+}
+
 int gc(lua_State* L)
 {
 	EmmyFacade::Get().OnLuaStateGC(L);

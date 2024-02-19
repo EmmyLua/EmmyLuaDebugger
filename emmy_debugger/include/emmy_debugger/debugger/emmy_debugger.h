@@ -22,6 +22,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <bitset>
 
 #include "emmy_debugger/api/lua_api.h"
 #include "hook_state.h"
@@ -94,6 +95,8 @@ public:
 
 	void ClearVariableArenaRef();
 
+	bool RegisterTypeName(const std::string& typeName, std::string& err);
+
 private:
 	std::shared_ptr<BreakPoint> FindBreakPoint(lua_Debug* ar);
 	std::shared_ptr<BreakPoint> FindBreakPoint(const std::string& file, int line);
@@ -111,6 +114,8 @@ private:
 	void CacheValue(int valueIndex, Idx<Variable> variable) const;
 	// bool HasCacheValue(int valueIndex) const;
 	void ClearCache() const;
+
+	int GetTypeFromName(const char* typeName);
 
 	lua_State* currentL;
 	lua_State* mainL;
@@ -137,4 +142,6 @@ private:
 	std::queue<std::shared_ptr<EvalContext>> evalQueue;
 
 	Arena<Variable> *arenaRef;
+
+	std::bitset<LUA_TTHREAD+1> registeredTypes;
 };
