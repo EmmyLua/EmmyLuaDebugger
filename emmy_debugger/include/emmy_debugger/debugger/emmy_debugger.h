@@ -143,5 +143,5 @@ private:
 
 	Arena<Variable> *arenaRef;
 
-	std::bitset<LUA_TTHREAD+1> registeredTypes;
+	std::bitset<LUA_NUMTAGS> registeredTypes;
 };
