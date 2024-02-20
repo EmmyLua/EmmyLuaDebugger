@@ -62,6 +62,9 @@ typedef ptrdiff_t lua_KContext;
 #define LUA_TUSERDATA		7
 #define LUA_TTHREAD		8
 
+#define LUA_NUMTAGS		9
+
+
 /*
 ** Type for C functions registered with Lua
 */
