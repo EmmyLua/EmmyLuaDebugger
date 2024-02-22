@@ -95,7 +95,7 @@ public:
 
 	void ClearVariableArenaRef();
 
-	void enableDisplayCustomTypeInfo();
+	void EnableDisplayCustomTypeInfo();
 	bool RegisterTypeName(const std::string& typeName, std::string& err);
 
 private:

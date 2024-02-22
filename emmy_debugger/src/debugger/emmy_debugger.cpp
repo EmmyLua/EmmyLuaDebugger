@@ -1443,7 +1443,7 @@ int Debugger::GetTypeFromName(const char* typeName) {
     return -1; // 未知类型
 }
 
-void Debugger::enableDisplayCustomTypeInfo() {
+void Debugger::EnableDisplayCustomTypeInfo() {
     displayCustomTypeInfo = true;
 }
 
