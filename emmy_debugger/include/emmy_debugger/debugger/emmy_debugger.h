@@ -143,5 +143,6 @@ private:
 
 	Arena<Variable> *arenaRef;
 
+	bool displayCustomTypeInfo;
 	std::bitset<LUA_NUMTAGS> registeredTypes;
 };

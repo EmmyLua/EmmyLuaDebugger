@@ -41,7 +41,8 @@ Debugger::Debugger(lua_State *L, EmmyDebuggerManager *manager)
 	  running(false),
 	  skipHook(false),
 	  blocking(false),
-	  arenaRef(nullptr) {
+	  arenaRef(nullptr),
+	  displayCustomTypeInfo(false) {
 }
 
 Debugger::~Debugger() {
@@ -371,7 +372,7 @@ void Debugger::GetVariable(lua_State *L, Idx<Variable> variable, int index, int 
 	variable->valueType = type;
 
 	if (queryHelper) {
-		if (type >= 0 && type < registeredTypes.size() && registeredTypes.test(type)
+		if (displayCustomTypeInfo && type >= 0 && type < registeredTypes.size() && registeredTypes.test(type)
 			&& manager->extension.QueryVariableCustom(L, variable, typeName, index, depth)) {
 			return;
 		}
@@ -1448,6 +1449,7 @@ bool Debugger::RegisterTypeName(const std::string& typeName, std::string& err) {
         err = "Unknown type name: " + typeName;
         return false;
     }
+	displayCustomTypeInfo = true;
     registeredTypes.set(type);
     return true;
 }
