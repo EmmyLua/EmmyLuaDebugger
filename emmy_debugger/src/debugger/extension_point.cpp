@@ -140,7 +140,7 @@ bool ExtensionPoint::QueryVariableGeneric(lua_State *L, Idx<Variable> variable, 
 				result = lua_toboolean(L, -1);
 			} else {
 				const auto err = lua_tostring(L, -1);
-                printf("query error in %s: %s\n", queryFunction, err);
+				printf("query error in %s: %s\n", queryFunction, err);
 			}
 		}
 	}
@@ -150,11 +150,11 @@ bool ExtensionPoint::QueryVariableGeneric(lua_State *L, Idx<Variable> variable, 
 }
 
 bool ExtensionPoint::QueryVariable(lua_State *L, Idx<Variable> variable, const char *typeName, int object, int depth) {
-    return QueryVariableGeneric(L, variable, typeName, object, depth, "queryVariable");
+	return QueryVariableGeneric(L, variable, typeName, object, depth, "queryVariable");
 }
 
 bool ExtensionPoint::QueryVariableCustom(lua_State *L, Idx<Variable> variable, const char *typeName, int object, int depth) {
-    return QueryVariableGeneric(L, variable, typeName, object, depth, "queryVariableCustom");
+	return QueryVariableGeneric(L, variable, typeName, object, depth, "queryVariableCustom");
 }
 
 lua_State *ExtensionPoint::QueryParentThread(lua_State *L) {
