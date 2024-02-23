@@ -121,7 +121,7 @@ int stop(lua_State* L)
 int enableDisplayCustomTypeInfo(lua_State* L)
 {
 	std::string err;
-	const auto suc = EmmyFacade::Get().EnableDisplayCustomTypeInfo(L, err);
+	const auto suc = EmmyFacade::Get().enableDisplayCustomTypeInfo(L, err);
 	lua_pushboolean(L, suc);
 	if (suc) return 1;
 	lua_pushstring(L, err.c_str());
