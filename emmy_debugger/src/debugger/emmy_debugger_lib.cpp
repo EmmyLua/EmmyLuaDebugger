@@ -117,17 +117,6 @@ int stop(lua_State* L)
 	return 0;
 }
 
-// emmy.enableDisplayCustomTypeInfo(): bool
-int enableDisplayCustomTypeInfo(lua_State* L)
-{
-	std::string err;
-	const auto suc = EmmyFacade::Get().enableDisplayCustomTypeInfo(L, err);
-	lua_pushboolean(L, suc);
-	if (suc) return 1;
-	lua_pushstring(L, err.c_str());
-	return 2;
-}
-
 // emmy.registerTypeName(typeName: string): bool
 int registerTypeName(lua_State* L)
 {

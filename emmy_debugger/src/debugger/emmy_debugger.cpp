@@ -41,8 +41,7 @@ Debugger::Debugger(lua_State *L, EmmyDebuggerManager *manager)
 	  running(false),
 	  skipHook(false),
 	  blocking(false),
-	  arenaRef(nullptr),
-	  displayCustomTypeInfo(false) {
+	  arenaRef(nullptr) {
 }
 
 Debugger::~Debugger() {
@@ -372,7 +371,7 @@ void Debugger::GetVariable(lua_State *L, Idx<Variable> variable, int index, int 
 	variable->valueType = type;
 
 	if (queryHelper) {
-		if (displayCustomTypeInfo && type >= 0 && type < registeredTypes.size() && registeredTypes.test(type)
+		if (type >= 0 && type < registeredTypes.size() && registeredTypes.test(type)
 			&& manager->extension.QueryVariableCustom(L, variable, typeName, index, depth)) {
 			return;
 		}
@@ -1441,10 +1440,6 @@ int Debugger::GetTypeFromName(const char* typeName) {
     if (strcmp(typeName, "userdata") == 0) return LUA_TUSERDATA;
     if (strcmp(typeName, "thread") == 0) return LUA_TTHREAD;
     return -1; // 未知类型
-}
-
-void Debugger::enableDisplayCustomTypeInfo() {
-    displayCustomTypeInfo = true;
 }
 
 bool Debugger::RegisterTypeName(const std::string& typeName, std::string& err) {

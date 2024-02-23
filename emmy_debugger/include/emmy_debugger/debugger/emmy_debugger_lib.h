@@ -28,9 +28,6 @@ int tcpSharedListen(lua_State* L);
 // emmy.stop()
 int stop(lua_State* L);
 
-// emmy.enableDisplayCustomTypeInfo(): bool
-int enableDisplayCustomTypeInfo(lua_State* L);
-
 // emmy.registerTypeName(typeName: string): bool
 int registerTypeName(lua_State* L);
 

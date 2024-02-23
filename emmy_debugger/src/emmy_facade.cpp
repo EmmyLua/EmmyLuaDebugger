@@ -397,16 +397,6 @@ void EmmyFacade::Attach(lua_State *L) {
 	lua_sethook(L, EmmyFacade::HookLua, LUA_MASKCALL | LUA_MASKLINE | LUA_MASKRET, 0);
 }
 
-bool EmmyFacade::enableDisplayCustomTypeInfo(lua_State *L, std::string &err) {
-	auto debugger = GetDebugger(L);
-	if (!debugger) {
-		err = "Debugger does not exist";
-		return false;
-	}
-	debugger->enableDisplayCustomTypeInfo();
-	return true;
-}
-
 bool EmmyFacade::RegisterTypeName(lua_State *L, const std::string &typeName, std::string &err) {
 	auto debugger = GetDebugger(L);
 	if (!debugger) {

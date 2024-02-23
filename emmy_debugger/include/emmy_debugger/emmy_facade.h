@@ -58,7 +58,6 @@ public:
 	bool PipeListen(lua_State* L, const std::string& name, std::string& err);
 	bool PipeConnect(lua_State* L, const std::string& name, std::string& err);
 	int BreakHere(lua_State* L);
-	bool enableDisplayCustomTypeInfo(lua_State *L, std::string &err);
 	bool RegisterTypeName(lua_State *L, const std::string &typeName, std::string &err);
 	
 	int OnConnect(bool suc);

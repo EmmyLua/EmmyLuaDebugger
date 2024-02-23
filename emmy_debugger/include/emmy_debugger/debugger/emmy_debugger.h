@@ -95,7 +95,6 @@ public:
 
 	void ClearVariableArenaRef();
 
-	void enableDisplayCustomTypeInfo();
 	bool RegisterTypeName(const std::string& typeName, std::string& err);
 
 private:
@@ -144,6 +143,5 @@ private:
 
 	Arena<Variable> *arenaRef;
 
-	bool displayCustomTypeInfo;
 	std::bitset<LUA_NUMTAGS> registeredTypes;
 };
