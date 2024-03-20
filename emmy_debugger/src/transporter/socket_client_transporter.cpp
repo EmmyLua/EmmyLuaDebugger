@@ -59,10 +59,13 @@ bool SocketClientTransporter::Connect(const std::string& host, int port, std::st
 	uvClient.data = this;
 	uv_tcp_init(loop, &uvClient);
 	struct sockaddr_storage addr;
-	uv_ip6_addr(host.c_str(), port, (struct sockaddr_in6 *) &addr);// 尝试使用IPv6地址
-
-	if (addr.ss_family == AF_UNSPEC) {
-		uv_ip4_addr(host.c_str(), port, (struct sockaddr_in *) &addr);// 如果失败，改用IPv4地址
+	int ret = uv_ip6_addr(host.c_str(), port, (struct sockaddr_in6 *) &addr);// 尝试使用IPv6地址
+	if (ret != 0) {
+		ret = uv_ip4_addr(host.c_str(), port, (struct sockaddr_in *) &addr);// 如果失败，改用IPv4地址
+		if (ret != 0) {
+			err = uv_strerror(ret);
+			return false;
+		}
 	}
 
 	connect_req.data = this;
