@@ -62,7 +62,9 @@ typedef ptrdiff_t lua_KContext;
 #define LUA_TUSERDATA		7
 #define LUA_TTHREAD		8
 
+#ifndef LUA_NUMTAGS
 #define LUA_NUMTAGS		9
+#endif
 
 
 /*

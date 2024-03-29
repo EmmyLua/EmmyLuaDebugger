@@ -6,3 +6,4 @@ build_script
 cmake-build-debug
 cmake-build-release
 .idea
+third-party

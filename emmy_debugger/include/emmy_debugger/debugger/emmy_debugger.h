@@ -29,6 +29,10 @@
 #include "emmy_debugger/proto/proto.h"
 #include "emmy_debugger/arena/arena.h"
 
+#ifndef LUA_NUMTAGS
+#define LUA_NUMTAGS		9
+#endif
+
 using Executor = std::function<void(lua_State* L)>;
 class EmmyDebuggerManager;
 

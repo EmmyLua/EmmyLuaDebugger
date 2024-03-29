@@ -1,123 +1,69 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.11)
 
-project (emmy_debugger)
+project (emmy)
 
-add_library(emmy_debugger STATIC)
+set(CMAKE_CXX_STANDARD 11)
 
-add_dependencies(
-    emmy_debugger
-    uv_a
-)
+set(EMMY_LUA_VERSION "54" CACHE STRING "Lua version: jit/51/52/53/54")
+set(EMMY_CORE_VERSION "DEV" CACHE STRING "Emmy core version: DEV/version number")
+option(EMMY_USE_LUA_SOURCE "Build with lua source" OFF)
 
-target_include_directories(emmy_debugger PUBLIC 
-    ${emmy_debugger_SOURCE_DIR}/include
-    ${emmy_SOURCE_DIR}/third-party/nlohmann/include
-    ${emmy_SOURCE_DIR}/third-party/libuv-1.29.0/include
-    PRIVATE src
-)
-
-target_sources(emmy_debugger 
-    PRIVATE
-    #src/api
-    src/api/lua_api.cpp
-    src/api/lua_state.cpp
-    src/api/lua_version.cpp
-
-    #src/transporter
-    src/transporter/pipeline_client_transporter.cpp
-    src/transporter/pipeline_server_transporter.cpp
-    src/transporter/socket_client_transporter.cpp
-    src/transporter/socket_server_transporter.cpp
-    src/transporter/transporter.cpp
-
-    #src/debugger
-    src/debugger/emmy_debugger.cpp
-    src/debugger/emmy_debugger_manager.cpp
-    src/debugger/emmy_debugger_lib.cpp
-    src/debugger/hook_state.cpp 
-    src/debugger/extension_point.cpp
-
-    #src/proto
-    src/proto/proto.cpp
-    src/proto/proto_handler.cpp
-
-    #src/arena
-    src/arena/arena.cpp
-
-    #src
-    src/emmy_facade.cpp
-    src/util.cpp
-)
-
-
-if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-	target_compile_options(emmy_debugger PUBLIC /utf-8)
-endif ()
-
-
-if(NOT WIN32)
-    target_compile_options(emmy_debugger PUBLIC -fPIC)
+if(${EMMY_LUA_VERSION} STREQUAL "54")
+    set(EMMY_LUA_DIR "lua-5.4.6")
+    add_definitions(-DEMMY_LUA_54)
+elseif(${EMMY_LUA_VERSION} STREQUAL "53")
+    set(EMMY_LUA_DIR "lua-5.3.5")
+    add_definitions(-DEMMY_LUA_53)
+elseif(${EMMY_LUA_VERSION} STREQUAL "52")
+    set(EMMY_LUA_DIR "lua-5.2.4")
+    add_definitions(-DEMMY_LUA_52)
+elseif(${EMMY_LUA_VERSION} STREQUAL "51")
+    set(EMMY_LUA_DIR "lua-5.1.5")
+    add_definitions(-DEMMY_LUA_51)
+elseif(${EMMY_LUA_VERSION} STREQUAL "jit")
+    set(EMMY_LUA_DIR "luajit")
+    add_definitions(-DEMMY_LUA_JIT)
+    # if LUAJIT support lua_setfuncs use this macro define
+    #add_definitions(-DEMMY_LUA_JIT_SUPPORT_LUA_SETFUNCS)
 endif()
 
+add_definitions(-DEMMY_CORE_VERSION="${EMMY_CORE_VERSION}")
+
 if(EMMY_USE_LUA_SOURCE)
-    target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
-    target_include_directories(emmy_debugger PUBLIC 
-        ${emmy_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
+    add_definitions(-DEMMY_USE_LUA_SOURCE)
+    include_directories(
+        ${CMAKE_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
     )
     if(${EMMY_LUA_VERSION} STREQUAL "jit")
-        target_link_directories(emmy_debugger PUBLIC 
-            ${emmy_SOURCE_DIR}/third-party/${EMMY_LUA_DIR}/src
-        )
-        target_link_libraries(
-            emmy_debugger
-            PRIVATE lua51.lib
-        )
-        target_sources(emmy_debugger
-            PRIVATE
-            src/api/lua_state/lua_state_jit.cpp
-        )
+        #ignore
     else()
-        add_dependencies(emmy_debugger lua${EMMY_LUA_VERSION})
-        target_link_libraries(
-            emmy_debugger
-            PUBLIC lua${EMMY_LUA_VERSION}
-        )
-        target_sources(emmy_debugger
-            PRIVATE
-            src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
-        )
+        add_subdirectory(third-party/${EMMY_LUA_DIR})
     endif()
+endif()
 
+add_subdirectory(third-party/libuv-1.46.0)
+add_subdirectory(emmy_debugger)
+add_subdirectory(emmy_core)
 
-
-elseif(EMMY_COMPILE_AS_LIB)
-    message("emmy build as lib")
-    target_compile_definitions(emmy_debugger PUBLIC -DEMMY_USE_LUA_SOURCE)
-    target_sources(emmy_debugger
-        PRIVATE
-        src/api/lua_state/lua_state_${EMMY_LUA_VERSION}.cpp
-    )
-else()
-    target_include_directories(emmy_debugger PRIVATE
-        ${emmy_SOURCE_DIR}/third-party
-    )
-
-    target_sources(emmy_debugger
-        PUBLIC
-        src/api/lua_api_loader.cpp
-
-        PRIVATE
-        src/api/lua_state/lua_state_54.cpp
-        src/api/lua_state/lua_state_53.cpp
-        src/api/lua_state/lua_state_52.cpp
-        src/api/lua_state/lua_state_51.cpp
-        src/api/lua_state/lua_state_jit.cpp
-    )
-   
-endif(EMMY_USE_LUA_SOURCE)
-
-
-target_link_libraries(
-    emmy_debugger
-    PUBLIC uv_a
-)
+if(WIN32)
+    macro(source_group_by_dir proj_dir source_files)
+        if(MSVC OR APPLE)
+            get_filename_component(sgbd_cur_dir ${proj_dir} ABSOLUTE)
+            foreach(sgbd_file ${${source_files}})
+                get_filename_component(sgbd_abs_file ${sgbd_file} ABSOLUTE)
+                file(RELATIVE_PATH sgbd_fpath ${sgbd_cur_dir} ${sgbd_abs_file})
+                string(REGEX REPLACE "\(.*\)/.*" \\1 sgbd_group_name ${sgbd_fpath})
+                string(COMPARE EQUAL ${sgbd_fpath} ${sgbd_group_name} sgbd_nogroup)
+                string(REPLACE "/" "\\" sgbd_group_name ${sgbd_group_name})
+                if(sgbd_nogroup)
+                    set(sgbd_group_name "\\")
+                endif(sgbd_nogroup)
+                source_group(${sgbd_group_name} FILES ${sgbd_file})
+            endforeach(sgbd_file)
+        endif(MSVC OR APPLE)
+    endmacro(source_group_by_dir)
+    add_subdirectory(shared)
+    add_subdirectory(emmy_tool)
+    add_subdirectory(third-party/EasyHook)
+    add_subdirectory(emmy_hook)
+endif(WIN32)
