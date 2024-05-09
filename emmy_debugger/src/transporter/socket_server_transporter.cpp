@@ -49,10 +49,9 @@ bool SocketServerTransporter::Listen(const std::string& host, int port, std::str
 	uvServer.data = this;
 	uv_tcp_init(loop, &uvServer);
 	struct sockaddr_storage addr;
-	uv_ip6_addr(host.c_str(), port, (struct sockaddr_in6 *) &addr);// 尝试使用IPv6地址
-
-	if (addr.ss_family == AF_UNSPEC) {
-		uv_ip4_addr(host.c_str(), port, (struct sockaddr_in *) &addr);// 如果失败，改用IPv4地址
+	bool addr_suc = ParseSocketAddress(host, port, &addr, err);
+	if (!addr_suc) {
+		return false;
 	}
 
 	uv_tcp_bind(&uvServer, reinterpret_cast<const struct sockaddr*>(&addr), 0);

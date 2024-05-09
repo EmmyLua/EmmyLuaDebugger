@@ -84,4 +84,6 @@ protected:
 	void Run();
 	virtual void OnDisconnect();
 	virtual void OnConnect(bool suc);
+    // helper for both client and server
+	static bool ParseSocketAddress(const std::string &host, int port, sockaddr_storage *addr, std::string &err);
 };

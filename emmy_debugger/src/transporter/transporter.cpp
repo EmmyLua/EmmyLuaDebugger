@@ -244,3 +244,22 @@ int Transporter::Stop()
 	running = false;
 	return 0;
 }
+
+bool Transporter::ParseSocketAddress(const std::string &host, int port, sockaddr_storage *addr, std::string &err)
+{
+	const int ip6_addr_res = uv_ip6_addr(host.c_str(), port, reinterpret_cast<sockaddr_in6 *>(addr));// 尝试使用IPv6地址
+	if (ip6_addr_res == 0) {
+		return true;
+	}
+
+	const int ip4_addr_res = uv_ip4_addr(host.c_str(), port, reinterpret_cast<sockaddr_in *>(addr));// 如果失败，改用IPv4地址
+	if (ip4_addr_res == 0) {
+		return true;
+	}
+
+	err = "Invalid host. IPv6 error: ";
+	err += uv_strerror(ip6_addr_res);
+	err += ". IPv4 error: ";
+	err += uv_strerror(ip4_addr_res);
+	return false;
+}
