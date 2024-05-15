@@ -21,7 +21,7 @@ target_sources(emmy_core PRIVATE
 
 target_link_libraries(
     emmy_core
-    PUBLIC emmy_debugger
+    PRIVATE emmy_debugger
 )
 
 install(
