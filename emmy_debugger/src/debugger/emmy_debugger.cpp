@@ -333,18 +333,19 @@ void DisplayFunction(Idx<Variable> variable, lua_State *L, int index) {
 	lua_pushvalue(L, index);
 	if (lua_getinfo(L, ">Snu", &ar) == 0) {
 		variable->value = ToPointer(L, index);
-		return;
 	}
-	switch (luaVersion) {
-		case LuaVersion::LUA_54: {
-			DisplayFunction54(variable, L, index, ar.u.ar54);
-			break;
+	else {
+		switch (luaVersion) {
+			case LuaVersion::LUA_54: {
+				DisplayFunction54(variable, L, index, ar.u.ar54);
+				break;
+			}
+			default: {
+				variable->value = ToPointer(L, index);
+				break;
+			}
 		}
-		default: {
-			variable->value = ToPointer(L, index);
-			break;
-		}
-	}
+    }
 	lua_settop(L, index);
 }
 #endif
