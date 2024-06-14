@@ -972,6 +972,7 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext) {
 		evalContext->error = lua_tostring(L, -1);
 	}
 
+	lua_pop(L, 1);
 	return false;
 }
 
