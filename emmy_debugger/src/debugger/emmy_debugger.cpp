@@ -447,13 +447,33 @@ void Debugger::GetVariable(lua_State *L, Idx<Variable> variable, int index, int 
 					auto v = variable.GetArena()->Alloc();
 					const auto t = lua_type(L, -2);
 					v->nameType = t;
-					if (t == LUA_TSTRING || t == LUA_TNUMBER || t == LUA_TBOOLEAN) {
-						lua_pushvalue(L, -2);// avoid error: "invalid key to 'next'" ???
-						v->name = lua_tostring(L, -1);
-						lua_pop(L, 1);
-					} else {
-						v->name = ToPointer(L, -2);
-					}
+                    switch (t) {
+                        case LUA_TSTRING:
+                        {
+                            v->name = lua_tostring(L, -2);
+                            break;
+                        }
+                        case LUA_TNUMBER:
+                        {
+                            auto number = lua_tonumber(L, -2);
+                            if (static_cast<long long>(number) == number) {
+                                v->name = std::to_string(static_cast<long long>(number));
+                            } else {
+                                v->name = std::to_string(number);
+                            }
+                            break;
+                        }
+                        case LUA_TBOOLEAN:
+                        {
+                            v->name = lua_toboolean(L, -2) ? "true" : "false";
+                            break;
+                        }
+                        default: {
+                            v->name = ToPointer(L, -2);
+                            break;
+                        }
+                    }
+
 					GetVariable(L, v, -1, depth - 1);
 					variable->children.push_back(v);
 				}
