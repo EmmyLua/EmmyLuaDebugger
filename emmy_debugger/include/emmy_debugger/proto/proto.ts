@@ -10,7 +10,7 @@ enum ValueType {
 }
 
 enum VariableNameType {
-    NString, NNumber, NComplex, 
+    NString, NNumber, NComplex,
 }
 
 interface Variable {
@@ -45,6 +45,7 @@ interface InitRsp {
 interface AddBreakPointReq {
     breakPoints: BreakPoint[];
 }
+
 interface AddBreakPointRsp {
 }
 
@@ -52,6 +53,7 @@ interface AddBreakPointRsp {
 interface RemoveBreakPointReq {
     breakPoints: BreakPoint[];
 }
+
 interface RemoveBreakPointRsp {
 }
 
@@ -68,6 +70,7 @@ enum DebugAction {
 interface ActionReq {
     action: DebugAction;
 }
+
 interface ActionRsp {
 }
 
