@@ -98,6 +98,7 @@ void HookStateStepIn::ProcessHook(std::shared_ptr<Debugger> debugger, lua_State*
 	UpdateStackLevel(debugger, L, ar);
 	if (getDebugEvent(ar) == LUA_HOOKLINE)
 	{
+		lua_getinfo(L, "nSl", ar);
 		auto currentLine = getDebugCurrentLine(ar);
 		auto source = getDebugSource(ar);
 		if(currentLine != line || file != source)
