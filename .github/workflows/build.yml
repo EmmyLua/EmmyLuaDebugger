@@ -44,12 +44,8 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         if [[ "${{ matrix.zig_build }}" == "true" ]]; then
-          wget https://ziglang.org/builds/zig-linux-x86_64-0.11.0.tar.xz
-          tar -xf zig-linux-x86_64-0.11.0.tar.xz
-          export PATH=$PWD/zig-linux-x86_64-0.11.0:$PATH
-          mkdir build
-          cd build
-          CC="zig cc -target x86_64-linux-gnu.2.17" cmake .. -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
+          snap install zig --classic --beta
+          cmake -B build -G Ninja --toolchain aarch64-linux-gnu.cmake -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
           cmake --build . --config Release
           cmake --install . --config Release --prefix ${{ github.workspace }}/artifact/
         else
