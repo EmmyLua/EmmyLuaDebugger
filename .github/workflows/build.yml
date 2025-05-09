@@ -43,7 +43,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         if [[ "${{ matrix.zig_build }}" == "true" ]]; then
-          snap install zig --classic --beta
+          sudo snap install zig --classic --beta
           mkdir -p build
           # 使用zig-build.cmake配置文件编译C++项目
           cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/zig-build.cmake -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
