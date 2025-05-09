@@ -44,10 +44,12 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
       run: |
         if [[ "${{ matrix.zig_build }}" == "true" ]]; then
-          snap install zig --classic --beta
-          cmake -B build -G Ninja --toolchain aarch64-linux-gnu.cmake -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
-          cmake --build . --config Release
-          cmake --install . --config Release --prefix ${{ github.workspace }}/artifact/
+          sudo snap install zig --classic --beta
+          mkdir -p build
+          # 使用Zig作为工具链编译C++项目
+          cmake -B build -G Ninja -DCMAKE_C_COMPILER=zig-cc -DCMAKE_CXX_COMPILER=zig-c++ -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
+          cmake --build build --config Release
+          cmake --install build --config Release --prefix ${{ github.workspace }}/artifact/
         else
           mkdir build
           cd build
