@@ -47,7 +47,7 @@ jobs:
           sudo snap install zig --classic --beta
           mkdir -p build
           # 使用Zig作为工具链编译C++项目
-          cmake -B build -G Ninja -DCMAKE_C_COMPILER=zig-cc -DCMAKE_CXX_COMPILER=zig-c++ -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
+          cmake -B build -G Ninja -DCMAKE_C_COMPILER=zig -DCMAKE_C_COMPILER_ARG1=cc -DCMAKE_CXX_COMPILER=zig -DCMAKE_CXX_COMPILER_ARG1=c++ -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
           cmake --build build --config Release
           cmake --install build --config Release --prefix ${{ github.workspace }}/artifact/
         else
