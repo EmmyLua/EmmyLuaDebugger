@@ -660,7 +660,7 @@ void Debugger::EnterDebugMode() {
 		std::unique_lock<std::mutex> lockEval(evalMtx);
 		if (evalQueue.empty() && blocking) {
 			lockEval.unlock();
-			cvRun.wait(lock);
+			cvRun.wait(lock, [this] { return !blocking || !evalQueue.empty(); });
 			lockEval.lock();
 		}
 		if (!evalQueue.empty()) {
