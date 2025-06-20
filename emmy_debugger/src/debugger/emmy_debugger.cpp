@@ -408,6 +408,9 @@ void Debugger::GetVariable(lua_State *L, Idx<Variable> variable, int index, int 
 					string = lua_tostring(L, -1);
 					lua_pop(L, 1);
 				}
+				else {
+					lua_settop(L, topIndex);
+				}
 			}
 			if (string) {
 				variable->value = string;
