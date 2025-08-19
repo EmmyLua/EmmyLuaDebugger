@@ -11,12 +11,7 @@ jobs:
         include:
           - { os: windows-latest, target: windows, platform: win32-x64}
           - { os: windows-latest, target: windows, platform: win32-x86, cmake_arch: "-A Win32"}
-<<<<<<< HEAD
           - { os: ubuntu-latest, target: linux, platform: linux-x64, zig_build: true}
-=======
-          - { os: ubuntu-latest, target: linux, platform: linux-x64}
-          - { os: ubuntu-latest, target: linux, platform: linux-x64-zig, zig_build: true}
->>>>>>> 118a4b74e7d2e05faf11ef900f3d16397e50990f
           - { os: macos-latest, target: darwin, platform: darwin-x64}
           - { os: macos-latest, target: darwin, platform: darwin-arm64}
     steps:
@@ -50,8 +45,8 @@ jobs:
         if [[ "${{ matrix.zig_build }}" == "true" ]]; then
           sudo snap install zig --classic --beta
           mkdir -p build
-          # 使用Zig作为工具链编译C++项目
-          cmake -B build -G Ninja -DCMAKE_C_COMPILER=zig -DCMAKE_C_COMPILER_ARG1=cc -DCMAKE_CXX_COMPILER=zig -DCMAKE_CXX_COMPILER_ARG1=c++ -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
+          # 使用zig-build.cmake配置文件编译C++项目
+          cmake -B build -G Ninja -DCMAKE_TOOLCHAIN_FILE=cmake/zig-build.cmake -DCMAKE_BUILD_TYPE=Release -DEMMY_CORE_VERSION=${{env.TAG}}
           cmake --build build --config Release
           cmake --install build --config Release --prefix ${{ github.workspace }}/artifact/
         else
