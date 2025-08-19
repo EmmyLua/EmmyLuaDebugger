@@ -86,7 +86,7 @@ void Transporter::Receive(const char* data, size_t len)
 		size_t start = pos;
 		for (size_t i = pos; i < receiveSize; i++)
 		{
-			if (data[i] == '\n')
+			if (buf[i] == '\n')
 			{
 				pos = i + 1;
 				break;

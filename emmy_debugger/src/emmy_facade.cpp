@@ -114,6 +114,10 @@ bool EmmyFacade::TcpSharedListen(lua_State *L, const std::string &host, int port
 	if (transporter == nullptr) {
 		return TcpListen(L, host, port, err);
 	}
+	if (_emmyDebuggerManager.GetDebugger(L) == nullptr) {
+		_emmyDebuggerManager.AddDebugger(L);
+		SetReadyHook(L);
+	}
 	return true;
 }
 
