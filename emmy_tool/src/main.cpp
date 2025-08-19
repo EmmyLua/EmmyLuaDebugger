@@ -2,6 +2,7 @@
 #include <string>
 #include "emmy_tool.h"
 #include "command_line.h"
+#include <thread>
 
 int main(int argc, char **argv) {
 	CommandLine commandLine;
