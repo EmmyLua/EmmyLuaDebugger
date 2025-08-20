@@ -1365,6 +1365,9 @@ int Debugger::FuzzyMatchFileName(const std::string &chunkName, const std::string
 
 	// 我们用chunkname去匹配filename
 	int maxMatchSize = static_cast<int>(std::min(chunkSize, fileSize));
+	if (maxMatchSize <= 1) {
+		return 0;
+	}
 
 	int matchProcess = 1;
 
