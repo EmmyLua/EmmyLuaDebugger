@@ -106,6 +106,7 @@ else ()
             src/api/lua_api_loader.cpp
 
             PRIVATE
+            src/api/lua_state/lua_state_55.cpp
             src/api/lua_state/lua_state_54.cpp
             src/api/lua_state/lua_state_53.cpp
             src/api/lua_state/lua_state_52.cpp

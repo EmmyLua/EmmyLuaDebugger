@@ -183,12 +183,35 @@ struct lua_Debug_54 {
 	struct CallInfo* i_ci;  /* active function */
 };
 
+struct lua_Debug_55 {
+	int event;
+	const char *name;           /* (n) */
+	const char *namewhat;       /* (n) 'global', 'local', 'field', 'method' */
+	const char *what;           /* (S) 'Lua', 'C', 'main', 'tail' */
+	const char *source;         /* (S) */
+	size_t srclen;              /* (S) */
+	int currentline;            /* (l) */
+	int linedefined;            /* (S) */
+	int lastlinedefined;        /* (S) */
+	unsigned char nups;         /* (u) number of upvalues */
+	unsigned char nparams;      /* (u) number of parameters */
+	char isvararg;              /* (u) */
+	unsigned char extraargs;    /* (t) number of extra arguments */
+	char istailcall;            /* (t) */
+	int ftransfer;              /* (r) index of first value transferred */
+	int ntransfer;              /* (r) number of transferred values */
+	char short_src[LUA_IDSIZE]; /* (S) */
+	/* private part */
+	struct CallInfo *i_ci; /* active function */
+};
+
 struct lua_Debug {
 	union {
 		lua_Debug_51 ar51;
 		lua_Debug_52 ar52;
 		lua_Debug_53 ar53;
 		lua_Debug_54 ar54;
+		lua_Debug_55 ar55;
 	} u;
 };
 
@@ -379,6 +402,10 @@ DEF_LUA_API_E(lua_rotate);
 //54
 typedef void* (*dll_e_lua_newuserdatauv)(lua_State* L, int size, int nuvalue);
 DEF_LUA_API_E(lua_newuserdatauv);
+
+typedef void (*dll_e_lua_pushexternalstring)(lua_State * L,
+                                              const char *s, size_t len, lua_Alloc falloc, void *ud);
+DEF_LUA_API_E(lua_pushexternalstring);
 
 //jit
 typedef int (*dll_e_luaopen_jit)(lua_State* L);

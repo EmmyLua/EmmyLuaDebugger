@@ -70,6 +70,10 @@ inline const char* getDebugSource(lua_Debug* ar) {
 	return ar->source;
 }
 #include "lua_state.h"
+
+#ifdef EMMY_LUA_55
+#define LUA_NUMTAGS LUA_NUMTYPES
+#endif
 ///////////////////////////EMMY_USE_LUA_SOURCE
 #else
 #include "lua_api_loader.h"

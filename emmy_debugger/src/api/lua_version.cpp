@@ -8,6 +8,8 @@ LuaVersion luaVersion = LuaVersion::LUA_52;
 LuaVersion luaVersion = LuaVersion::LUA_53;
 #elif EMMY_LUA_54
 LuaVersion luaVersion = LuaVersion::LUA_54;
+#elif EMMY_LUA_55
+LuaVersion luaVersion = LuaVersion::LUA_55;
 #elif EMMY_LUA_JIT
 LuaVersion luaVersion = LuaVersion::LUA_JIT;
 #else

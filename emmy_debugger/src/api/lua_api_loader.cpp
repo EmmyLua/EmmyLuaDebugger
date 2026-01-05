@@ -128,6 +128,8 @@ IMP_LUA_API_E(lua_rotate);
 IMP_LUA_API_E(lua_newuserdata);
 //54
 IMP_LUA_API_E(lua_newuserdatauv);
+//55
+IMP_LUA_API_E(lua_pushexternalstring);
 //jit
 IMP_LUA_API_E(luaopen_jit);
 
@@ -153,6 +155,8 @@ int getDebugEvent(lua_Debug* ar)
 		return ar->u.ar53.event;
 	case LuaVersion::LUA_54:
 		return ar->u.ar54.event;
+	case LuaVersion::LUA_55:
+		return ar->u.ar55.event;
 	default:
 		assert(false);
 		return 0;
@@ -172,6 +176,8 @@ int getDebugCurrentLine(lua_Debug* ar)
 		return ar->u.ar53.currentline;
 	case LuaVersion::LUA_54:
 		return ar->u.ar54.currentline;
+	case LuaVersion::LUA_55:
+		return ar->u.ar55.currentline;
 	default:
 		assert(false);
 		return 0;
@@ -191,6 +197,8 @@ int getDebugLineDefined(lua_Debug* ar)
 		return ar->u.ar53.linedefined;
 	case LuaVersion::LUA_54:
 		return ar->u.ar54.linedefined;
+	case LuaVersion::LUA_55:
+		return ar->u.ar55.linedefined;
 	default:
 		assert(false);
 		return 0;
@@ -210,6 +218,8 @@ const char* getDebugSource(lua_Debug* ar)
 		return ar->u.ar53.source;
 	case LuaVersion::LUA_54:
 		return ar->u.ar54.source;
+	case LuaVersion::LUA_55:
+		return ar->u.ar55.source;
 	default:
 		assert(false);
 		return nullptr;
@@ -229,6 +239,8 @@ const char* getDebugName(lua_Debug* ar)
 		return ar->u.ar53.name;
 	case LuaVersion::LUA_54:
 		return ar->u.ar54.name;
+	case LuaVersion::LUA_55:
+		return ar->u.ar55.name;
 	default:
 		assert(false);
 		return nullptr;
@@ -482,12 +494,19 @@ extern "C" bool SetupLuaAPI()
 	LOAD_LUA_API_E(lua_rotate);
 	//54
 	LOAD_LUA_API_E(lua_newuserdatauv);
+	//55
+	LOAD_LUA_API_E(lua_pushexternalstring);
 
 	//jit
 	LOAD_LUA_API_E(luaopen_jit);
 
-
-	if (e_lua_newuserdatauv)
+	if (e_lua_pushexternalstring)
+	{
+		luaVersion = LuaVersion::LUA_55;
+		LUA_REGISTRYINDEX = (-(INT_MAX / 2 + 1000));
+		LUA_GLOBALSINDEX = 2;
+	}
+	else if (e_lua_newuserdatauv)
 	{
 		luaVersion = LuaVersion::LUA_54;
 		LUA_REGISTRYINDEX = -1001000;

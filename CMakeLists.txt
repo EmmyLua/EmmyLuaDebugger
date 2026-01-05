@@ -4,12 +4,13 @@ project (emmy)
 
 set(CMAKE_CXX_STANDARD 11)
 
-set(EMMY_LUA_VERSION "54" CACHE STRING "Lua version: jit/51/52/53/54")
+set(EMMY_LUA_VERSION "55" CACHE STRING "Lua version: jit/51/52/53/54/55")
 set(EMMY_CORE_VERSION "DEV" CACHE STRING "Emmy core version: DEV/version number")
 option(EMMY_USE_LUA_SOURCE "Build with lua source" OFF)
 
 if(${EMMY_LUA_VERSION} STREQUAL "55")
     set(EMMY_LUA_DIR "lua-5.5.0")
+    add_definitions(-DEMMY_LUA_55)
 elseif(${EMMY_LUA_VERSION} STREQUAL "54")
     set(EMMY_LUA_DIR "lua-5.4.6")
     add_definitions(-DEMMY_LUA_54)

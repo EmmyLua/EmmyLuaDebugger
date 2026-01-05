@@ -9,6 +9,7 @@ enum class LuaVersion {
 	LUA_52 = 52,
 	LUA_53 = 53,
 	LUA_54 = 54,
+	LUA_55 = 55,
 };
 
 extern LuaVersion luaVersion;
