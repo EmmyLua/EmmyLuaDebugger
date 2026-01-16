@@ -34,6 +34,7 @@
 | Lua 5.2     | ✅     | Fully supported |
 | Lua 5.3     | ✅     | Fully supported |
 | Lua 5.4     | ✅     | Fully supported |
+| Lua 5.5     | ✅     | Fully supported |
 | LuaJIT      | ✅     | Fully supported |
 
 ## 🚀 Quick Start
@@ -97,14 +98,14 @@ print("Hello, EmmyLua Debugger!")
 
 | Option                | Default | Description                        |
 |-----------------------|---------|------------------------------------|
-| `EMMY_LUA_VERSION`    | `54`    | Lua version (51/52/53/54/jit)      |
+| `EMMY_LUA_VERSION`    | `55`    | Lua version (51/52/53/54/55/jit)      |
 | `EMMY_USE_LUA_SOURCE` | `OFF`   | Whether to build with Lua source   |
 
 ### Advanced Build Examples
 
 ```bash
 # Build for a specific version
-cmake .. -DEMMY_LUA_VERSION=53 
+cmake .. -DEMMY_LUA_VERSION=55
 # Build using Lua source
 cmake .. -DEMMY_USE_LUA_SOURCE=ON
 ```

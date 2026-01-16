@@ -318,12 +318,20 @@ void luaL_setfuncs(lua_State* L, const luaL_Reg* l, int nup)
 
 int lua_upvalueindex(int i)
 {
-	if (luaVersion == LuaVersion::LUA_54)
-		return -1001000 - i;
-	if (luaVersion == LuaVersion::LUA_53)
-		return -1001000 - i;
-	if (luaVersion == LuaVersion::LUA_52)
-		return -1001000 - i;
+	switch (luaVersion) {
+		case LuaVersion::LUA_55: {
+			return LUA_REGISTRYINDEX - i;
+		}
+		case LuaVersion::LUA_52:
+		case LuaVersion::LUA_53:
+		case LuaVersion::LUA_54: {
+			return -1001000 - i;
+		}
+		default: {
+			return -10002 - i;
+		}
+	}
+
 	return -10002 - i;
 }
 

@@ -963,9 +963,31 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext) {
 	// 如果是 aaa:bbbb 则纠正为aaa.bbbb
 	int r = luaL_loadstring(L, statement.c_str());
 	if (r == LUA_ERRSYNTAX) {
-		evalContext->error = "syntax err: ";
-		evalContext->error.append(evalContext->expr);
-		return false;
+		// 尝试将 : 替换为 . 后重新加载
+		std::string correctedExpr = evalContext->expr;
+		size_t colonPos = correctedExpr.find(':');
+		if (colonPos != std::string::npos) {
+			correctedExpr[colonPos] = '.';
+			std::string correctedStatement = "return ";
+			if (evalContext->setValue) {
+				correctedStatement = correctedExpr + " = " + evalContext->value + " return " + correctedExpr;
+			} else {
+				correctedStatement.append(correctedExpr);
+			}
+			lua_pop(L, 1); // 弹出之前的错误信息
+			r = luaL_loadstring(L, correctedStatement.c_str());
+			if (r == LUA_OK) {
+				// 纠正成功，继续执行
+				evalContext->expr = correctedExpr; // 更新表达式
+			}
+		}
+		
+		if (r == LUA_ERRSYNTAX) {
+			lua_pop(L, 1); // 弹出错误信息
+			evalContext->error = "syntax err: ";
+			evalContext->error.append(evalContext->expr);
+			return false;
+		}
 	}
 	// call
 	const int fIdx = lua_gettop(L);
@@ -977,7 +999,8 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext) {
 	lua_setfenv(L, fIdx);
 #elif defined(EMMY_LUA_51) || defined(EMMY_LUA_JIT)
     lua_setfenv(L, fIdx);
-#else //52 & 53
+#else //52, 53, 54, 55+
+    // Lua 5.2+ 使用 _ENV upvalue 替代 setfenv
     lua_setupvalue(L, fIdx, 1);
 #endif
 	assert(lua_gettop(L) == fIdx);
