@@ -16,8 +16,16 @@
 #pragma once
 
 #include <thread>
+#include <mutex>
+#include <queue>
 #include "uv.h"
 #include "nlohmann/json_fwd.hpp"
+
+struct WriteRequest {
+	uv_write_t req;
+	uv_buf_t buf;
+	uv_stream_t* handler;
+};
 
 class EmmyFacade;
 
@@ -62,6 +70,13 @@ class Transporter {
 	bool running;
 	bool connected;
 	bool serverMode;
+
+	uv_async_t writeAsync;
+	std::mutex writeMtx;
+	std::queue<WriteRequest*> writeQueue;
+
+	static void OnAsyncWrite(uv_async_t* handle);
+	static void AfterWrite(uv_write_t* req, int status);
 protected:
 	uv_loop_t* loop;
 public:
