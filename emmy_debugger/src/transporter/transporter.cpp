@@ -28,6 +28,9 @@ Transporter::Transporter(bool server):
 	loop = uv_loop_new();
 	bufSize = 10 * 1024;
 	buf = static_cast<char*>(malloc(bufSize));
+
+	writeAsync.data = this;
+	uv_async_init(loop, &writeAsync, OnAsyncWrite);
 }
 
 Transporter::~Transporter()
@@ -152,30 +155,26 @@ bool Transporter::IsServerMode() const
 ////////////////////////////////////////////////////////////////////////////////
 // send data
 
-typedef struct
+void Transporter::AfterWrite(uv_write_t* req, int status)
 {
-	uv_write_t req;
-	uv_buf_t buf;
-	uv_stream_t* handler;
-} write_req_t;
-
-static void after_write(uv_write_t* req, int status)
-{
-	const auto* writeReq = reinterpret_cast<write_req_t*>(req);
+	auto* writeReq = reinterpret_cast<WriteRequest*>(req);
 	free(writeReq->buf.base);
 	delete writeReq;
 }
 
-static void after_async(uv_handle_t* h)
+void Transporter::OnAsyncWrite(uv_async_t* handle)
 {
-	delete h;
-}
-
-static void async_write(uv_async_t* h)
-{
-	auto* writeReq = (write_req_t*)h->data;
-	uv_write(&writeReq->req, writeReq->handler, &writeReq->buf, 1, after_write);
-	uv_close((uv_handle_t*)h, after_async);
+	auto* self = static_cast<Transporter*>(handle->data);
+	std::queue<WriteRequest*> pending;
+	{
+		std::lock_guard<std::mutex> lock(self->writeMtx);
+		std::swap(pending, self->writeQueue);
+	}
+	while (!pending.empty()) {
+		auto* writeReq = pending.front();
+		pending.pop();
+		uv_write(&writeReq->req, writeReq->handler, &writeReq->buf, 1, AfterWrite);
+	}
 }
 
 void Transporter::Send(uv_stream_t* handler, int cmd, const char* data, size_t len)
@@ -184,7 +183,7 @@ void Transporter::Send(uv_stream_t* handler, int cmd, const char* data, size_t l
 	{
 		return;
 	}
-	auto* writeReq = new write_req_t();
+	auto* writeReq = new WriteRequest();
 	char cmdValue[100];
 	const int l1 = sprintf(cmdValue, "%d\n", cmd);
 	const size_t newLen = len + l1 + 1;
@@ -197,11 +196,11 @@ void Transporter::Send(uv_stream_t* handler, int cmd, const char* data, size_t l
 	writeReq->buf = uv_buf_init(newData, newLen);
 	writeReq->handler = handler;
 
-	// thread safe:
-	auto* async = new uv_async_t;
-	async->data = writeReq;
-	uv_async_init(loop, async, async_write);
-	uv_async_send(async);
+	{
+		std::lock_guard<std::mutex> lock(writeMtx);
+		writeQueue.push(writeReq);
+	}
+	uv_async_send(&writeAsync);
 }
 
 void Transporter::Send(uv_stream_t* handler, const char* data, size_t len)
@@ -210,18 +209,17 @@ void Transporter::Send(uv_stream_t* handler, const char* data, size_t len)
 	{
 		return;
 	}
-	auto* writeReq = new write_req_t();
+	auto* writeReq = new WriteRequest();
 	char* newData = static_cast<char*>(malloc(len));
-
 	memcpy(newData, data, len);
 	writeReq->buf = uv_buf_init(newData, len);
 	writeReq->handler = handler;
 
-	// thread safe:
-	auto* async = new uv_async_t;
-	async->data = writeReq;
-	uv_async_init(loop, async, async_write);
-	uv_async_send(async);
+	{
+		std::lock_guard<std::mutex> lock(writeMtx);
+		writeQueue.push(writeReq);
+	}
+	uv_async_send(&writeAsync);
 }
 
 void Transporter::StartEventLoop()
@@ -242,6 +240,14 @@ void Transporter::Run()
 int Transporter::Stop()
 {
 	running = false;
+	// 清理未发送的写请求
+	std::lock_guard<std::mutex> lock(writeMtx);
+	while (!writeQueue.empty()) {
+		auto* req = writeQueue.front();
+		writeQueue.pop();
+		free(req->buf.base);
+		delete req;
+	}
 	return 0;
 }
 
