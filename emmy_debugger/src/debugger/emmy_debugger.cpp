@@ -1,4 +1,4 @@
-﻿/*
+/*
 * Copyright (c) 2019. tangzx(love.tangzx@qq.com)
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
@@ -984,9 +984,16 @@ bool Debugger::DoEval(std::shared_ptr<EvalContext> evalContext) {
 		
 		if (r == LUA_ERRSYNTAX) {
 			lua_pop(L, 1); // 弹出错误信息
-			evalContext->error = "syntax err: ";
-			evalContext->error.append(evalContext->expr);
-			return false;
+			// 尝试作为语句执行（例如 a.b = 123 这样的赋值语句）
+			if (!evalContext->setValue) {
+				r = luaL_loadstring(L, evalContext->expr.c_str());
+			}
+			if (r == LUA_ERRSYNTAX) {
+				lua_pop(L, 1);
+				evalContext->error = "syntax err: ";
+				evalContext->error.append(evalContext->expr);
+				return false;
+			}
 		}
 	}
 	// call
