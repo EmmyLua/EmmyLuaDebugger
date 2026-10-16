@@ -243,6 +243,9 @@ void EmmyDebuggerManager::Eval(std::shared_ptr<EvalContext> ctx)
 void EmmyDebuggerManager::OnDisconnect()
 {
 	SetRunning(false);
+	// The next IDE must not inherit the hit debugger: attach mode removes every debugger on
+	// disconnect, so a Break routed to the old one would never land.
+	SetHitDebugger(nullptr);
 	std::lock_guard<std::mutex> lock(debuggerMtx);
 	for (auto it : debuggers)
 	{
