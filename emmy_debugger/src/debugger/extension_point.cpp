@@ -10,7 +10,7 @@ std::string ExtensionPoint::ExtensionTable = "emmyHelper";
 // debugger has pushed above framesize (e.g. the variable being inspected by GetVariable). The
 // subsequent lua_next then treats nil as a table and crashes in lj_tab_next.
 // emmyHelper is always installed with rawset by emmyHelper.lua, so a raw lookup is sufficient.
-static void rawGetGlobal(lua_State* L, const char* name)
+static void rawgetglobal(lua_State* L, const char* name)
 {
 	lua_pushglobaltable(L);
 	lua_pushstring(L, name);
@@ -178,7 +178,7 @@ bool ExtensionPoint::QueryVariableGeneric(lua_State* L, Idx<Variable> variable, 
 	bool result = false;
 	object = lua_absindex(L, object);
 	const int t = lua_gettop(L);
-	rawGetGlobal(L, ExtensionTable.c_str());
+	rawgetglobal(L, ExtensionTable.c_str());
 
 	if (lua_istable(L, -1))
 	{
@@ -221,7 +221,7 @@ lua_State* ExtensionPoint::QueryParentThread(lua_State* L)
 {
 	lua_State* PL = nullptr;
 	const int t = lua_gettop(L);
-	rawGetGlobal(L, ExtensionTable.c_str());
+	rawgetglobal(L, ExtensionTable.c_str());
 	if (lua_istable(L, -1))
 	{
 		lua_getfield(L, -1, "queryParentThread");
